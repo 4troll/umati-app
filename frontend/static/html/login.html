@@ -31,6 +31,13 @@
                 background-color: #ddd;
                 outline: none;
             }
+            input[type="checkbox"] {
+                -webkit-appearance: checkbox;
+                -moz-appearance: checkbox;
+                appearance: checkbox;
+                display: inline-block;
+                width: auto;
+            }
         </style>
         <ul>
             <div class= "InputContainer">
@@ -43,7 +50,7 @@
                 <label for="psw"><b>Password</b></label><br>
                 <input type="password" placeholder="Password" name="psw" id="psw" required>
             </div>
-            
+            <input type="checkbox" value="lsRememberMe" id="rememberMe" checked> <label for="rememberMe">Remember me</label>
         </ul>
         <hr>
       <p>By contributing to Umati, you pledge to adhere to our <a href="#">Terms & Privacy</a>.</p>

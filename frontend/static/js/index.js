@@ -24,7 +24,8 @@ async function postJson(url, body) {
     let response = await fetch(window.location.protocol + "//" + window.location.hostname + url, {
         method: "post",
         body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: "include"
     });
     if (!response.ok) {
         throw new Error("HTTP error, status = " + response.status);
@@ -64,9 +65,31 @@ const router = async () => {
     document.querySelector("#app").innerHTML = await view.getHtml();
 
     if (location.pathname == "/register") { // if on register page
-        var registerForm = document.getElementById('register-form');
+        var registerForm = document.getElementById("register-form");
         registerForm.addEventListener("submit", function (event) {
             registerAccount(event);
+        });
+    }
+    if (location.pathname == "/login") { // if on login page
+        var loginForm = document.getElementById("login-form");
+        loginForm.addEventListener("submit", function (event) {
+            let success = loginAccount(event);
+            if (success) {
+                let username = document.getElementById("username").value;
+                let password = document.getElementById("psw").value;
+                let rememberMe = $("input[type='checkbox']").val();
+                if (rememberMe) {
+                    Cookies.set("username", username, { expires: 30 });
+                    Cookies.set("password", password, { expires: 30 });
+                    Cookies.set("loggedIn", true, { expires: 30 });
+                }
+                else {
+                    Cookies.set("username", username);
+                    Cookies.set("password", password);
+                    Cookies.set("loggedIn", true);
+                }
+                
+            }
         });
     }
 
@@ -87,6 +110,24 @@ async function registerAccount(event) {
 
     let success = true;
     await postJson("/api/registerAccount", newAccount)
+        .then(function (data) {
+            return data;
+        })
+        .catch((error) => {
+            return error;
+        });
+    return success;
+}
+
+async function loginAccount(event) {
+    event.preventDefault();
+    var loggedAccount = {
+        "username": document.getElementById("username").value,
+        "password": document.getElementById("psw").value
+    }
+
+    let success = true;
+    await postJson("/api/loginAccount", loggedAccount)
         .then(function (data) {
             return data;
         })
