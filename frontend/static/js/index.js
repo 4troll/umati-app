@@ -1,5 +1,6 @@
 import Start from "./views/Start.js";
 import Login from "./views/Login.js";
+import Register from "./views/Register.js";
 import Posts from "./views/Posts.js";
 import PostView from "./views/PostView.js";
 
@@ -19,10 +20,24 @@ const navigateTo = url => {
     router();
 };
 
+async function postJson(url, body) {
+    let response = await fetch(window.location.protocol + "//" + window.location.hostname + url, {
+        method: "post",
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+        throw new Error("HTTP error, status = " + response.status);
+    }
+    let data = await response.json()
+    return data;
+}
+
 const router = async () => {
     const routes = [
         { path: "/", view: Start },
         { path: "/login", view: Login },
+        { path: "/register", view: Register },
         { path: "/posts", view: Posts },
         { path: "/posts/:id", view: PostView },
     ];
@@ -47,7 +62,39 @@ const router = async () => {
     const view = new match.route.view(getParams(match));
 
     document.querySelector("#app").innerHTML = await view.getHtml();
+
+    if (location.pathname == "/register") { // if on register page
+        var registerForm = document.getElementById('register-form');
+        registerForm.addEventListener("submit", function (event) {
+            registerAccount(event);
+        });
+    }
+
 };
+
+async function registerAccount(event) {
+    event.preventDefault();
+    var newAccount = {
+        "username": document.getElementById("username").value,
+        "email": document.getElementById("email").value,
+        "password": document.getElementById("psw").value,
+        "passCon": document.getElementById("psw-repeat").value
+    }
+
+    if (newAccount.password != newAccount.passCon) {
+        return "entered passwords don't match :(";
+    }
+
+    let success = true;
+    await postJson("/api/registerAccount", newAccount)
+        .then(function (data) {
+            return data;
+        })
+        .catch((error) => {
+            return error;
+        });
+    return success;
+}
 
 window.addEventListener("popstate", router);
 

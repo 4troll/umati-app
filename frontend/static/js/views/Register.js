@@ -3,12 +3,12 @@ import AbstractView from "./AbstractView.js";
 export default class extends AbstractView {
     constructor(params) {
         super(params);
-        this.setTitle("Login");
+        this.setTitle("Register");
     }
 
     async getHtml() {
         var contents = ``;
-        await fetch("/static/html/login.html")
+        await fetch("/static/html/register.html")
         .then(function (response) {
             if (!response.ok)
             {

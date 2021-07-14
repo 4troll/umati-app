@@ -1,0 +1,55 @@
+<h1>
+    Login
+</h1>
+<form class="pure-form" id= "login-form">
+    <div class="container">
+        <p>Please fill in this form to create an account.</p>
+        <hr>
+
+        <style>
+            ul {
+                list-style: none;
+                padding-left: 0;
+            }​
+            input[type=text] {
+                width: 30%;
+                padding: 15px;
+                margin: 5px 0 22px 0;
+                display: inline-block;
+                border: none;
+                background: #f1f1f1;
+            }
+            input[type=text], input[type=password] {
+                width: 30%;
+                padding: 15px;
+                margin: 5px 0 22px 0;
+                display: inline-block;
+                border: none;
+                background: #f1f1f1;
+            }
+            input[type=text]:focus, input[type=password]:focus {
+                background-color: #ddd;
+                outline: none;
+            }
+        </style>
+        <ul>
+            <div class= "InputContainer">
+                <label for="username"><b>Username</b></label><br>
+                <input type="text" placeholder="Username" name="username" id="username" required>
+            </div>
+            
+
+            <div class= "InputContainer">
+                <label for="psw"><b>Password</b></label><br>
+                <input type="password" placeholder="Password" name="psw" id="psw" required>
+            </div>
+            
+        </ul>
+        <hr>
+      <p>By contributing to Umati, you pledge to adhere to our <a href="#">Terms & Privacy</a>.</p>
+      <button type="submit" class="loginbtn">login</button>
+    </div>
+    <div class="registerContainer">
+      <p>Don't have an account? <a href="/register">Register now</a>. Join the Umati!</p>
+    </div>
+  </form>
