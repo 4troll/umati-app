@@ -15,7 +15,7 @@ var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 //app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
-app.use("/static", express.static(path.resolve(__dirname, "./client/build")));
+//app.use("/static", express.static(path.resolve(__dirname, "./client/src")));
 app.use("/fonts", express.static(path.resolve(__dirname, "frontend", "static/fonts")));
 
 app.get("/api", (req, res) => {
@@ -178,6 +178,15 @@ function redirectLoggedIn(req,res) {
 app.get("/*", (req, res) => {
     res.sendFile(path.resolve(__dirname, "./client/build", "index.html"));
 });
+
+if (process.env.NODE_ENV === 'production') {
+    // Serve any static files
+    app.use(express.static(path.join(__dirname, 'client/build')));
+    // Handle React routing, return all requests to React app
+    app.get('*', function(req, res) {
+      res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+    });
+  }
 
 
 app.listen(process.env.PORT || 80, () => console.log("Server running..."));
