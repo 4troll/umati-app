@@ -17,6 +17,8 @@
     "express": "^4.17.1",
     "js-cookie": "^2.2.1",
     "mongodb": "^4.0.0",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.12",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0"
   }
 }

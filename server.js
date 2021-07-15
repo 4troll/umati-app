@@ -13,8 +13,7 @@ app.use(cookies());
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-//app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
-app.use("/static", express.static(path.join (__dirname, "/static")));
+app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
 app.use("/fonts", express.static(path.resolve(__dirname, "frontend", "static/fonts")));
 
 var uri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/test";
