@@ -6,7 +6,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "devStart": "nodemon server.js"
+    "devStart": "nodemon server.js",
+    "build": "cd client && npm install && npm run build",
+
+    "client": "cd client && yarn start",
+    "server": "nodemon server.js",
+    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\"",
+
+    "heroku-postbuild": "cd client && npm install && npm install --only=dev --no-shrinkwrap && npm run build"
+  },
+  "engines": {
+    "node": "v14.17.1"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +29,10 @@
     "mongodb": "^4.0.0",
     "nodemon": "^2.0.12",
     "react": "^16.14.0",
-    "react-dom": "^16.14.0"
+    "react-dom": "^16.14.0",
+    "concurrently": "^6.2.0"
+  },
+  "devDependencies": {
+    "concurrently": "^4.0.1"
   }
 }

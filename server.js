@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
 
+
 const { MongoClient } = require("mongodb");
 
 const app = express();
@@ -13,8 +14,13 @@ app.use(cookies());
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
+//app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
+app.use("/static", express.static(path.resolve(__dirname, "./client/build")));
 app.use("/fonts", express.static(path.resolve(__dirname, "frontend", "static/fonts")));
+
+app.get("/api", (req, res) => {
+    res.json({ message: "Hello from server!" });
+  });
 
 var uri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/test";
 
@@ -170,9 +176,8 @@ function redirectLoggedIn(req,res) {
 }
 
 app.get("/*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "frontend", "index.html"));
+    res.sendFile(path.resolve(__dirname, "./client/build", "index.html"));
 });
-
 
 
 app.listen(process.env.PORT || 80, () => console.log("Server running..."));
