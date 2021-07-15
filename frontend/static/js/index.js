@@ -3,6 +3,7 @@ import Login from "./views/Login.js";
 import Register from "./views/Register.js";
 import Posts from "./views/Posts.js";
 import PostView from "./views/PostView.js";
+import Account from "./views/Account.js";
 
 const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$");
 
@@ -19,6 +20,10 @@ const navigateTo = url => {
     history.pushState(null, null, url);
     router();
 };
+
+function parseBoolean(stuff) {
+    return (stuff == "true");
+}
 
 async function postJson(url, body) {
     let response = await fetch(window.location.protocol + "//" + window.location.hostname + url, {
@@ -41,6 +46,7 @@ const router = async () => {
         { path: "/register", view: Register },
         { path: "/posts", view: Posts },
         { path: "/posts/:id", view: PostView },
+        { path: "/account", view: Account },
     ];
 
     // Test each route for potential match
@@ -88,12 +94,25 @@ const router = async () => {
                     Cookies.set("password", password);
                     Cookies.set("loggedIn", true);
                 }
-                
+                window.location.href = "/posts";
             }
         });
     }
+    createNav("umati", "/");
+    if (parseBoolean(Cookies.get("loggedIn"))) { // if logged in
+    }
+    else {
+        createNav("Login", "/login");
+    }
+    createNav("Posts", "/posts");
 
 };
+
+function createNav(text, path) {
+    let loginNav = document.createElement("a");
+    $(loginNav).appendTo("nav").addClass("nav__link").attr("href",path).text(text);
+}
+
 
 async function registerAccount(event) {
     event.preventDefault();

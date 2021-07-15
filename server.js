@@ -6,10 +6,15 @@ const { MongoClient } = require("mongodb");
 
 const app = express();
 
+var cookies = require("cookie-parser");
+const { nextTick } = require("process");
+app.use(cookies());
+
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
-app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
+//app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
+app.use("/static", express.static(path.join (__dirname, "/static")));
 app.use("/fonts", express.static(path.resolve(__dirname, "frontend", "static/fonts")));
 
 var uri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/test";
@@ -117,6 +122,53 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
         res.status(404).end();
     }
 });
+
+app.get("/", redirectLoggedIn);
+app.get("/login", redirectLoggedIn);
+app.get("/register", redirectLoggedIn);
+
+function redirectLoggedIn(req,res) {
+    var body = req.cookies;
+    var user;
+    var rootUrl = req.protocol + '://' + req.get('host');
+    try {
+            loggedAccount = {
+                "username": body.username,
+                "password": body.password
+            }
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+    
+                (async ()=>{
+                user = await usersCollection.findOne( {
+                    $and: [
+                        {username: body.username},
+                        {password: body.password}
+                    ]
+                });
+                console.log(user);
+                if (user) {
+                    res.redirect(rootUrl + "/posts");
+                }
+                else if (req.originalUrl != "/login") {
+                    res.redirect(rootUrl + "/login");
+                }
+                else {
+                    res.sendFile(path.resolve(__dirname, "frontend", "index.html"));
+                }
+                })
+                
+                ();
+            });
+    }
+    catch (e) {
+        console.error(e);
+    }
+    finally{
+        client.close();
+    }
+}
 
 app.get("/*", (req, res) => {
     res.sendFile(path.resolve(__dirname, "frontend", "index.html"));
