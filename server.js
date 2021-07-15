@@ -12,7 +12,7 @@ const { nextTick } = require("process");
 app.use(cookies());
 
 var jsonParser = bodyParser.json();
-var urlencodedParser = bodyParser.urlencoded({ extended: false });
+var urlencodedParser = bodyParser.urlencoded({ extended: true });
 
 //app.use("/static", express.static(path.resolve(__dirname, "frontend", "static")));
 //app.use("/static", express.static(path.resolve(__dirname, "./client/src")));
