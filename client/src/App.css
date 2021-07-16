@@ -1,0 +1,72 @@
+@font-face {
+    font-family: "GDS Transport";
+    font-style: normal;
+    font-weight: normal;
+    src: 
+        url("./fonts/light-94a07e06a1-v2.woff2") format("woff2"),
+        url("./fonts/light-f591b13f7d-v2.woff") format("woff");
+
+}
+@font-face {
+    font-family: "GDS Transport";
+    font-style: normal;
+    font-weight: bold;
+    src: 
+        url("./fonts/bold-b542beb274-v2.woff2") format("woff2"),
+        url("./fonts/bold-affa96571d-v2.woff") format("woff");
+
+}
+
+
+body {
+    --nav-height: 45px;
+    margin-top: 80px;
+    font-family: "GDS Transport", sans-serif;
+    font-size: 18px;
+}
+
+.App {
+	text-align: center;
+}
+
+.App-logo {
+	animation: App-logo-spin infinite 20s linear;
+	height: 40vmin;
+}
+
+.App-header {
+	background-color: #282c34;
+	min-height: 50%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-size: calc(10px + 2vmin);
+	color: white;
+	padding-bottom: 10px;
+}
+
+.App-link {
+color: #61dafb;
+}
+
+div.navbar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: var(--nav-height);
+	width: 100%;
+	background: #222222;
+}
+
+a.navlink {
+	display: block;
+    padding: 12px 18px;
+    text-decoration: none;
+    color: #eeeeee;
+    font-weight: 500;
+    float: left;
+}
+a.navlink:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
