@@ -169,6 +169,9 @@ function redirectLoggedIn(req,res) {
                 if (user) {
                     res.redirect(rootUrl + "/posts");
                 }
+                else if (req.originalUrl == "/register") {
+                    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+                }
                 else if (req.originalUrl != "/login") {
                     res.redirect(rootUrl + "/login");
                 }
@@ -177,7 +180,6 @@ function redirectLoggedIn(req,res) {
                     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
                 }
                 })
-                
                 ();
             });
     }
