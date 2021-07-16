@@ -148,7 +148,6 @@ function redirectLoggedIn(req,res) {
     var body = req.cookies;
     console.log(body);
     var user;
-    var rootUrl = req.protocol + '://' + req.get('host');
     try {
             loggedAccount = {
                 "username": body.username,
@@ -167,13 +166,13 @@ function redirectLoggedIn(req,res) {
                 });
                 console.log(user);
                 if (user) {
-                    res.redirect(rootUrl + "/posts");
+                    res.redirect("/posts");
                 }
                 else if (req.originalUrl == "/register") {
                     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
                 }
                 else if (req.originalUrl != "/login") {
-                    res.redirect(rootUrl + "/login");
+                    res.redirect("/login");
                 }
                 else {
                     //res.sendFile(path.resolve(__dirname, "frontend", "index.html"));
