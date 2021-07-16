@@ -140,6 +140,7 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
     }
 });
 
+app.get("", redirectLoggedIn);
 app.get("/", redirectLoggedIn);
 app.get("/login", redirectLoggedIn);
 app.get("/register", redirectLoggedIn);
