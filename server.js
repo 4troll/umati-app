@@ -94,6 +94,42 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
     }
 });
 
+app.post("/api/usernameLookup", jsonParser, function (req, res) {
+    if (req) {
+        var lookup;
+        var user;
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                var body = req.body;
+
+                (async ()=>{
+                    lookup = {
+                        "username": body.username
+                    }
+                    user = await usersCollection.findOne({username: body.username});
+                    if (user) {
+                        res.json(lookup).end();
+                    }
+                    else {
+                        res.status(404).end();
+                    }
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 app.post("/api/loginAccount", jsonParser, function (req, res) {
     if (req) {
         console.log("recieved at server");
@@ -124,6 +160,112 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
                     res.status(403).end();
                 }
                 
+
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.get("/api/userData/:username", jsonParser, function (req, res) {
+    if (req) {
+        var user;
+        var username = req.params.username;
+        console.log(username);
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+
+                var cookies = req.cookies;
+                var adminMode = false;
+
+                (async ()=>{
+                    try {
+                        queryingUser = await usersCollection.findOne( {
+                            $and: [
+                                {username: cookies.username},
+                                {password: cookies.password}
+                            ]
+                        });
+                        if (queryingUser && queryingUser.admin) {
+                            adminMode = true;
+                        }
+                    }
+                    catch (e) {
+                        console.error(e);
+                    }
+
+                    user = await usersCollection.findOne({username: username});
+                    if (user) {
+                        delete user.email;
+                        delete user.password;
+                        delete user._id;
+                        res.json(user).end();
+                    }
+                    else {
+                        res.status(404).end();
+                    }
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/editDescription/:username", jsonParser, function (req, res) {
+    if (req) {
+        console.log("recieved at server");
+        var loggedAccount;
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+
+                var cookies = req.cookies;
+
+                (async ()=>{
+                    if (req.params.username == cookies.username) {
+                        loggedAccount = {
+                            "username": req.params.username,
+                            "password": cookies.password
+                        }
+                        var updateUser = await usersCollection.updateOne({ 
+                            $and: [
+                            {username: loggedAccount.username},
+                            {password: loggedAccount.password}
+                            ]
+                        },
+                        {$set: {description: req.body.description}}
+                        )
+                        if (updateUser) {
+                            res.json(updateUser).end();
+                        }
+                        else {
+                            res.status(403).end();
+                        }
+                    }
+                    else {
+                        res.status(403).end();
+                    }
+
 
                 })();
             });

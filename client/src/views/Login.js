@@ -12,8 +12,10 @@ import Grid from '@material-ui/core/Grid';
 import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
-
-
+import InputAdornment from '@material-ui/core/InputAdornment';
+import IconButton from '@material-ui/core/IconButton';
+import Visibility from '@material-ui/icons/Visibility';
+import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
 function Copyright() {
 return (
@@ -64,6 +66,7 @@ export default function Login() {
 	const [username,setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [rememberMe, setRemember] = useState("");
+	const [showPassword,setShow] = useState("");
   
 	function validateForm() {
 	  return username.length > 0 && password.length > 0;
@@ -115,6 +118,14 @@ export default function Login() {
 			return error;
 		});
 	}
+
+	function handleClickShowPassword() {
+		setShow(!showPassword);
+	};
+	
+	function handleMouseDownPassword (event) {
+		event.preventDefault();
+	};
 	
 	return (
 		<Grid container component="main" className={classes.root}>
@@ -147,10 +158,24 @@ export default function Login() {
 				fullWidth
 				name="password"
 				label="Password"
-				type="password"
 				id="password"
 				autoComplete="current-password"
 				onChange={(e) => setPassword(e.target.value)}
+				type={showPassword ? 'text' : 'password'}
+				InputProps={{
+					endAdornment: (
+						<InputAdornment position="end">
+						  <IconButton
+							aria-label="toggle password visibility"
+							onClick={handleClickShowPassword}
+							onMouseDown={handleMouseDownPassword}
+							edge="end"
+						  >
+							{showPassword ? <Visibility /> : <VisibilityOff />}
+						  </IconButton>
+						</InputAdornment>
+					)
+				}}
 				/>
 				<FormControlLabel
 				control={

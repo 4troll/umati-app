@@ -70,3 +70,15 @@ a.navlink {
 a.navlink:hover {
     background: rgba(255, 255, 255, 0.05);
 }
+
+p {
+    word-wrap: break-word;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+section {
+    height: 100%;
+    width: 100%;
+    display: inline-block;
+  }

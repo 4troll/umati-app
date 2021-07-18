@@ -13,6 +13,12 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import PeopleOutlineOutlinedIcon from '@material-ui/icons/PeopleOutlineOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import IconButton from '@material-ui/core/IconButton';
+import Visibility from '@material-ui/icons/Visibility';
+import VisibilityOff from '@material-ui/icons/VisibilityOff';
+import validator from "validator";
+import { FormHelperText } from '@material-ui/core';
 
 function Copyright() {
   return (
@@ -64,10 +70,26 @@ export default function Register() {
     const [username,setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [passwordCon, setPasswordCon] = useState("");
+	var submitted = false;
+	const [taken,setTaken] = useState("");
+	const [showPassword,setShow] = useState("");
   
 	function validateForm() {
-	  return username.length > 0 && password.length > 0;
+		if (username.length == 0) {
+			return false;
+		}
+		if (password.length == 0) {
+			return false;
+		}
+		if (email.length == 0) {
+			return false;
+		}
+		if (passwordCon != password) {
+			return false;
+		}
+		return true;
 	}
+
 
 	async function postJson(url, body) {
 		let response = await fetch(url, {
@@ -86,13 +108,13 @@ export default function Register() {
 			await response.json()
 			.then(json => {
 				console.log(json);
-                window.location.href = "/login";
 			});
 		}
 	}
 
 	async function handleSubmit(event) {
 		event.preventDefault();
+		
 		var newAccount = {
 			"username": username,
 			"email": email,
@@ -101,11 +123,53 @@ export default function Register() {
 		}
 		await postJson("/api/registerAccount", newAccount)
 		.then(function (data) {
+			window.location.href = "/login";
 			return data;
 		})
 		.catch((error) => {
 			return error;
 		});
+	}
+
+	async function usernameUpdate(username) {
+		setUsername(username);
+		setTaken(false);
+		var lookup = {
+			"username": username
+		}
+		await postJson("/api/usernameLookup", lookup)
+		.then(function (data) {
+			console.log("taken");
+			setTaken(true);
+			return data;
+		})
+		.catch((error) => {
+			return error;
+		});
+	}
+	function handleClickShowPassword() {
+		setShow(!showPassword);
+	};
+	
+	function handleMouseDownPassword (event) {
+		event.preventDefault();
+	};
+	const validatorSettings = { minLength: 4, minLowercase: 0, minUppercase: 0, minNumbers: 0, minSymbols: 0, returnScore: true, pointsPerUnique: 1, pointsPerRepeat: 0.5, pointsForContainingLower: 10, pointsForContainingUpper: 10, pointsForContainingNumber: 10, pointsForContainingSymbol: 10 };
+	const strengthThreshold = 40;
+
+	function checkPassword() {
+		var strength = validator.isStrongPassword(password, validatorSettings);
+		if (!(password == passwordCon) && passwordCon.length > 0) {
+			return [true, "Passwords don't match"];
+		}
+		if (strength < strengthThreshold) {
+			return [true, "Password not strong enough! Strength: " + strength + "/" + strengthThreshold + ". Try adding numbers, symbols, and uppercase characters!"];
+		}
+		return [false, "Strength: " + strength + "/" + strengthThreshold];
+	}
+	function interpretFirst() {
+		var variable = checkPassword()
+		return variable[0];
 	}
 
 return (
@@ -129,7 +193,9 @@ return (
 		label="Username"
 		name="username"
 		autoComplete="username"
-		onChange={(e) => setUsername(e.target.value)}
+		onChange={(e) => usernameUpdate(e.target.value)}
+		error={taken == true}
+		helperText = {taken == true? 'Username already taken' : ''}
 		autoFocus
 		/>
 		<TextField
@@ -142,6 +208,16 @@ return (
 		name="email"
 		autoComplete="email"
 		onChange={(e) => setEmail(e.target.value)}
+		helperText = {function () {
+			if (email.length == 0) {
+				return "";
+			}
+			if (!validator.isEmail(email)) {
+				return "Invalid email address";
+			}
+		}
+		}
+		error = {!validator.isEmail(email) && email.length > 0}
 		/>
 		<TextField
 		variant="outlined"
@@ -150,10 +226,27 @@ return (
 		fullWidth
 		name="password"
 		label="Password"
-		type="password"
-		id="password"
-		autoComplete="current-password"
+		//id="password"
+		//autoComplete="current-password"
+		autoComplete="off"
+		error={password.length > 0 ?interpretFirst():""}
+		helperText = {password.length > 0 ?checkPassword():""}
 		onChange={(e) => setPassword(e.target.value)}
+		type={showPassword ? 'text' : 'password'}
+		InputProps={{
+			endAdornment: (
+				<InputAdornment position="end">
+				  <IconButton
+					aria-label="toggle password visibility"
+					onClick={handleClickShowPassword}
+					onMouseDown={handleMouseDownPassword}
+					edge="end"
+				  >
+					{showPassword ? <Visibility /> : <VisibilityOff />}
+				  </IconButton>
+				</InputAdornment>
+			)
+			}}
 		/>
 		<TextField
 		variant="outlined"
@@ -162,10 +255,27 @@ return (
 		fullWidth
 		name="confirm-password"
 		label="Confirm password"
-		type="confirm-password"
+		type={showPassword ? 'text' : 'password'}
 		id="confirm-password"
-		autoComplete="confirm-password"
+		//autoComplete="confirm-password"
+		autoComplete="off"
+		error={(!(password == passwordCon) && passwordCon.length > 0)}
+		helperText = {(!(password == passwordCon) && passwordCon.length > 0)? 'Passwords do not match' : ''}
 		onChange={(e) => setPasswordCon(e.target.value)}
+		InputProps={{
+		endAdornment: (
+			<InputAdornment position="end">
+			  <IconButton
+				aria-label="toggle password visibility"
+				onClick={handleClickShowPassword}
+				onMouseDown={handleMouseDownPassword}
+				edge="end"
+			  >
+				{showPassword ? <Visibility /> : <VisibilityOff />}
+			  </IconButton>
+			</InputAdornment>
+		)
+		}}	
 		/>
 		<Button
 		type="submit"
@@ -173,6 +283,7 @@ return (
 		variant="contained"
 		color="primary"
 		className={classes.submit}
+		disabled={!validateForm()}
 		>
 		Register
 		</Button>

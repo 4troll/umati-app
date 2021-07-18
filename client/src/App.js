@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import Login from "./views/Login.js";
+import Account from "./views/Account.js";
 import Register from "./views/Register.js";
 import './App.css';
 
@@ -43,20 +44,30 @@ import {
 } from "react-router-dom";
 
 class App extends Component {
-	state = {
-		loggedIn: false,
-		tabs: []
-	};
+	constructor(props) {
+		super(props);
+		
+		this.state = {
+			username: Cookies.get("username"),
+			loggedIn: false,
+			tabs: []
+		};
+	  }
 
 	componentDidMount() {
 		if (Cookies.get("loggedIn") == "true") { // if logged in
 			this.setState({ loggedIn : true })
+			var username = this.state.username; //username
 			this.setState(prevState => ({
 				tabs: [...prevState.tabs, <Link class="navlink" to="/">umati</Link>]
 			}));
 			this.setState(prevState => ({
+				tabs: [...prevState.tabs, <Link class="navlink" to={"/@" + username}>@{username}</Link>]
+			}));
+			this.setState(prevState => ({
 				tabs: [...prevState.tabs, <Link class="navlink" to="/posts">Posts</Link>]
 			}));
+
 		}
 		else {
 			this.setState({ loggedIn : false })
@@ -72,28 +83,6 @@ class App extends Component {
 		}
 	}
 
-	// callApi = async () => {
-	//   const response = await fetch('/api/hello');
-	//   const body = await response.json();
-
-	//   if (response.status !== 200) throw Error(body.message);
-
-	//   return body;
-	// };
-
-	// handleSubmit = async e => {
-	//   e.preventDefault();
-	//   const response = await fetch('/api/world', {
-	//     method: 'POST',
-	//     headers: {
-	//       'Content-Type': 'application/json',
-	//     },
-	//     body: JSON.stringify({ post: this.state.post }),
-	//   });
-	//   const body = await response.text();
-
-	//   this.setState({ responseToPost: body });
-	// };
 
 	render() {
 		return (
@@ -118,6 +107,11 @@ class App extends Component {
 				</Route>
 				<Route path="/register">
 					<Register />
+				</Route>
+				<Route path="/@:username">
+					<Account 
+					path="/@:username"
+					/>
 				</Route>
 				<Route path="/dashboard">
 					{/* <Dashboard /> */}
