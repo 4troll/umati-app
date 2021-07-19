@@ -20,9 +20,13 @@
 
 body {
     --nav-height: 45px;
-    margin-top: 80px;
+    /* margin-top: 80px; */
     font-family: "GDS Transport", sans-serif;
     font-size: 18px;
+}
+
+div#root {
+    margin-top: 45px;
 }
 
 .App {

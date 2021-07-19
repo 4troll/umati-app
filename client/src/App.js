@@ -57,7 +57,7 @@ class App extends Component {
 	componentDidMount() {
 		if (Cookies.get("loggedIn") == "true") { // if logged in
 			this.setState({ loggedIn : true })
-			var username = this.state.username; //username
+			var username = Cookies.get("username"); //username
 			this.setState(prevState => ({
 				tabs: [...prevState.tabs, <Link class="navlink" to="/">umati</Link>]
 			}));

@@ -3,6 +3,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const { MongoClient } = require("mongodb");
 var cors = require("cors");
+var validator = require("validator");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -49,6 +50,16 @@ try {
         client.close();
 }
 
+function checkUsername(targetUsername) {
+    if (targetUsername.length < 3) {
+        return false;
+    }
+    if (!validator.isAlphanumeric(targetUsername)) {
+        return false;
+    }
+    return true;
+}
+
 app.post("/api/registerAccount", jsonParser, function (req, res) {
     if (req) {
         var newAccount;
@@ -71,7 +82,7 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
                     }
                     taken = await usersCollection.findOne({username: body.username});
                     console.log(taken);
-                    if (!taken) {
+                    if (!taken && checkUsername(body.username)) {
                         usersCollection.insertOne(newAccount);
                     }
                     
@@ -95,7 +106,7 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
 });
 
 app.post("/api/usernameLookup", jsonParser, function (req, res) {
-    if (req) {
+    if (req && checkUsername(req.body.username)) {
         var lookup;
         var user;
         try {
@@ -263,6 +274,69 @@ app.post("/api/editDescription/:username", jsonParser, function (req, res) {
                         }
                     }
                     else {
+                        res.status(403).end();
+                    }
+
+
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/updateNameAvatar/:username", jsonParser, function (req, res) {
+    if (req && checkUsername(req.body.username)) {
+        console.log(req.body);
+        var updatedAccount;
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+
+                var cookies = req.cookies;
+
+                (async ()=>{
+                    if (req.params.username == cookies.username) {
+
+                        lookup = {
+                            "username": req.body.username
+                        }
+                        var foundUser = await usersCollection.findOne({username: req.body.username});
+                        console.log(req.params.username == req.body.username);
+                        if (!foundUser || (req.body.username == req.params.username)) {
+                            updatedAccount = {
+                                "username": req.params.username,
+                                "password": cookies.password
+                            }
+                            var updateUser = await usersCollection.updateOne({ 
+                                $and: [
+                                {username: updatedAccount.username},
+                                {password: updatedAccount.password}
+                                ]
+                            },
+                            {$set: {username: req.body.username, displayname: req.body.displayname}}
+                            )
+                            if (updateUser) {
+                                res.json(updateUser).end();
+                            }
+                            else { // if no credentials
+                                res.status(403).end();
+                            }
+                        }
+                        else{ // if username taken
+                            res.status(403).end();
+                        }
+                    }
+                    else { // if the one editing profile does not own the account (different name)
                         res.status(403).end();
                     }
 
