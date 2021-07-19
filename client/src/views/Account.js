@@ -71,13 +71,18 @@ function Account(props) {
 	const [usernameField,setUsernameField] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [taken,setTaken] = useState(false);
-	const inputFile = useRef(null) 
+
+
+	const inputFile = useRef(null);
+	const [selectedAvatarFile,setSelectedAvatarFile] = useState("");
 
 	const { username } = useParams();
 	const classes = useStyles();
 
 	const inputRef = useRef();
   	const [desctext, setDescText] = useState("");
+
+	const urlCreator = window.URL || window.webkitURL;
 
 	async function postJson(url, body) {
 		let response = await fetch(url, {
@@ -117,6 +122,10 @@ function Account(props) {
 			.then(json => {
 				console.log(json);
 				setUserDat(json);
+				
+				if (json.avatar) {
+					console.log(json.avatar);
+				}
 
 				setUsernameField(json.username);
 				setDisplayName(json.displayname);
@@ -210,7 +219,8 @@ function Account(props) {
 		try {
 			var formData = {
 				"username": usernameField,
-				"displayname": displayName
+				"displayname": displayName,
+				"avatar": selectedAvatarFile
 			}
 			let response = await fetch("/api/updateNameAvatar/" + username, {
 				method: "post",
@@ -243,6 +253,10 @@ function Account(props) {
 			setProfileModal(false);
 		}
 	}
+
+
+
+
 	function checkUsername(targetUsername) {
 		if (targetUsername.length < 3) {
 			return false;
@@ -279,25 +293,29 @@ function Account(props) {
 			});
 		}
 	}
+	 
 
-	function handleUploadClick (event){
+	async function handleUploadClick (event){
 		console.log("image upload clicked");
 		var file = event.target.files[0];
-		const reader = new FileReader();
-		var url = reader.readAsDataURL(file);
-	
-		reader.onloadend = function(e) {
-		  this.setState({
-			selectedFile: [reader.result]
-		  });
-		}.bind(this);
-		console.log(url); // Would see a path?
-	
-		this.setState({
-		  mainState: "uploaded",
-		  selectedFile: event.target.files[0],
-		  imageUploaded: 1
-		});
+		// var blob = URL.createObjectURL(file);
+		// console.log(blob);
+		// setSelectedAvatarFile(blob);
+		// blobToDataURL(file, function(dataurl){
+		// 	console.log(dataurl);
+		// });
+		var reader = new FileReader();
+		reader.readAsDataURL(file);
+		reader.onload = function () {
+		  	setSelectedAvatarFile(reader.result);
+			console.log(selectedAvatarFile);
+		};
+		reader.onerror = function (error) {
+		  console.log('Error: ', error);
+		};
+		
+
+		
 	};
 
 	function onChangeAvatarClick () {
@@ -322,8 +340,8 @@ function Account(props) {
 									<Skeleton animation="wave" variant="circle" width={80} height={80} />
 								) : (
 									<Avatar
-									alt="Ted talk"
-									src=""
+									alt={userDat.displayname}
+									src={userDat.avatar}
 									style={{height:80+"px", width:80+"px"}}
 									/>
 								)
@@ -455,7 +473,7 @@ function Account(props) {
 					className={classes.input}
 					id="contained-button-file"
 					type="file"
-					onChange={handleUploadClick}
+					onChange={(e) => handleUploadClick(e)}
 					style={{display: "none"}}
 					ref={inputFile}
 					/>

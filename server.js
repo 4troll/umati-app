@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 var cookies = require("cookie-parser");
 app.use(cookies());
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '10mb', extended: true}));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 var jsonParser = bodyParser.json();
@@ -295,7 +295,6 @@ app.post("/api/editDescription/:username", jsonParser, function (req, res) {
 
 app.post("/api/updateNameAvatar/:username", jsonParser, function (req, res) {
     if (req && checkUsername(req.body.username)) {
-        console.log(req.body);
         var updatedAccount;
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -323,7 +322,7 @@ app.post("/api/updateNameAvatar/:username", jsonParser, function (req, res) {
                                 {password: updatedAccount.password}
                                 ]
                             },
-                            {$set: {username: req.body.username, displayname: req.body.displayname}}
+                            {$set: {username: req.body.username, displayname: req.body.displayname, avatar: req.body.avatar}}
                             )
                             if (updateUser) {
                                 res.json(updateUser).end();
