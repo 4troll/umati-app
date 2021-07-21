@@ -3,6 +3,8 @@ import logo from './logo.svg';
 import Login from "./views/Login.js";
 import Account from "./views/Account.js";
 import Register from "./views/Register.js";
+import Umatis from "./views/Umatis.js";
+import CreateUmati from "./views/CreateUmati.js";
 import './App.css';
 
 import { createTheme } from '@material-ui/core/styles';
@@ -55,32 +57,29 @@ class App extends Component {
 	  }
 
 	componentDidMount() {
+
+		this.setState(prevState => ({
+			tabs: [...prevState.tabs, <Link key="home" class="navlink" to="/">umati</Link>]
+		}));
 		if (Cookies.get("loggedIn") == "true") { // if logged in
 			this.setState({ loggedIn : true })
 			var username = Cookies.get("username"); //username
 			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" to="/">umati</Link>]
+				tabs: [...prevState.tabs, <Link class="navlink" key="account" to={"/@" + username}>@{username}</Link>]
 			}));
-			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" to={"/@" + username}>@{username}</Link>]
-			}));
-			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" to="/posts">Posts</Link>]
-			}));
-
 		}
 		else {
 			this.setState({ loggedIn : false })
 			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" to="/">umati</Link>]
-			}));
-			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" to="/login">Login</Link>]
-			}));
-			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" to="/posts">Posts</Link>]
+				tabs: [...prevState.tabs, <Link class="navlink" key="login" to="/login">Login</Link>]
 			}));
 		}
+		this.setState(prevState => ({
+			tabs: [...prevState.tabs, <Link class="navlink" key="posts" to="/posts">Posts</Link>]
+		}));
+		this.setState(prevState => ({
+			tabs: [...prevState.tabs, <Link class="navlink" key="umatis" to="/umatis">Umatis</Link>]
+		}));
 	}
 
 
@@ -113,6 +112,13 @@ class App extends Component {
 					path="/@:username"
 					/>
 				</Route>
+				<Route path="/umatis/createUmati">
+					<CreateUmati />
+				</Route>
+				<Route path="/umatis">
+					<Umatis />
+				</Route>
+				
 				<Route path="/dashboard">
 					{/* <Dashboard /> */}
 				</Route>

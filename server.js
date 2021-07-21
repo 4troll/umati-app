@@ -2,8 +2,10 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const { MongoClient } = require("mongodb");
-var cors = require("cors");
-var validator = require("validator");
+const cors = require("cors");
+const validator = require("validator");
+
+const sharp = require("sharp"); // img processing
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -11,8 +13,10 @@ const port = process.env.PORT || 5000;
 var cookies = require("cookie-parser");
 app.use(cookies());
 app.use(cors());
-app.use(bodyParser.json({limit: '10mb', extended: true}));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json({limit: '10mb', extended: true}));
+app.use(express.urlencoded({
+    extended: true
+}));
 
 var jsonParser = bodyParser.json();
 
@@ -32,6 +36,25 @@ var uri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/test";
 
 var usersDB;
 var usersCollection;
+var umatisDB;
+var umatisCollection;
+var postsDB;
+var postsCollection;
+
+
+
+function checkUsername(targetUsername) {
+    if (!targetUsername) {
+        return false;
+    }
+    if (targetUsername.length < 3) {
+        return false;
+    }
+    if (!validator.isAlphanumeric(targetUsername)) {
+        return false;
+    }
+    return true;
+}
 
 try {
     var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -41,6 +64,12 @@ try {
         }
         usersDB = client.db("users");
         usersCollection = usersDB.collection("users");
+
+        umatisDB = client.db("umatis");
+        umatisCollection = umatisDB.collection("umatis");
+
+        postsDB = client.db("posts");
+        postsCollection = postsDB.collection("posts");
     });
     }
     catch(e) {
@@ -48,16 +77,6 @@ try {
     }
     finally {
         client.close();
-}
-
-function checkUsername(targetUsername) {
-    if (targetUsername.length < 3) {
-        return false;
-    }
-    if (!validator.isAlphanumeric(targetUsername)) {
-        return false;
-    }
-    return true;
 }
 
 app.post("/api/registerAccount", jsonParser, function (req, res) {
@@ -72,13 +91,22 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
                 var body = req.body;
 
                 (async ()=>{
-                    
+                    let usersCounter = usersDB.collection("counter");
+                    var increment = await usersCounter.findOneAndUpdate(
+                        {_id: "userCounter" },
+                        {$inc:{sequence_value:1}},
+                        { returnOriginal: false }
+                    );  
+
+
                     newAccount = {
                         "username": body.username,
+                        "userId": increment.value.sequence_value + 1,
                         "email": body.email,
                         "password": body.password,
                         "admin": false,
-                        "removed": false
+                        "removed": false,
+                        "creationDate": Date.now()
                     }
                     taken = await usersCollection.findOne({username: body.username});
                     console.log(taken);
@@ -105,6 +133,140 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
     }
 });
 
+app.post("/api/createUmati", jsonParser, function (req, res) {
+    if (req) {
+        console.log(req.body);
+        var newUmati;
+        var taken;
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+
+                var body = req.body;
+
+                (async ()=>{
+
+                    var cookies = req.cookies;
+                    var logIn = await usersCollection.findOne( {
+                        $and: [
+                            {username: cookies.username},
+                            {password: cookies.password}
+                        ]
+                    });
+                    if (logIn) {
+                        let usersCounter = umatisDB.collection("counter");
+                        var increment = await usersCounter.findOneAndUpdate(
+                            {_id: "umatisCounter" },
+                            {$inc:{sequence_value:1}},
+                            { returnOriginal: false }
+                        );
+                        
+                        newUmati = {
+                            "umatiname": body.umatiname,
+                            "displayname": body.displayname,
+                            "umatiId": increment.value.sequence_value + 1,
+                            "owner": logIn.userId,
+                            "removed": false,
+                            "creationDate": Date.now()
+                        }
+                        console.log(newUmati);
+                        taken = await umatisCollection.findOne({umatiname: body.umatiname});
+                        if (!taken && checkUsername(body.umatiname)) {
+                            let insertOperation = umatisCollection.insertOne(newUmati);
+                            res.json(insertOperation).end();
+                        }
+                    }
+                    else {
+                        res.status(403).end();
+                    }
+                    
+                   
+                    
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+        if (taken) {
+            return "username taken";
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.get("/api/fetchUmatis", jsonParser, function (req, res) {
+    if (req) {
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+
+                var cookies = req.cookies;
+                var adminMode = false;
+
+                (async ()=>{
+                    try {
+                        queryingUser = await usersCollection.findOne( {
+                            $and: [
+                                {username: cookies.username},
+                                {password: cookies.password}
+                            ]
+                        });
+                        if (queryingUser && queryingUser.admin) {
+                            adminMode = true;
+                        }
+                    }
+                    catch (e) {
+                        console.error(e);
+                    }
+
+                    let queryStuff = {
+                        "pageNum": 0,
+                        "limit": 25
+                    }
+
+                    if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
+                        queryStuff.pageNum = parseInt(req.query.page);
+                    }
+
+                    if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
+                        queryStuff.limit = parseInt(req.query.limit);
+                    }
+                    
+                    var umatiStream = []
+
+                    let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
+
+                    var stuff = await umatisCollection.find({ umatiId: { $gt: startingCount} })
+                    .sort({umatiId:1})
+                    // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
+                    .limit( queryStuff.limit )
+                    .forEach( umati => {
+                        umatiStream.push(umati);
+                    });
+                    res.json(umatiStream).end();
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 app.post("/api/usernameLookup", jsonParser, function (req, res) {
     if (req && checkUsername(req.body.username)) {
         var lookup;
@@ -122,6 +284,38 @@ app.post("/api/usernameLookup", jsonParser, function (req, res) {
                     user = await usersCollection.findOne({username: body.username});
                     if (user) {
                         res.json(lookup).end();
+                    }
+                    else {
+                        res.status(404).end();
+                    }
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/umatiLookup", jsonParser, function (req, res) {
+    if (req && checkUsername(req.body.umatiname)) {
+        var umati;
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                var body = req.body;
+
+                (async ()=>{
+                    umati = await umatisCollection.findOne({umatiname: body.umatiname});
+                    if (umati) {
+                        res.json(umati).end();
                     }
                     else {
                         res.status(404).end();
@@ -241,6 +435,60 @@ app.get("/api/userData/:username", jsonParser, function (req, res) {
     }
 });
 
+app.get("/api/user/id=:id", jsonParser, function (req, res) {
+    if (req) {
+        var user;
+        var id = parseInt(req.params.id);
+        console.log(id);
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+
+                var cookies = req.cookies;
+                var adminMode = false;
+
+                (async ()=>{
+                    try {
+                        queryingUser = await usersCollection.findOne( {
+                            $and: [
+                                {username: cookies.username},
+                                {password: cookies.password}
+                            ]
+                        });
+                        if (queryingUser && queryingUser.admin) {
+                            adminMode = true;
+                        }
+                    }
+                    catch (e) {
+                        console.error(e);
+                    }
+
+                    user = await usersCollection.findOne({userId: id}, {});
+                    if (user) {
+                        delete user.email;
+                        delete user.password;
+                        delete user._id;
+                        res.json(user).end();
+                    }
+                    else {
+                        res.status(404).end();
+                    }
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 app.post("/api/editDescription/:username", jsonParser, function (req, res) {
     if (req) {
         console.log("recieved at server");
@@ -316,13 +564,36 @@ app.post("/api/updateNameAvatar/:username", jsonParser, function (req, res) {
                                 "username": req.params.username,
                                 "password": cookies.password
                             }
-                            var updateUser = await usersCollection.updateOne({ 
+                            
+                            let body = req.body;
+
+
+                            let resizedBase64;
+                            if (body.avatar) {
+                                let uncompressedb64 = body.avatar
+                                let parts = uncompressedb64.split(';');
+                                let mimType = parts[0].split(':')[1];
+                                let imageData = parts[1].split(',')[1];
+                                var img = new Buffer.from(imageData, 'base64');
+                                await sharp(img)
+                                .resize(64, 64)
+                                .toBuffer()
+                                .then(resizedImageBuffer => {
+                                    let resizedImageData = resizedImageBuffer.toString('base64');
+                                    resizedBase64 = `data:${mimType};base64,${resizedImageData}`;
+                                    
+                                })
+                            }
+                            console.log(resizedBase64);
+
+
+                            let updateUser = await usersCollection.updateOne({ 
                                 $and: [
                                 {username: updatedAccount.username},
                                 {password: updatedAccount.password}
                                 ]
                             },
-                            {$set: {username: req.body.username, displayname: req.body.displayname, avatar: req.body.avatar}}
+                            {$set: {username: body.username, displayname: body.displayname, avatar: resizedBase64}}
                             )
                             if (updateUser) {
                                 res.json(updateUser).end();

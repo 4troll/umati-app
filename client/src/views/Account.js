@@ -68,13 +68,14 @@ function Account(props) {
 	const [editable, setEditable] = useState(false);
 	const [anchor, setAnchor] = useState(null);
 
+	
 	const [usernameField,setUsernameField] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [taken,setTaken] = useState(false);
 
-
 	const inputFile = useRef(null);
 	const [selectedAvatarFile,setSelectedAvatarFile] = useState("");
+
 
 	const { username } = useParams();
 	const classes = useStyles();
@@ -87,6 +88,7 @@ function Account(props) {
 	async function postJson(url, body) {
 		let response = await fetch(url, {
 			method: "post",
+			mode: "cors", 
 			body: JSON.stringify(body),
 			headers: {
 				'Accept': 'application/json',
@@ -125,6 +127,7 @@ function Account(props) {
 				
 				if (json.avatar) {
 					console.log(json.avatar);
+					setSelectedAvatarFile(json.avatar);
 				}
 
 				setUsernameField(json.username);
@@ -308,7 +311,6 @@ function Account(props) {
 		reader.readAsDataURL(file);
 		reader.onload = function () {
 		  	setSelectedAvatarFile(reader.result);
-			console.log(selectedAvatarFile);
 		};
 		reader.onerror = function (error) {
 		  console.log('Error: ', error);
@@ -337,12 +339,12 @@ function Account(props) {
 							<CardHeader
 								avatar={
 								loading ? (
-									<Skeleton animation="wave" variant="circle" width={80} height={80} />
+									<Skeleton animation="wave" variant="circle" width={64} height={64} />
 								) : (
 									<Avatar
 									alt={userDat.displayname}
-									src={userDat.avatar}
-									style={{height:80+"px", width:80+"px"}}
+									src={selectedAvatarFile}
+									style={{height:64+"px", width:64+"px"}}
 									/>
 								)
 								}
@@ -452,12 +454,10 @@ function Account(props) {
 							value={usernameField}
 							error={taken == true}
 							helperText = {taken == true? 'Username already taken' : ''}
-							autoFocus
 					/>
 					<TextField
 							variant="outlined"
 							margin="normal"
-							required
 							fullWidth
 							id="displayname"
 							label="Display name"
@@ -465,7 +465,6 @@ function Account(props) {
 							autoComplete="displayname"
 							value={displayName}
 							onChange={(e) => setDisplayName(e.target.value)}
-							
 							autoFocus
 					/>
 					<input
@@ -473,7 +472,7 @@ function Account(props) {
 					className={classes.input}
 					id="contained-button-file"
 					type="file"
-					onChange={(e) => handleUploadClick(e)}
+					// onChange={(e) => handleUploadClick(e)}
 					style={{display: "none"}}
 					ref={inputFile}
 					/>
