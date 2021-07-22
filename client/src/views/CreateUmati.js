@@ -66,7 +66,7 @@ function CreateUmati(props) {
     const [taken,setTaken] = useState(false);
 
     const inputFile = useRef(null);
-	const [selectedAvatarFile,setSelectedAvatarFile] = useState("");
+	const [selectedLogoFile,setSelectedLogoFile] = useState("");
 
     async function postJson(url, body) {
 		let response = await fetch(url, {
@@ -147,13 +147,37 @@ function CreateUmati(props) {
 		return true;
 	}
 
-	function validUsernameAvatarForm() {
+	function validUmatiForm() {
 		console.log(checkUmatiname(umatiNameField));
 		if (!checkUmatiname(umatiNameField)) {
 			return false;
 		}
 		return true;
 	}
+
+	async function handleUploadClick (event){
+		console.log("image upload clicked");
+		var file = event.target.files[0];
+		// var blob = URL.createObjectURL(file);
+		// console.log(blob);
+		// setSelectedAvatarFile(blob);
+		// blobToDataURL(file, function(dataurl){
+		// 	console.log(dataurl);
+		// });
+		var reader = new FileReader();
+		reader.readAsDataURL(file);
+		reader.onload = function () {
+		  	setSelectedLogoFile(reader.result);
+		};
+		reader.onerror = function (error) {
+		  console.log('Error: ', error);
+		};
+	};
+
+	function onChangeLogoClick () {
+		// `current` points to the mounted file input element
+	   inputFile.current.click();
+	};
 
     return (
         <Fragment>
@@ -207,22 +231,23 @@ function CreateUmati(props) {
                                         value={displayName}
                                         onChange={(e) => setDisplayName(e.target.value)}
                                 />
+								<Avatar style={{height:200+"px", width:200+"px"}} src={selectedLogoFile} />
                                 <input
                                 accept="image/*"
                                 className={classes.input}
                                 id="contained-button-file"
                                 type="file"
-                                // onChange={(e) => handleUploadClick(e)}
+                                onChange={(e) => handleUploadClick(e)}
                                 style={{display: "none"}}
                                 ref={inputFile}
                                 />
                                 <Button 
-                                // onClick={sendUmatiCreationForm}
+                                onClick={onChangeLogoClick}
                                 variant="contained" type="button">
                                 Select umati image
                                 </Button>
                                 <Button form="umatiCreationForm" variant="contained" color="primary" type="submit" isPrimary className={classes.submit} 
-                                disabled={!validUsernameAvatarForm()} 
+                                disabled={!validUmatiForm()} 
                                 >
                                 Save
                                 </Button>
