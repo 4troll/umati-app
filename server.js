@@ -324,7 +324,7 @@ app.get("/api/fetchUmatis", jsonParser, function (req, res) {
                     setTimeout(function(){
                         // console.log(umatiStream);
                         res.json(umatiStream).end();
-                    }, 500);
+                    }, 1000);
                 })();
             });
         }
