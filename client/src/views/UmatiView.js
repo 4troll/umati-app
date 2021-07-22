@@ -353,7 +353,7 @@ function UmatiView(props) {
 				<MenuItem onClick={handleOpenUmatiModal}>Edit name/logo</MenuItem>
 				</Fragment>
 				: 
-				<MenuItem onClick={handleCloseDropdown}>Message</MenuItem>
+				<MenuItem onClick={handleCloseDropdown}>Join</MenuItem>
 				}
 				</Menu>
 				<CardContent>
@@ -402,7 +402,7 @@ function UmatiView(props) {
 					<div className={classes.paper}>
 					<h2 id="simple-modal-title">Edit Umati Name and logo</h2>
 					<p id="simple-modal-description">
-						Update Umati settings. Umati Names are unique and alphanumeric.s
+						Update Umati settings. Umati Names are unique, alphanumerical, and do not include spaces.
 					</p>
 					<form id="umatiEditForm" className={classes.form} onSubmit={saveUmatiData} noValidate>
 						<TextField
