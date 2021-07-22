@@ -5,6 +5,7 @@ import Account from "./views/Account.js";
 import Register from "./views/Register.js";
 import Umatis from "./views/Umatis.js";
 import CreateUmati from "./views/CreateUmati.js";
+import UmatiView from "./views/UmatiView.js";
 import './App.css';
 
 import { createTheme } from '@material-ui/core/styles';
@@ -59,26 +60,26 @@ class App extends Component {
 	componentDidMount() {
 
 		this.setState(prevState => ({
-			tabs: [...prevState.tabs, <Link key="home" class="navlink" to="/">umati</Link>]
+			tabs: [...prevState.tabs, <Link key="home" className="navlink" to="/">umati</Link>]
 		}));
 		if (Cookies.get("loggedIn") == "true") { // if logged in
 			this.setState({ loggedIn : true })
 			var username = Cookies.get("username"); //username
 			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" key="account" to={"/@" + username}>@{username}</Link>]
+				tabs: [...prevState.tabs, <Link className="navlink" key="account" to={"/@" + username}>@{username}</Link>]
 			}));
 		}
 		else {
 			this.setState({ loggedIn : false })
 			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link class="navlink" key="login" to="/login">Login</Link>]
+				tabs: [...prevState.tabs, <Link className="navlink" key="login" to="/login">Login</Link>]
 			}));
 		}
 		this.setState(prevState => ({
-			tabs: [...prevState.tabs, <Link class="navlink" key="posts" to="/posts">Posts</Link>]
+			tabs: [...prevState.tabs, <Link className="navlink" key="posts" to="/posts">Posts</Link>]
 		}));
 		this.setState(prevState => ({
-			tabs: [...prevState.tabs, <Link class="navlink" key="umatis" to="/umatis">Umatis</Link>]
+			tabs: [...prevState.tabs, <Link className="navlink" key="umatis" to="/umatis">Umatis</Link>]
 		}));
 	}
 
@@ -87,7 +88,7 @@ class App extends Component {
 		return (
 			<ThemeProvider theme={theme}>
 			<Router>
-			<div class="navbar">
+			<div className="navbar">
 				{this.state.tabs}
 			</div>
 				{/*
@@ -110,17 +111,18 @@ class App extends Component {
 				<Route path="/@:username">
 					<Account 
 					path="/@:username"
-					/>
+				/>
+				</Route>
+				<Route path="/u/:umati">
+					<UmatiView
+					path="/u/:umati"
+				/>
 				</Route>
 				<Route path="/umatis/createUmati">
 					<CreateUmati />
 				</Route>
 				<Route path="/umatis">
 					<Umatis />
-				</Route>
-				
-				<Route path="/dashboard">
-					{/* <Dashboard /> */}
 				</Route>
 				</Switch>
 			

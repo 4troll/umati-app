@@ -79,12 +79,31 @@ section {
     display: inline-block;
 }
 
-div.cardContainer {
-    cursor: pointer;
+div.umatiCardContainer {
+    
     transition-duration: 0.4s;
 }
 
 
-div.cardContainer:hover {
-    opacity: 0.7;
+div.umatiCardContainer:hover {
+    cursor: pointer;
+    box-shadow: 0px 2px 1px -1px rgb(0 0 0 / 100%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 1px 3px 0px rgb(0 0 0 / 12%);
+}
+
+.flexbox{
+	display:-webkit-box;
+	display:-moz-box;
+    display:-ms-flexbox;
+	display:-webkit-flex;
+	display:flex;
+}
+
+.right-hold{
+	margin-left:auto;
+	align-items:center;
+}
+
+.user-link {
+    margin-left:4px;
+	align-items:center;
 }

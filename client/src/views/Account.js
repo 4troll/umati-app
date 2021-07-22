@@ -315,9 +315,6 @@ function Account(props) {
 		reader.onerror = function (error) {
 		  console.log('Error: ', error);
 		};
-		
-
-		
 	};
 
 	function onChangeAvatarClick () {
@@ -370,8 +367,14 @@ function Account(props) {
 							open={anchor}
 							onClose={handleCloseDropdown}
 							>
+							{editable ? 
+							<Fragment>
 							<MenuItem onClick={handleOpenProfileModal}>Edit name/avatar</MenuItem>
-							<MenuItem onClick={onLogout}>Logout</MenuItem>
+							<MenuItem onClick={onLogout}>Logout</MenuItem> 
+							</Fragment>
+							: 
+							<MenuItem onClick={handleCloseDropdown}>Message</MenuItem>
+							}
 							</Menu>
 							<CardContent>
 								<Box
@@ -389,7 +392,7 @@ function Account(props) {
 										) : (
 										<Editable
 											text={desctext || userDat.description}
-											placeholder={"Write a fancy description"}
+											placeholder={editable ? "Click me to add a fancy description" : "Hello. I am @" + userDat.username + ", an Umati user."}
 											childRef={inputRef}
 											finishEdits={() => setDescription()}
 											type="input"
@@ -472,7 +475,7 @@ function Account(props) {
 					className={classes.input}
 					id="contained-button-file"
 					type="file"
-					// onChange={(e) => handleUploadClick(e)}
+					onChange={(e) => handleUploadClick(e)}
 					style={{display: "none"}}
 					ref={inputFile}
 					/>

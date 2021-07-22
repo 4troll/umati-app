@@ -25,6 +25,9 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 
 import AddIcon from '@material-ui/icons/Add';
 
+import UmatiCard from "./components/UmatiCard.js";
+
+
 const useStyles = makeStyles(theme => ({
 	root: {
 	  minWidth: 275,
@@ -65,43 +68,10 @@ function Umatis(props) {
 
     const [loading, setLoading] = useState(true);
 
-    const [umatiCards, setUmatiCards] = useState([]);
+    const [umatiData, setUmatiData] = useState([]);
     const [loadCards, setLoadCards] = useState([]);
 
-    function umatiCard (props) {
-        const data = props.data
-        return (
-            <div key={data.umatiname} className="cardContainer" onClick={() => clickCard(data.umatiname)}>
-                <Card className={classes.root}>
-                <CardHeader
-                    avatar={
-                    <Avatar
-                        alt={data.displayname}
-                        // src={selectedAvatarFile}
-                        // style={{height:64+"px", width:64+"px"}}
-                        />
-                    }
-                    title={
-                        (data.displayname ? data.displayname : "u/" + data.umatiname)
-                    }
-                    subheader={(data.displayname ? ("u/" + data.umatiname) : "")}
-                />
-                <CardContent>
-                    <Box
-                        sx={{
-                        alignItems: 'left',
-                        display: 'flex',
-                        flexDirection: 'column'
-                        }}
-                    >
-                        <h3>{data.ownerData ? data.ownerData.username : ""}</h3>
-                    </Box>
-                </CardContent>
-            </Card>
-        </div>
     
-        );
-    }
     
     
     function loadCard () {
@@ -159,6 +129,7 @@ function Umatis(props) {
             .then(json => {
                 console.log(json);
                 returnData = json;
+                setUmatiData(json);
             })
             .catch(e => {
                 console.error(e);
@@ -168,54 +139,47 @@ function Umatis(props) {
         return returnData;
     }
 
-    async function returnTest(stuff) {
-        return "test id: " + stuff;
-    }
-
-    async function fetchUmatiData() {
-        var umatiCardList = [];
-        let response = await fetch("/api/fetchUmatis/" + window.location.search, {
-            method: "get",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            credentials: "include"
-        });
-        if (!response.ok) {
-            throw new Error("HTTP error, status = " + response.status);
-        }
-        else {
-            await response.json()
-            .then(async function (json) {
-                
-                await json.forEach(async function(currentUmati, index){
-                    await getUserDataFromId(currentUmati.umatiId)
-                    .then(response => {
-                        currentUmati.ownerData = response;
-                        console.log(currentUmati);
-                        umatiCardList.push(
-                            <umatiCard data={currentUmati}/>
-                        );
-                    })
-                    .catch (e => {
-                        console.error(e);
-                    });
-                });
-                
-            })
-            .catch(e => {
-                console.error(e);
-                return error;
-            });
-        }
-        return umatiCardList;
-    }
+    
 
     
 
-    useEffect (() => {
-        
+    useLayoutEffect (() => {
+
+        async function fetchUmatiData() {
+            let response = await fetch("/api/fetchUmatis/" + window.location.search, {
+                method: "get",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                credentials: "include"
+            });
+            if (!response.ok) {
+                throw new Error("HTTP error, status = " + response.status);
+            }
+            else {
+                await response.json()
+                .then(function (json) {
+                    // await json.forEach(async function(currentUmati, index){
+                    //     await getUserDataFromId(currentUmati.owner)
+                    //     .then(response => {
+                    //         currentUmati.ownerData = response;
+                    //         umatiDataList.push(currentUmati);
+                    //     })
+                    //     .catch (e => {
+                    //         console.error(e);
+                    //     });
+                    // });
+                    setUmatiData(json);
+                    return json;
+                    
+                })
+                .catch(e => {
+                    console.error(e);
+                    return error;
+                });
+            }
+        }
 
 		setLoading(true);
         let loadlist = []
@@ -224,23 +188,17 @@ function Umatis(props) {
         }
         setLoadCards(loadlist);
 
-		fetchUmatiData().then(json => {
-            setUmatiCards(json);
-			
-		})
-        .catch(error => {
-			console.error(error);
-		});
-        setLoading(false);
+        async function fetchUmatis() {
+            let json = await fetchUmatiData();
+            if (json) {
+                return json;
+            }
+        }
+        fetchUmatis().then(a => {
+            setLoading(false);
+        })
+        
 	}, []);
-
-    function clickCard(name) {
-        window.location.href = "/u/" + name;
-    }
-
-    
-
-    
     return (
         <Fragment>
             <Box
@@ -250,7 +208,13 @@ function Umatis(props) {
                 py: 3
             }}>
 			<Container maxWidth="lg">
-            { loading ? loadCards : umatiCards}
+            { loading ? loadCards : 
+            (umatiData.map(function (umati,i) {
+                return (
+                    <UmatiCard key={i} data={umati}/>
+                );
+            }))
+            }
             </Container>
 		</Box>
             <Fab color="primary" aria-label="add" href="/umatis/createUmati" 
