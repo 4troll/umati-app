@@ -14,8 +14,6 @@ import { ThemeProvider } from "@material-ui/core/styles";
 import GDSTWoff2 from "./fonts/light-94a07e06a1-v2.woff2";
 import GDSTWoff from "./fonts/light-f591b13f7d-v2.woff";
 
-import LogRocket from 'logrocket';
-LogRocket.init('os3mrd/umati-app');
 const GDSTransportLight = {
 	fontFamily: "GDS Transport",
 	fontStyle: "normal",

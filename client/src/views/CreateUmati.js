@@ -116,7 +116,7 @@ function CreateUmati(props) {
 			formData = {
 				"umatiname": umatiNameField,
 				"displayname": displayName,
-				"avatar": selectedAvatarFile
+				"logo": selectedLogoFile
 			}
             // console.log(formData);
 			await postJson("/api/createUmati", formData)

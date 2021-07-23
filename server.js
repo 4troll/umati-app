@@ -163,6 +163,7 @@ app.post("/api/createUmati", jsonParser, function (req, res) {
                         newUmati = {
                             "umatiname": body.umatiname,
                             "displayname": body.displayname,
+                            "logo": body.logo,
                             "umatiId": increment.value.sequence_value + 1,
                             "owner": logIn.userId,
                             "removed": false,
