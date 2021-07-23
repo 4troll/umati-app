@@ -110,39 +110,6 @@ function Umatis(props) {
         );
     }
 
-    
-    async function getUserDataFromId (id) {
-        let returnData;
-        let response = await fetch("/api/user/id=" + id, {
-            method: "get",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            },
-            credentials: "include"
-        });
-        if (!response.ok) {
-            throw new Error("HTTP error, status = " + response.status);
-        }
-        else {
-            await response.json()
-            .then(json => {
-                console.log(json);
-                returnData = json;
-                setUmatiData(json);
-            })
-            .catch(e => {
-                console.error(e);
-                return e;
-            });
-        }
-        return returnData;
-    }
-
-    
-
-    
-
     useLayoutEffect (() => {
 
         async function fetchUmatiData() {
