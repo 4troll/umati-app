@@ -299,11 +299,11 @@ app.get("/api/fetchUmatis", jsonParser, function (req, res) {
 
                     let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
 
-                    await umatisCollection.find({ umatiId: { $gt: startingCount} })
+                    let cursor = await umatisCollection.find({ umatiId: { $gt: startingCount} })
                     .sort({umatiId:1})
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
                     .limit( queryStuff.limit )
-                    .forEach( async function (umati){
+                    for await (let umati of cursor) {
                         await usersCollection.findOne({userId: umati.owner})
                         .then(ownerData => {
                             if (ownerData) {
@@ -320,11 +320,8 @@ app.get("/api/fetchUmatis", jsonParser, function (req, res) {
                         .catch(e => {
                             console.error(e);
                         })
-                    });
-                    setTimeout(function(){
-                        console.log(umatiStream);
-                        res.json(umatiStream).end();
-                    }, 1000);
+                    }
+                    res.json(umatiStream).end();
                 })();
             });
         }
