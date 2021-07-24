@@ -822,6 +822,8 @@ function redirectLoggedIn(req,res) {
 
 if (process.env.NODE_ENV === 'production') {
   // Serve any static files
+
+  app.use(express.static(path.join(__dirname, 'client/build', "registerServiceWorker.js")));
   app.use(express.static(path.join(__dirname, 'client/build')));
 
   // Handle React routing, return all requests to React app
