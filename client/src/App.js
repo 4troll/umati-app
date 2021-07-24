@@ -62,11 +62,11 @@ class App extends Component {
 	  }
 
 	componentDidMount() {
-		const cookieDat = jwt_decode(this.state.token);
+		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
 		this.setState(prevState => ({
 			tabs: [...prevState.tabs, <Link key="home" className="navlink" to="/">umati</Link>]
 		}));
-		if (cookieDat.username) { // if logged in
+		if (cookieDat) { // if logged in
 			this.setState({ loggedIn : true })
 			var username = cookieDat.username; // username
 			this.setState(prevState => ({
