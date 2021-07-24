@@ -210,6 +210,7 @@ app.get("/api/umatiData/:umati", jsonParser, function (req, res) {
             client.connect( (err,db) => {
                 if (err) throw err;
                 (async ()=>{
+                    let adminMode = false;
                     var cookies = req.cookies;
                     var queryingUser = await usersCollection.findOne( {
                         $and: [
