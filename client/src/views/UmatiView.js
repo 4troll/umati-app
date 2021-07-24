@@ -25,8 +25,9 @@ import {
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import cookieParser from "cookie-parser";
+import { Cookies, useCookies } from 'react-cookie';
 import validator from "validator";
+import jwt_decode from "jwt-decode";
 
 import UserLink from "./components/UserLink.js";
 
@@ -65,6 +66,8 @@ const useStyles = makeStyles(theme => ({
 
 
 function UmatiView(props) {
+	const [token, setToken] = useCookies(["token"]);
+
     const [umatiDat, setUmatiDat] = useState({});
 	const [loading, setLoading] = useState(true);
 	const [editable, setEditable] = useState(false);
@@ -108,6 +111,7 @@ function UmatiView(props) {
 	}
 
     async function getUmatiData () {
+		const cookieDat = jwt_decode(token.token);
 		let response = await fetch("/api/umatiData/" + umatiname, {
 			method: "get",
 			headers: {
@@ -136,7 +140,7 @@ function UmatiView(props) {
 				if (json.description) {
 					setDescText(userDat.description);
 				}
-				if (json.ownerData.username == Cookies.get("username")) {
+				if (json.ownerData.username == cookieDat.username || cookieDat.isAdmin) {
 					setEditable(true);
 				}
 				return json;
@@ -298,10 +302,9 @@ function UmatiView(props) {
 				"umatiname": umatinameQuery
 			}
 			await postJson("/api/umatiLookup", lookup)
-			.then(function (data) {
-				console.log("taken");
+			.then(function (response) {
 				setTaken(true);
-				return data;
+				return response;
 			})
 			.catch((error) => {
 				return error;

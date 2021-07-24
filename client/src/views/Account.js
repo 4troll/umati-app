@@ -25,8 +25,9 @@ import {
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-import cookieParser from "cookie-parser";
 import validator from "validator";
+import jwt_decode from "jwt-decode";
+import { useCookies } from 'react-cookie';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -63,6 +64,9 @@ const useStyles = makeStyles(theme => ({
 
 
 function Account(props) {
+	const [token, setToken] = useCookies(["token"]);
+	
+
 	const [userDat, setUserDat] = useState({});
 	const [loading, setLoading] = useState(true);
 	const [editable, setEditable] = useState(false);
@@ -103,16 +107,21 @@ function Account(props) {
 			await response.json()
 			.then(json => {
 				console.log(json);
-			});
+				return json;
+			})
+			.catch(e => {
+				return e;
+			})
 		}
 	}
 
 	async function getUserData () {
+		const cookieDat = jwt_decode(token.token);
 		let response = await fetch("/api/userData/" + username, {
 			method: "get",
 			headers: {
 				"Accept": "application/json",
-				"Content-Type": "application/json",
+				"Content-Type": "application/json"
 			},
 			credentials: "include"
 		});
@@ -136,7 +145,8 @@ function Account(props) {
 				if (json.description) {
 					setDescText(userDat.description);
 				}
-				if (username == Cookies.get("username")) {
+				
+				if (username == cookieDat.username || cookieDat.isAdmin) {
 					setEditable(true);
 				}
 				return json;
@@ -148,9 +158,9 @@ function Account(props) {
 	}
 
 	function onLogout() {
-		Cookies.set("username", "");
-		Cookies.set("password", "");
-		Cookies.set("loggedIn", false);
+		// Cookies.set("username", "");
+		// Cookies.set("password", "");
+		// Cookies.set("loggedIn", false);
 		window.location.href = "/login";
 	}
 
@@ -240,8 +250,9 @@ function Account(props) {
 			else {
 				await response.json()
 				.then(json => {
-					console.log(json);
-					Cookies.set("username", formData.username, { expires: 30 });
+					console.log(json.token);
+					Cookies.set("token",json.token);
+					// Cookies.set("username", formData.username, { expires: 30 });
 					window.location.href = "/@" + formData.username;
 				})
 				.catch(e => {
@@ -286,10 +297,9 @@ function Account(props) {
 				"username": usernameQuery
 			}
 			await postJson("/api/usernameLookup", lookup)
-			.then(function (data) {
-				console.log("taken");
+			.then(function (response) {
 				setTaken(true);
-				return data;
+				return response;
 			})
 			.catch((error) => {
 				return error;

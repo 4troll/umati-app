@@ -69,7 +69,7 @@ export default function Login() {
 	const [showPassword,setShow] = useState("");
   
 	function validateForm() {
-	  return username.length > 0 && password.length > 0;
+		return username.length > 0 && password.length > 0;
 	}
 
 	async function postJson(url, body) {
@@ -89,17 +89,18 @@ export default function Login() {
 			await response.json()
 			.then(json => {
 				console.log(json);
-				if (rememberMe) {
-                    Cookies.set("username", username, { expires: 30 });
-                    Cookies.set("password", password, { expires: 30 });
-                    Cookies.set("loggedIn", true, { expires: 30 });
-                }
-                else {
-                    Cookies.set("username", username);
-                    Cookies.set("password", password);
-                    Cookies.set("loggedIn", true);
-                }
-                window.location.href = "/posts";
+				Cookies.set("token", json, { sameSite: 'strict' });
+				// if (rememberMe) {
+                //     Cookies.set("username", username, { expires: 30 });
+                //     Cookies.set("password", password, { expires: 30 });
+                //     Cookies.set("loggedIn", true, { expires: 30 });
+                // }
+                // else {
+                //     Cookies.set("username", username);
+                //     Cookies.set("password", password);
+                //     Cookies.set("loggedIn", true);
+                // }
+                window.location.href = "/@" + username;
 			});
 		}
 	}

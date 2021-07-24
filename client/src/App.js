@@ -14,6 +14,9 @@ import { ThemeProvider } from "@material-ui/core/styles";
 import GDSTWoff2 from "./fonts/light-94a07e06a1-v2.woff2";
 import GDSTWoff from "./fonts/light-f591b13f7d-v2.woff";
 
+import jwt_decode from "jwt-decode";
+import { useCookies } from 'react-cookie';
+
 const GDSTransportLight = {
 	fontFamily: "GDS Transport",
 	fontStyle: "normal",
@@ -52,20 +55,20 @@ class App extends Component {
 		super(props);
 		
 		this.state = {
-			username: Cookies.get("username"),
+			token: Cookies.get("token"),
 			loggedIn: false,
 			tabs: []
 		};
 	  }
 
 	componentDidMount() {
-
+		const cookieDat = jwt_decode(this.state.token);
 		this.setState(prevState => ({
 			tabs: [...prevState.tabs, <Link key="home" className="navlink" to="/">umati</Link>]
 		}));
-		if (Cookies.get("loggedIn") == "true") { // if logged in
+		if (cookieDat.username) { // if logged in
 			this.setState({ loggedIn : true })
-			var username = Cookies.get("username"); //username
+			var username = cookieDat.username; // username
 			this.setState(prevState => ({
 				tabs: [...prevState.tabs, <Link className="navlink" key="account" to={"/@" + username}>@{username}</Link>]
 			}));

@@ -5,6 +5,10 @@ const { MongoClient } = require("mongodb");
 const cors = require("cors");
 const validator = require("validator");
 
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+dotenv.config();
+
 const sharp = require("sharp"); // img processing
 
 const app = express();
@@ -41,7 +45,45 @@ var umatisCollection;
 var postsDB;
 var postsCollection;
 
+function generateAccessToken(userJson) {
+    return jwt.sign(userJson, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
+}
 
+const middleware = {
+    jsonParser: jsonParser,
+    authenticateToken: function (req, res, next) {
+        // check header or url parameters or post parameters for token
+        var token = req.body.token || req.query.token || req.headers["Authorization"] || req.cookies.token;
+        // decode token
+        if (token) {
+            // verifies secret and checks exp
+            jwt.verify(token, process.env.TOKEN_SECRET, function (err, decoded) {
+                if (err) {
+                    var err = new Error('You are not authenticated!');
+                    err.status = 401;
+                    return next(err);
+                } else {
+                    // if everything is good, save to request for use in other routes
+                    req.decoded = decoded;
+                    next();
+                }
+            });
+        } else {
+            // if there is no token
+            // return an error
+            var err = new Error('No token provided!');
+            err.status = 403;
+            return next(err);
+        }
+    },
+    verifyAdmin: function(req,res,next){
+        if(req.decoded.isAdmin !== true)  {
+            return next("You are not authorized to perform this operation!");
+        }else {
+            return next();
+        }
+    }
+}
 
 function checkUsername(targetUsername) {
     if (!targetUsername) {
@@ -132,7 +174,7 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
     }
 });
 
-app.post("/api/createUmati", jsonParser, function (req, res) {
+app.post("/api/createUmati", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         var newUmati;
         var taken;
@@ -144,15 +186,7 @@ app.post("/api/createUmati", jsonParser, function (req, res) {
                 var body = req.body;
 
                 (async ()=>{
-
-                    var cookies = req.cookies;
-                    var logIn = await usersCollection.findOne( {
-                        $and: [
-                            {username: cookies.username},
-                            {password: cookies.password}
-                        ]
-                    });
-                    if (logIn) {
+                    if (req.decoded) { // if logged in
                         let usersCounter = umatisDB.collection("counter");
                         var increment = await usersCounter.findOneAndUpdate(
                             {_id: "umatisCounter" },
@@ -199,28 +233,17 @@ app.post("/api/createUmati", jsonParser, function (req, res) {
     }
 });
 
-app.get("/api/umatiData/:umati", jsonParser, function (req, res) {
+app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     console.log("recieved at server");
     if (req) {
         var umatiname = req.params.umati;
-        console.log(umatiname);
         var umati;
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 (async ()=>{
-                    let adminMode = false;
-                    var cookies = req.cookies;
-                    var queryingUser = await usersCollection.findOne( {
-                        $and: [
-                            {username: cookies.username},
-                            {password: cookies.password}
-                        ]
-                    });
-                    if (queryingUser && queryingUser.admin) {
-                        adminMode = true;
-                    }
+                    let adminMode = req.decoded.isAdmin;
                     umati = await umatisCollection.findOne({umatiname: umatiname});
                     if (umati) {
                         await usersCollection.findOne({userId: umati.owner})
@@ -258,32 +281,16 @@ app.get("/api/umatiData/:umati", jsonParser, function (req, res) {
     }
 });
 
-app.get("/api/fetchUmatis", jsonParser, function (req, res) {
+app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                var cookies = req.cookies;
-                var adminMode = false;
+                var adminMode = req.decoded.isAdmin;
 
                 (async ()=>{
-                    try {
-                        queryingUser = await usersCollection.findOne( {
-                            $and: [
-                                {username: cookies.username},
-                                {password: cookies.password}
-                            ]
-                        });
-                        if (queryingUser && queryingUser.admin) {
-                            adminMode = true;
-                        }
-                    }
-                    catch (e) {
-                        console.error(e);
-                    }
-
                     let queryStuff = {
                         "pageNum": 0,
                         "limit": 25
@@ -339,7 +346,7 @@ app.get("/api/fetchUmatis", jsonParser, function (req, res) {
     }
 });
 
-app.post("/api/usernameLookup", jsonParser, function (req, res) {
+app.post("/api/usernameLookup", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && checkUsername(req.body.username)) {
         var lookup;
         var user;
@@ -375,7 +382,7 @@ app.post("/api/usernameLookup", jsonParser, function (req, res) {
     }
 });
 
-app.post("/api/umatiLookup", jsonParser, function (req, res) {
+app.post("/api/umatiLookup", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && checkUsername(req.body.umatiname)) {
         var umati;
         try {
@@ -390,7 +397,7 @@ app.post("/api/umatiLookup", jsonParser, function (req, res) {
                         res.status(200).end();
                     }
                     else {
-                        res.status(404).end();
+                        res.status(403).end();
                     }
                 })();
             });
@@ -409,7 +416,6 @@ app.post("/api/umatiLookup", jsonParser, function (req, res) {
 
 app.post("/api/loginAccount", jsonParser, function (req, res) {
     if (req) {
-        var loggedAccount;
         var user;
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -419,18 +425,18 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
                 var body = req.body;
 
                 (async ()=>{
-                    loggedAccount = {
-                        "username": body.username,
-                        "password": body.password
-                    }
                 user = await usersCollection.findOne( {
                     $and: [
                         {username: body.username},
                         {password: body.password}
                     ]
                 });
+                
+
                 if (user) {
-                    res.json(loggedAccount).end();
+                    let isAdmin = user.admin
+                    const token = generateAccessToken({ username: req.body.username, isAdmin: isAdmin, userId: user.userId });
+                    res.json(token).end();
                 }
                 else {
                     res.status(403).end();
@@ -452,7 +458,7 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
     }
 });
 
-app.get("/api/userData/:username", jsonParser, function (req, res) {
+app.get("/api/userData/:username", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         var user;
         var username = req.params.username;
@@ -461,30 +467,17 @@ app.get("/api/userData/:username", jsonParser, function (req, res) {
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                var cookies = req.cookies;
-                var adminMode = false;
+                var adminMode = req.decoded.isAdmin;
 
                 (async ()=>{
-                    try {
-                        queryingUser = await usersCollection.findOne( {
-                            $and: [
-                                {username: cookies.username},
-                                {password: cookies.password}
-                            ]
-                        });
-                        if (queryingUser && queryingUser.admin) {
-                            adminMode = true;
-                        }
-                    }
-                    catch (e) {
-                        console.error(e);
-                    }
 
                     user = await usersCollection.findOne({username: username});
                     if (user) {
-                        delete user.email;
-                        delete user.password;
-                        delete user._id;
+                        if (!adminMode) {
+                            delete user.email;
+                            delete user.password;
+                            delete user._id;
+                        }
                         res.json(user).end();
                     }
                     else {
@@ -505,7 +498,7 @@ app.get("/api/userData/:username", jsonParser, function (req, res) {
     }
 });
 
-app.get("/api/user/id=:id", jsonParser, function (req, res) {
+app.get("/api/user/id=:id", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         var user;
         var id = parseInt(req.params.id);
@@ -514,24 +507,9 @@ app.get("/api/user/id=:id", jsonParser, function (req, res) {
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                var cookies = req.cookies;
-                var adminMode = false;
+                var adminMode = req.decoded.isAdmin;
 
                 (async ()=>{
-                    try {
-                        queryingUser = await usersCollection.findOne( {
-                            $and: [
-                                {username: cookies.username},
-                                {password: cookies.password}
-                            ]
-                        });
-                        if (queryingUser && queryingUser.admin) {
-                            adminMode = true;
-                        }
-                    }
-                    catch (e) {
-                        console.error(e);
-                    }
 
                     user = await usersCollection.findOne({userId: id}, {});
                     if (user) {
@@ -560,29 +538,22 @@ app.get("/api/user/id=:id", jsonParser, function (req, res) {
     }
 });
 
-app.post("/api/editDescription/:username", jsonParser, function (req, res) {
+app.post("/api/editDescription/:username", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
-        var loggedAccount;
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
-
+                
+                var tokenData = req.decoded;
+                var adminMode = tokenData.isAdmin;
                 var cookies = req.cookies;
 
                 (async ()=>{
-                    if (req.params.username == cookies.username) {
-                        loggedAccount = {
-                            "username": req.params.username,
-                            "password": cookies.password
-                        }
-                        var updateUser = await usersCollection.updateOne({ 
-                            $and: [
-                            {username: loggedAccount.username},
-                            {password: loggedAccount.password}
-                            ]
-                        },
-                        {$set: {description: req.body.description}}
+                    if (req.params.username == tokenData.username || adminMode) {
+                        var updateUser = await usersCollection.updateOne(
+                            {username: req.params.username},
+                            {$set: {description: req.body.description}}
                         )
                         if (updateUser) {
                             res.json(updateUser).end();
@@ -611,31 +582,22 @@ app.post("/api/editDescription/:username", jsonParser, function (req, res) {
     }
 });
 
-app.post("/api/updateNameAvatar/:username", jsonParser, function (req, res) {
+app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && checkUsername(req.body.username)) {
-        var updatedAccount;
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                var cookies = req.cookies;
+                const tokenData = req.decoded
+                const adminMode = tokenData.isAdmin;
+                
 
                 (async ()=>{
-                    if (req.params.username == cookies.username) {
-
-                        lookup = {
-                            "username": req.body.username
-                        }
+                    if (req.params.username == tokenData.username || adminMode) {
                         var foundUser = await usersCollection.findOne({username: req.body.username});
-                        if (!foundUser || (req.body.username == req.params.username)) {
-                            updatedAccount = {
-                                "username": req.params.username,
-                                "password": cookies.password
-                            }
-                            
+                        if (!foundUser || (req.body.username == req.params.username)) { // if username not taken by anyone else
                             let body = req.body;
-
 
                             let resizedBase64;
                             if (body.avatar) {
@@ -655,16 +617,18 @@ app.post("/api/updateNameAvatar/:username", jsonParser, function (req, res) {
                             }
 
 
-                            let updateUser = await usersCollection.updateOne({ 
-                                $and: [
-                                {username: updatedAccount.username},
-                                {password: updatedAccount.password}
-                                ]
-                            },
+                            let updateUser = await usersCollection.updateOne({username: req.params.username},
                             {$set: {username: body.username, displayname: body.displayname, avatar: resizedBase64}}
                             )
+                            
                             if (updateUser) {
-                                res.json(updateUser).end();
+                                req.decoded.username = req.body.username;
+                                delete req.decoded.exp;
+                                delete req.decoded.iat;
+                                const response = {
+                                    "token": generateAccessToken(req.decoded) // regen token with new username
+                                }
+                                res.json(response).end();
                             }
                             else { // if no credentials
                                 res.status(403).end();
@@ -694,26 +658,21 @@ app.post("/api/updateNameAvatar/:username", jsonParser, function (req, res) {
     }
 });
 
-app.post("/api/updateUmati/:umatiname", jsonParser, function (req, res) {
+app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && checkUsername(req.body.umatiname)) {
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
-
+                
+                const adminMode = req.decoded.isAdmin;
                 var cookies = req.cookies;
                 let body = req.body;
 
                 (async ()=>{
                     let targetUmati = await umatisCollection.findOne({ umatiname: req.params.umatiname})
-                    let authorizedAccount = await usersCollection.findOne({ 
-                        $and: [
-                        {username: cookies.username},
-                        {password: cookies.password}
-                        ]
-                    });
-                    if (authorizedAccount && targetUmati.owner == authorizedAccount.userId) { // if user owns umati
-                       console.log("authorized");
+                    if (req.decoded && (targetUmati.owner == req.decoded.userId || adminMode)) { // if user owns the umati or admin
+                        console.log("authorized");
 
                         var foundUmati = await umatisCollection.findOne({umatiname: body.umatiname});
                         if (!foundUmati || (body.umatiname == req.params.umatiname)) { // if umatiname not taken by other umatis
