@@ -309,9 +309,9 @@ app.get("/api/fetchUmatis", jsonParser, function (req, res) {
                         .then(ownerData => {
                             if (ownerData) {
                                 if (!adminMode) {
-                                    delete user.email;
-                                    delete user.password;
-                                    delete user._id;
+                                    delete ownerData.email;
+                                    delete ownerData.password;
+                                    delete ownerData._id;
                                 }
                                 umati.ownerData = ownerData;
                                 // console.log(umati);
