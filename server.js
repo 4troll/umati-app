@@ -595,6 +595,7 @@ app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.a
 
                 (async ()=>{
                     if (req.params.username == tokenData.username || adminMode) {
+                        const editingOnBehalf = !(req.params.username == tokenData.username) // if user is admin and does not own the account
                         var foundUser = await usersCollection.findOne({username: req.body.username});
                         if (!foundUser || (req.body.username == req.params.username)) { // if username not taken by anyone else
                             let body = req.body;
@@ -628,7 +629,13 @@ app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.a
                                 const response = {
                                     "token": generateAccessToken(req.decoded) // regen token with new username
                                 }
-                                res.json(response).end();
+                                if (!editingOnBehalf) { // if not editing on behalf of someone else (not admin)
+                                    res.json(response).end();
+                                }
+                                else {
+                                    res.json(updateUser).end();
+                                }
+                                
                             }
                             else { // if no credentials
                                 res.status(403).end();

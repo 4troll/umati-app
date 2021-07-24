@@ -250,8 +250,9 @@ function Account(props) {
 			else {
 				await response.json()
 				.then(json => {
-					console.log(json.token);
-					Cookies.set("token",json.token);
+					if (json.token) { // check if token returned
+						Cookies.set("token",json.token); // update token
+					}
 					// Cookies.set("username", formData.username, { expires: 30 });
 					window.location.href = "/@" + formData.username;
 				})
