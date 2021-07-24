@@ -227,9 +227,9 @@ app.get("/api/umatiData/:umati", jsonParser, function (req, res) {
                         .then(ownerData => {
                             if (ownerData) {
                                 if (!adminMode) {
-                                    delete user.email;
-                                    delete user.password;
-                                    delete user._id;
+                                    delete ownerData.email;
+                                    delete ownerData.password;
+                                    delete ownerData._id;
                                 }
                                 umati.ownerData = ownerData;
                                 res.json(umati).end();
@@ -355,7 +355,7 @@ app.post("/api/usernameLookup", jsonParser, function (req, res) {
                     }
                     user = await usersCollection.findOne({username: body.username});
                     if (user) {
-                        res.json(lookup).end();
+                        res.status(200).end();
                     }
                     else {
                         res.status(404).end();
@@ -387,7 +387,7 @@ app.post("/api/umatiLookup", jsonParser, function (req, res) {
                 (async ()=>{
                     umati = await umatisCollection.findOne({umatiname: body.umatiname});
                     if (umati) {
-                        res.json(umati).end();
+                        res.status(200).end();
                     }
                     else {
                         res.status(404).end();
@@ -535,9 +535,11 @@ app.get("/api/user/id=:id", jsonParser, function (req, res) {
 
                     user = await usersCollection.findOne({userId: id}, {});
                     if (user) {
-                        delete user.email;
-                        delete user.password;
-                        delete user._id;
+                        if (!adminMode) {
+                            delete user.email;
+                            delete user.password;
+                            delete user._id;
+                        }
                         res.json(user).end();
                     }
                     else {
