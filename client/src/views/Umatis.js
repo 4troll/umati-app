@@ -79,7 +79,7 @@ function Umatis(props) {
         return (
             <Card className={classes.root}>
             <CardHeader
-                avatar={<Skeleton animation="wave" variant="circle" width={64} height={64} />}
+                avatar={<Skeleton animation="wave" variant="rounded" width={64} height={64} />}
                 // action={
                 // loading ? null : (
                 //     <IconButton aria-label="settings" 

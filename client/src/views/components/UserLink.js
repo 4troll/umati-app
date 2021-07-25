@@ -42,8 +42,8 @@ function umatiCard (props) {
     const classes = useStyles();
     const data = props.data
     return (
-        <a class="user-link" href={"/@" + data.username}>
-            <div class="right-hold flexbox">
+        <a className="user-link" href={"/@" + data.username}>
+            <div className="right-hold flexbox">
                 <Avatar style={{height:24+"px", width:24+"px"}} alt={data.displayname} src={data.avatar} />
                 <p>{"@" + data.username}</p>
             </div>

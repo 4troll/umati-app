@@ -230,7 +230,7 @@ function CreateUmati(props) {
                                         value={displayName}
                                         onChange={(e) => setDisplayName(e.target.value)}
                                 />
-								<Avatar style={{height:200+"px", width:200+"px"}} src={selectedLogoFile} />
+								<Avatar variant="rounded" style={{height:200+"px", width:200+"px"}} src={selectedLogoFile} />
                                 <input
                                 accept="image/*"
                                 className={classes.input}

@@ -107,3 +107,22 @@ div.umatiCardContainer:hover {
     margin-left:4px;
 	align-items:center;
 }
+
+a.user-link:link
+{
+   color: #0000EE;
+   text-decoration: none;
+}
+a.user-link:visited
+{
+   color: #0000EE;
+   text-decoration: none;
+}
+
+.MuiAvatar-root {
+    box-shadow: 0 0 6px rgb(221, 221, 221), 0 0 3px rgb(0, 0, 0);
+}
+
+.MuiSkeleton-root {
+    border-radius: 4px;
+}

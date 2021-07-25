@@ -159,7 +159,7 @@ function UmatiView(props) {
         return (
             <Card className={classes.root}>
             <CardHeader
-                avatar={<Skeleton animation="wave" variant="circle" width={64} height={64} />}
+                avatar={<Skeleton animation="wave" variant="rounded" width={64} height={64} />}
                 // action={
                 // loading ? null : (
                 //     <IconButton aria-label="settings" 
@@ -334,6 +334,7 @@ function UmatiView(props) {
 				<CardHeader
 					avatar={
 					<Avatar
+						variant="rounded"
 						alt={umatiDat.displayname}
 						src={selectedLogoFile}
 						style={{height:64+"px", width:64+"px"}}
