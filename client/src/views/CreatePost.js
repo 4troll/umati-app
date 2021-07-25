@@ -57,15 +57,15 @@ const useStyles = makeStyles(theme => ({
 }));
 
 
-function CreateUmati(props) {
+function CreatePost(props) {
     const classes = useStyles();
 
-    const [umatiNameField,setumatiNameField] = useState("");
+    const [umatiTitleField,setUmatiTitleField] = useState("");
+    const [postBody, setPostBody] = useState("");
 	const [displayName, setDisplayName] = useState("");
-    const [taken,setTaken] = useState(false);
 
     const inputFile = useRef(null);
-	const [selectedLogoFile,setSelectedLogoFile] = useState("");
+	const [selectedPhotoFile,setSelectedPhotoFile] = useState("");
 
     async function postJson(url, body) {
 		let response = await fetch(url, {
@@ -89,39 +89,20 @@ function CreateUmati(props) {
 		}
 	}
 
-    async function umatinameUpdate(umatinameQuery) {
-		setumatiNameField(umatinameQuery);
-		setTaken(false);
-		if (umatiNameField != umatinameQuery) {
-			var lookup = {
-				"username": umatinameQuery
-			}
-			await postJson("/api/umatiLookup", lookup)
-			.then(function (data) {
-				console.log("taken");
-				setTaken(true);
-				return data;
-			})
-			.catch((error) => {
-				return error;
-			});
-		}
-	}
-
     async function sendUmatiCreationForm(event) {
 		event.preventDefault()
 		var formData;
 		try {
 			formData = {
-				"umatiname": umatiNameField,
-				"displayname": displayName,
-				"logo": selectedLogoFile
+				"title": umatiTitleField,
+				"body": postBody,
+				"photo": selectedPhotoFile
 			}
             // console.log(formData);
 			await postJson("/api/createUmati", formData)
 			.then(function (data){
 				console.log(data);
-				window.location.href = "/u/" + formData.umatiname;
+				// window.location.href = "/u/" + formData.umatiname;
 				return data;
 			})
 			.catch(e => {
@@ -147,8 +128,8 @@ function CreateUmati(props) {
 	}
 
 	function validUmatiForm() {
-		console.log(checkUmatiname(umatiNameField));
-		if (!checkUmatiname(umatiNameField)) {
+		console.log(checkUmatiname(umatiTitleField));
+		if (!checkUmatiname(umatiTitleField)) {
 			return false;
 		}
 		return true;
@@ -166,7 +147,7 @@ function CreateUmati(props) {
 		var reader = new FileReader();
 		reader.readAsDataURL(file);
 		reader.onload = function () {
-		  	setSelectedLogoFile(reader.result);
+		  	setSelectedPhotoFile(reader.result);
 		};
 		reader.onerror = function (error) {
 		  console.log('Error: ', error);
@@ -213,7 +194,7 @@ function CreateUmati(props) {
                                         name="umatiname"
                                         autoComplete="umatiname"
                                         onChange={(e) => umatinameUpdate(e.target.value)}
-                                        value={umatiNameField}
+                                        value={umatiTitleField}
                                         error={taken == true}
                                         helperText = {taken == true? "Umati Name already taken" : ""}
                                         autoFocus
@@ -227,10 +208,10 @@ function CreateUmati(props) {
                                         label="Title"
                                         name="displayname"
                                         autoComplete="displayname"
-                                        value={displayName}
-                                        onChange={(e) => setDisplayName(e.target.value)}
+                                        value={postBody}
+                                        onChange={(e) => setPostBody(e.target.value)}
                                 />
-								<Avatar style={{height:200+"px", width:200+"px"}} src={selectedLogoFile} />
+								<Avatar style={{height:200+"px", width:200+"px"}} src={selectedPhotoFile} />
                                 <input
                                 accept="image/*"
                                 className={classes.input}
@@ -259,4 +240,4 @@ function CreateUmati(props) {
     );
 }
 
-export default CreateUmati;
+export default CreatePost;

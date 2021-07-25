@@ -116,7 +116,8 @@ function Account(props) {
 	}
 
 	async function getUserData () {
-		const cookieDat = jwt_decode(token.token);
+		const cookieDat = token.token ? jwt_decode(token.token) : null;
+		console.log(cookieDat);
 		let response = await fetch("/api/userData/" + username, {
 			method: "get",
 			headers: {
@@ -145,10 +146,12 @@ function Account(props) {
 				if (json.description) {
 					setDescText(userDat.description);
 				}
-				
-				if (username == cookieDat.username || cookieDat.isAdmin) {
-					setEditable(true);
+				if (cookieDat) {
+					if (username == cookieDat.username || cookieDat.isAdmin) {
+						setEditable(true);
+					}
 				}
+				
 				return json;
 			})
 			.catch(e => {
@@ -357,7 +360,7 @@ function Account(props) {
 								)
 								}
 								action={
-								loading ? null : (
+									(loading || (!token.token)) ? null : (
 									<IconButton aria-label="settings" onClick={handleOpenDropdown}>
 									<MoreVertIcon />
 									</IconButton>

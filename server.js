@@ -3,6 +3,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const { MongoClient } = require("mongodb");
 const cors = require("cors");
+
 const validator = require("validator");
 
 const jwt = require("jsonwebtoken");
@@ -44,6 +45,36 @@ var umatisDB;
 var umatisCollection;
 var postsDB;
 var postsCollection;
+var assetsDB;
+var pfpsCollection;
+var umatiLogosCollection;
+
+try {
+    var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    client.connect( (err,db) => {
+        if (err) {
+            throw err;
+        }
+        usersDB = client.db("users");
+        usersCollection = usersDB.collection("users");
+
+        umatisDB = client.db("umatis");
+        umatisCollection = umatisDB.collection("umatis");
+
+        postsDB = client.db("posts");
+        postsCollection = postsDB.collection("all");
+        
+        assetsDB = client.db("assets");
+        pfpsCollection = assetsDB.collection("pfps");
+        umatiLogosCollection = assetsDB.collection("umatiLogos");
+    });
+}
+catch(e) {
+    console.error(e);
+}
+finally {
+    client.close();
+}
 
 function generateAccessToken(userJson) {
     return jwt.sign(userJson, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
@@ -61,11 +92,11 @@ const middleware = {
                 if (err) {
                     var err = new Error('You are not authenticated!');
                     err.status = 401;
-                    return next(err);
+                    return next();
                 } else {
                     // if everything is good, save to request for use in other routes
                     req.decoded = decoded;
-                    next();
+                    return next();
                 }
             });
         } else {
@@ -73,7 +104,7 @@ const middleware = {
             // return an error
             var err = new Error('No token provided!');
             err.status = 403;
-            return next(err);
+            return next();
         }
     },
     verifyAdmin: function(req,res,next){
@@ -98,28 +129,6 @@ function checkUsername(targetUsername) {
     return true;
 }
 
-try {
-    var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-    client.connect( (err,db) => {
-        if (err) {
-            throw err;
-        }
-        usersDB = client.db("users");
-        usersCollection = usersDB.collection("users");
-
-        umatisDB = client.db("umatis");
-        umatisCollection = umatisDB.collection("umatis");
-
-        postsDB = client.db("posts");
-        postsCollection = postsDB.collection("posts");
-    });
-    }
-    catch(e) {
-        console.error(e);
-    }
-    finally {
-        client.close();
-}
 
 app.post("/api/registerAccount", jsonParser, function (req, res) {
     if (req) {
@@ -243,7 +252,12 @@ app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticate
             client.connect( (err,db) => {
                 if (err) throw err;
                 (async ()=>{
-                    let adminMode = req.decoded.isAdmin;
+                    var tokenData;
+                    var adminMode;
+                    if (req.decoded) {
+                        var tokenData = req.decoded
+                        var adminMode = tokenData.isAdmin;
+                    }
                     umati = await umatisCollection.findOne({umatiname: umatiname});
                     if (umati) {
                         await usersCollection.findOne({userId: umati.owner})
@@ -287,8 +301,14 @@ app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
-
-                var adminMode = req.decoded.isAdmin;
+                
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
+                
 
                 (async ()=>{
                     let queryStuff = {
@@ -467,7 +487,12 @@ app.get("/api/userData/:username", [middleware.jsonParser, middleware.authentica
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                var adminMode = req.decoded.isAdmin;
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
 
                 (async ()=>{
 
@@ -507,7 +532,12 @@ app.get("/api/user/id=:id", [middleware.jsonParser, middleware.authenticateToken
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                var adminMode = req.decoded.isAdmin;
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
 
                 (async ()=>{
 
@@ -545,9 +575,12 @@ app.post("/api/editDescription/:username", [middleware.jsonParser, middleware.au
             client.connect( (err,db) => {
                 if (err) throw err;
                 
-                var tokenData = req.decoded;
-                var adminMode = tokenData.isAdmin;
-                var cookies = req.cookies;
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
 
                 (async ()=>{
                     if (req.params.username == tokenData.username || adminMode) {
@@ -589,19 +622,25 @@ app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.a
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                const tokenData = req.decoded
-                const adminMode = tokenData.isAdmin;
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
                 
 
                 (async ()=>{
-                    if (req.params.username == tokenData.username || adminMode) {
+                    if ((req.params.username == tokenData.username) || adminMode) {
                         const editingOnBehalf = !(req.params.username == tokenData.username) // if user is admin and does not own the account
                         var foundUser = await usersCollection.findOne({username: req.body.username});
                         if (!foundUser || (req.body.username == req.params.username)) { // if username not taken by anyone else
                             let body = req.body;
 
                             let resizedBase64;
-                            if (body.avatar) {
+
+                            const isUrlOptions = {require_tld: false, require_protocol: false, require_host: false, require_port: false, require_valid_protocol: false, allow_underscores: false, host_whitelist: false, host_blacklist: false, allow_trailing_dot: false, allow_protocol_relative_urls: true, disallow_auth: false, validate_length: true }
+                            if (body.avatar && !validator.isURL(body.avatar,isUrlOptions)) { // if avatar exists and avatar is b64
                                 let uncompressedb64 = body.avatar
                                 let parts = uncompressedb64.split(';');
                                 let mimType = parts[0].split(':')[1];
@@ -613,16 +652,29 @@ app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.a
                                 .then(resizedImageBuffer => {
                                     let resizedImageData = resizedImageBuffer.toString('base64');
                                     resizedBase64 = `data:${mimType};base64,${resizedImageData}`;
-                                    
                                 })
+
+                                // update pfp asset
+                                await pfpsCollection.replaceOne(
+                                    {id: tokenData.userId}, 
+                                    {
+                                        id: tokenData.userId,
+                                        contents: resizedBase64
+                                    },
+                                    {upsert: true}
+                                );
                             }
 
+                            
+                            let pfpLink = "/assets/profilePicture/" + tokenData.userId;
 
                             let updateUser = await usersCollection.updateOne({username: req.params.username},
-                            {$set: {username: body.username, displayname: body.displayname, avatar: resizedBase64}}
+                            {$set: {username: body.username, displayname: body.displayname, avatar: pfpLink}}
                             )
                             
                             if (updateUser) {
+
+
                                 req.decoded.username = req.body.username;
                                 delete req.decoded.exp;
                                 delete req.decoded.iat;
@@ -672,20 +724,30 @@ app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authe
             client.connect( (err,db) => {
                 if (err) throw err;
                 
-                const adminMode = req.decoded.isAdmin;
-                var cookies = req.cookies;
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
                 let body = req.body;
 
                 (async ()=>{
                     let targetUmati = await umatisCollection.findOne({ umatiname: req.params.umatiname})
                     if (req.decoded && (targetUmati.owner == req.decoded.userId || adminMode)) { // if user owns the umati or admin
                         console.log("authorized");
-
                         var foundUmati = await umatisCollection.findOne({umatiname: body.umatiname});
                         if (!foundUmati || (body.umatiname == req.params.umatiname)) { // if umatiname not taken by other umatis
                             console.log("unique");
                             let resizedBase64;
-                            if (body.logo) {
+
+                            const isUrlOptions = {require_tld: false, require_protocol: false, require_host: false, require_port: false, require_valid_protocol: false, allow_underscores: false, host_whitelist: false, host_blacklist: false, allow_trailing_dot: false, allow_protocol_relative_urls: true, disallow_auth: false, validate_length: true }
+                            
+                            console.log(body.logo);
+                            console.log("Is not URL: " + !validator.isURL(body.logo,isUrlOptions));
+                            console.log("Is b64: " + validator.isBase64(body.logo));
+                            
+                            if (body.logo && !validator.isURL(body.logo,isUrlOptions)) {
                                 console.log("logo found");
                                 let uncompressedb64 = body.logo
                                 let parts = uncompressedb64.split(';');
@@ -698,14 +760,26 @@ app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authe
                                 .then(resizedImageBuffer => {
                                     let resizedImageData = resizedImageBuffer.toString('base64');
                                     resizedBase64 = `data:${mimType};base64,${resizedImageData}`;
-                                    
                                 })
+                                console.log(targetUmati.umatiId);
+                                // update logo asset
+                                let operation = await umatiLogosCollection.replaceOne(
+                                    {id: targetUmati.umatiId}, 
+                                    {
+                                        id: targetUmati.umatiId,
+                                        contents: resizedBase64
+                                    },
+                                    {upsert: true}
+                                );
+                                console.log(operation);
                             }
+
+                            let logoLink = "/assets/umatiLogo/" + targetUmati.umatiId;
 
 
                             let updateUmati = await umatisCollection.updateOne(
-                                {umatiname: req.body.umatiname},
-                                {$set: {umatiname: body.umatiname, displayname: body.displayname, logo: resizedBase64}}
+                                {umatiname: body.umatiname},
+                                {$set: {umatiname: body.umatiname, displayname: body.displayname, logo: logoLink}}
                             );
                             if (updateUmati) {
                                 console.log("success");
@@ -739,55 +813,71 @@ app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authe
     }
 });
 
-app.get("", redirectLoggedIn);
-app.get("/", redirectLoggedIn);
-app.get("/login", redirectLoggedIn);
-app.get("/register", redirectLoggedIn);
-
-function redirectLoggedIn(req,res) {
-    var body = req.cookies;
-    var user;
-    try {
-            loggedAccount = {
-                "username": body.username,
-                "password": body.password
-            }
+app.get("/assets/profilePicture/:id", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req) {
+        const id = parseInt(req.params.id);
+        try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
-    
                 (async ()=>{
-                user = await usersCollection.findOne( {
-                    $and: [
-                        {username: body.username},
-                        {password: body.password}
-                    ]
-                });
-                if (user) {
-                    res.redirect("/posts");
-                }
-                else if (req.originalUrl == "/register") {
-                    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-                }
-                else if (req.originalUrl != "/login") {
-                    res.redirect("/login");
-                }
-                else {
-                    //res.sendFile(path.resolve(__dirname, "frontend", "index.html"));
-                    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-                }
-                })
-                ();
-            });
+                    const operation = await pfpsCollection.findOne({id: id});
+                    var foundImage = operation.contents;
+                    if (foundImage) {
+                        var img = Buffer.from(foundImage.split(',')[1], "base64");
+                        res.writeHead(200, {
+                            'Content-Type': 'image/png',
+                            'Content-Length': img.length
+                        });
+                        res.end(img);
+                    }
+                    else {
+                        res.status(404).end();
+                    }
+                })();
+            })
+        }
+        catch (e) {
+            console.error(e);
+        }
     }
-    catch (e) {
-        console.error(e);
+    else {
+        res.status(404).end();
     }
-    finally{
-        client.close();
-    }
-}
+});
 
+app.get("/assets/umatiLogo/:id", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req) {
+        const id = parseInt(req.params.id);
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                (async ()=>{
+                    const operation = await umatiLogosCollection.findOne({id: id});
+                    var foundImage = operation.contents;
+                    if (foundImage) {
+                        var img = Buffer.from(foundImage.split(',')[1], "base64");
+                        res.writeHead(200, {
+                            'Content-Type': 'image/png',
+                            'Content-Length': img.length
+                        });
+                        res.end(img);
+                    }
+                    else {
+                        res.status(404).end();
+                    }
+                })();
+            })
+        }
+        catch (e) {
+            console.error(e);
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
 
 if (process.env.NODE_ENV === 'production') {
   // Serve any static files

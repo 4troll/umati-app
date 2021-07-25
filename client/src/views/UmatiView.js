@@ -20,11 +20,15 @@ import {
 	IconButton,
 	Menu,
 	MenuItem,
-	Modal
+	Modal,
+	Fab
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
+
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import CreateIcon from '@material-ui/icons/Create';
+
 import { Cookies, useCookies } from 'react-cookie';
 import validator from "validator";
 import jwt_decode from "jwt-decode";
@@ -111,7 +115,7 @@ function UmatiView(props) {
 	}
 
     async function getUmatiData () {
-		const cookieDat = jwt_decode(token.token);
+		const cookieDat = token.token ? jwt_decode(token.token) : null ;
 		let response = await fetch("/api/umatiData/" + umatiname, {
 			method: "get",
 			headers: {
@@ -140,7 +144,7 @@ function UmatiView(props) {
 				if (json.description) {
 					setDescText(userDat.description);
 				}
-				if (json.ownerData.username == cookieDat.username || cookieDat.isAdmin) {
+				if (cookieDat && (json.ownerData.username == cookieDat.username || cookieDat.isAdmin)) {
 					setEditable(true);
 				}
 				return json;
@@ -238,7 +242,7 @@ function UmatiView(props) {
 	};
 
 	async function saveUmatiData(event) {
-		event.preventDefault()
+		event.preventDefault();
 		try {
 			var formData = {
 				"umatiname": umatinameField,
@@ -262,9 +266,12 @@ function UmatiView(props) {
 				.then(json => {
 					console.log(json);
 					window.location.href = "/u/" + formData.umatiname;
+
+					return json;
 				})
 				.catch(e => {
 					console.error(e);
+					return e;
 				});
 			}
 		}
@@ -337,7 +344,7 @@ function UmatiView(props) {
 					}
 					subheader={(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
 					action={
-					loading ? null : (
+					(loading || (!token.token)) ? null : (
 						<IconButton aria-label="settings" onClick={handleOpenDropdown}>
 						<MoreVertIcon />
 						</IconButton>
@@ -454,6 +461,19 @@ function UmatiView(props) {
 					</Modal>
 				</Grid>
 			</Grid>
+			{
+            (loading || (!token.token)) ? null : 
+        
+            <Fab color="secondary" aria-label="add" href={"/u/" + umatiDat.umatiname + "/submit"} 
+            style={{margin: 0,
+                top: 'auto',
+                right: 20,
+                bottom: 20,
+                left: 'auto',
+                position: 'fixed'}}>
+                <CreateIcon />
+            </Fab>
+        }
 		</Fragment>
     );
 }

@@ -27,6 +27,7 @@ import AddIcon from '@material-ui/icons/Add';
 
 import UmatiCard from "./components/UmatiCard.js";
 
+import { Cookies, useCookies } from 'react-cookie';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -71,7 +72,7 @@ function Umatis(props) {
     const [umatiData, setUmatiData] = useState([]);
     const [loadCards, setLoadCards] = useState([]);
 
-    
+    const [token, setToken] = useCookies(["token"]);
     
     
     function loadCard () {
@@ -184,6 +185,9 @@ function Umatis(props) {
             }
             </Container>
 		</Box>
+        {
+            (loading || (!token.token)) ? null : 
+        
             <Fab color="primary" aria-label="add" href="/umatis/createUmati" 
             style={{margin: 0,
                 top: 'auto',
@@ -193,6 +197,7 @@ function Umatis(props) {
                 position: 'fixed'}}>
                 <AddIcon />
             </Fab>
+        }
         </Fragment>
     );
 }

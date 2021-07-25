@@ -70,9 +70,10 @@ export default function Register() {
     const [username,setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [passwordCon, setPasswordCon] = useState("");
-	var submitted = false;
-	const [taken,setTaken] = useState("");
+	const [taken,setTaken] = useState(false);
+	const [checkingUsername,setCheckingUsername] = useState(false);
 	const [showPassword,setShow] = useState("");
+
   
 	function validateForm() {
 		if (username.length == 0) {
@@ -87,6 +88,12 @@ export default function Register() {
 		if (passwordCon != password) {
 			return false;
 		}
+		if (usernameValidation()) {
+			return false;
+		}
+		if (checkingUsername) {
+			return false;
+		}
 		return true;
 	}
 
@@ -94,6 +101,7 @@ export default function Register() {
 	async function postJson(url, body) {
 		let response = await fetch(url, {
 			method: "post",
+			mode: "cors",
 			body: JSON.stringify(body),
 			headers: {
 				'Accept': 'application/json',
@@ -110,7 +118,7 @@ export default function Register() {
 				console.log(json);
 				return json;
 			})
-			.catch((error) => {
+			.catch(error => {
 				return error;
 			});
 		}
@@ -122,8 +130,7 @@ export default function Register() {
 		var newAccount = {
 			"username": username,
 			"email": email,
-			"password": password,
-			"passwordCon": passwordCon
+			"password": password
 		}
 		await postJson("/api/registerAccount", newAccount)
 		.then(function (data) {
@@ -134,23 +141,26 @@ export default function Register() {
 			return error;
 		});
 	}
+	
 
 	async function usernameUpdate(username) {
 		setUsername(username);
 		setTaken(false);
+		setCheckingUsername(true);
 		var lookup = {
 			"username": username
 		}
 		await postJson("/api/usernameLookup", lookup)
-		.then(function (data) {
-			console.log("taken");
+		.then(function (response) {
 			setTaken(true);
-			return data;
+			return response;
 		})
 		.catch((error) => {
 			return error;
 		});
+		setCheckingUsername(false);
 	}
+
 	function handleClickShowPassword() {
 		setShow(!showPassword);
 	};
@@ -169,12 +179,36 @@ export default function Register() {
 		if (strength < strengthThreshold) {
 			return [true, "Password not strong enough! Strength: " + strength + "/" + strengthThreshold + ". Try adding numbers, symbols, and uppercase characters!"];
 		}
+		if (password.length > 100) {
+			return [true, "Password too long (>100 char)"];
+		}
 		return [false, "Strength: " + strength + "/" + strengthThreshold];
 	}
-	function interpretFirst() {
+	function passwordValidation() {
 		var variable = checkPassword()
 		return variable[0];
 	}
+
+	function checkUsername() {
+		if (username.length < 3) {
+			return [true, "Username must be at least 3 characters long"];
+		}
+		if (username.length > 20) {
+			return [true, "Username must be less than 20 characters long"];
+		}
+		if (!validator.isAlphanumeric(username)) {
+			return [true, "Username must be alphanumeric (no spaces, only numbers and letters)"];
+		}
+		if (taken) {
+			return [true, "Username is taken"];
+		}
+		return [false,""];
+	}
+	function usernameValidation() {
+		var variable = checkUsername()
+		return variable[0];
+	}
+
 
 return (
 	<Grid container component="main" className={classes.root}>
@@ -198,8 +232,8 @@ return (
 		name="username"
 		autoComplete="username"
 		onChange={(e) => usernameUpdate(e.target.value)}
-		error={taken == true}
-		helperText = {taken == true? 'Username already taken' : ''}
+		error={username.length > 0 ?usernameValidation():""}
+		helperText = {username.length > 0 ?checkUsername():""}
 		autoFocus
 		/>
 		<TextField
@@ -233,7 +267,7 @@ return (
 		//id="password"
 		//autoComplete="current-password"
 		autoComplete="off"
-		error={password.length > 0 ?interpretFirst():""}
+		error={password.length > 0 ?passwordValidation():""}
 		helperText = {password.length > 0 ?checkPassword():""}
 		onChange={(e) => setPassword(e.target.value)}
 		type={showPassword ? 'text' : 'password'}

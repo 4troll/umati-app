@@ -47,7 +47,8 @@ import {
   BrowserRouter as Router,
   Switch,
   Route,
-  Link
+  Link,
+  Redirect
 } from "react-router-dom";
 
 class App extends Component {
@@ -89,6 +90,7 @@ class App extends Component {
 
 
 	render() {
+		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
 		return (
 			<ThemeProvider theme={theme}>
 			<Router>
@@ -104,6 +106,16 @@ class App extends Component {
 				*/}
 				<Switch>
 				<Route exact path="/">
+					{
+						function() {
+							if (!cookieDat) {
+								return (<Redirect to="/login" />);
+							}
+							else {
+								return (<Redirect to={"/@" + cookieDat.username} />);
+							}
+						}
+					}
 					{/* <Home /> */}
 				</Route>
 				<Route path="/login">
@@ -117,6 +129,12 @@ class App extends Component {
 					path="/@:username"
 				/>
 				</Route>
+				<Route path="/u/:umati/submit">
+					<UmatiView
+					path="/u/:umati/submit"
+				/>
+				</Route>
+
 				<Route path="/u/:umati">
 					<UmatiView
 					path="/u/:umati"
