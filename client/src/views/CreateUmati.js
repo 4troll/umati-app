@@ -87,6 +87,7 @@ function CreateUmati(props) {
 			await response.json()
 			.then(json => {
 				console.log(json);
+				return json;
 			});
 		}
 	}
@@ -122,7 +123,6 @@ function CreateUmati(props) {
             // console.log(formData);
 			await postJson("/api/createUmati/", formData)
 			.then(function (data){
-				console.log(data);
 				window.location.href = "/u/" + formData.umatiname;
 				return data;
 			})

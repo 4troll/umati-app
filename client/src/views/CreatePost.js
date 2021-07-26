@@ -92,6 +92,7 @@ function CreatePost(props) {
 			await response.json()
 			.then(json => {
 				console.log(json);
+				return json;
 			});
 		}
 	}
@@ -106,7 +107,15 @@ function CreatePost(props) {
 				"photo": selectedPhotoFile
 			}
             // console.log(formData);
-			await postJson("/api/createPost/" + umatiname, formData)
+			await fetch("/api/createPost/" + umatiname, {
+				method: "post",
+				body: JSON.stringify(formData),
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				credentials: "include"
+			})
 			.then(function (data){
 				console.log(data);
 				window.location.href = "/u/" + umatiname + "/comments/" + data.postId;

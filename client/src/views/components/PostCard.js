@@ -69,15 +69,17 @@ function createSubHeader (authorData) {
             )
         }
         else {
-            <span style={{
-                alignItems: "left",
-                display: 'flex',
-                flexDirection: 'row',
-            }}>
-            
-            <UserLink data={authorData}/>
-            
-            </span>
+            return (
+                <span style={{
+                    alignItems: "left",
+                    display: 'flex',
+                    flexDirection: 'row',
+                }}>
+                
+                <UserLink data={authorData}/>
+                
+                </span>
+            );
         }
     } 
 }

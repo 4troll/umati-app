@@ -96,11 +96,15 @@ function UmatiView(props) {
 
 
 
-    function loadCard () {
+    function loadCard (main) {
         return (
-            <Card className={classes.root}>
+            <Card className={classes.root} style={{marginTop: "5px"}}>
             <CardHeader
-                avatar={<Skeleton animation="wave" variant="rounded" width={64} height={64} />}
+                avatar={
+				main ? 
+				<Skeleton animation="wave" variant="circle" width={64} height={64} />
+				: ""
+			}
                 // action={
                 // loading ? null : (
                 //     <IconButton aria-label="settings" 
@@ -361,7 +365,7 @@ function UmatiView(props) {
 			}}
 			>
 				<Container maxWidth="lg">
-					{loading ? loadCard() : 
+					{loading ? loadCard(true) : 
 					
 					<div key={umatiDat.umatiname} className="umatiView" style={{marginTop: "5px"}}>
 						<Card className={classes.root}>

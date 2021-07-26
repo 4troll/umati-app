@@ -59,7 +59,7 @@ function UmatiCard (props) {
                     avatar={
                     <Avatar
                         variant="rounded"
-                        alt={umatiDat.displayname}
+                        alt={umatiDat.displayname ? umatiDat.displayname : umatiDat.umatiname}
                         src={umatiDat.logo}
                         style={{height:64+"px", width:64+"px"}}
                         />

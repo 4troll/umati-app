@@ -161,6 +161,7 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
                         "userId": increment.value.sequence_value + 1,
                         "email": body.email,
                         "password": body.password,
+                        "avatar": "/assets/profilePicture/" + (increment.value.sequence_value + 1),
                         "admin": false,
                         "removed": false,
                         "creationDate": Date.now()
@@ -386,13 +387,15 @@ app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.a
                 
 
                 (async ()=>{
+                    var targetUser = await usersCollection.findOne({username: req.params.username});
                     if ((req.params.username == tokenData.username) || adminMode) {
                         const editingOnBehalf = !(req.params.username == tokenData.username) // if user is admin and does not own the account
                         var foundUser = await usersCollection.findOne({username: req.body.username});
+                        
                         if (!foundUser || (req.body.username == req.params.username)) { // if username not taken by anyone else
                             let body = req.body;
 
-                            let resizedBase64;
+                            var resizedBase64;
 
                             const isUrlOptions = {require_tld: false, require_protocol: false, require_host: false, require_port: false, require_valid_protocol: false, allow_underscores: false, host_whitelist: false, host_blacklist: false, allow_trailing_dot: false, allow_protocol_relative_urls: true, disallow_auth: false, validate_length: true }
                             if (body.avatar && !validator.isURL(body.avatar,isUrlOptions)) { // if avatar exists and avatar is b64
@@ -409,19 +412,24 @@ app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.a
                                     resizedBase64 = `data:${mimType};base64,${resizedImageData}`;
                                 })
 
-                                // update pfp asset
                                 await pfpsCollection.replaceOne(
-                                    {id: tokenData.userId}, 
+                                    {id: targetUser.userId}, 
                                     {
-                                        id: tokenData.userId,
+                                        id: targetUser.userId,
                                         contents: resizedBase64
                                     },
                                     {upsert: true}
                                 );
+                                
+                            }
+                            if (body.avatar == "") {
+                                await pfpsCollection.remove(
+                                    {id: targetUser.userId}
+                                );
                             }
 
                             
-                            let pfpLink = "/assets/profilePicture/" + tokenData.userId;
+                            let pfpLink = "/assets/profilePicture/" + targetUser.userId;
 
                             let updateUser = await usersCollection.updateOne({username: req.params.username},
                             {$set: {username: body.username, displayname: body.displayname, avatar: pfpLink}}
@@ -676,9 +684,8 @@ app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authe
                                     let resizedImageData = resizedImageBuffer.toString('base64');
                                     resizedBase64 = `data:${mimType};base64,${resizedImageData}`;
                                 })
-                                console.log(targetUmati.umatiId);
                                 // update logo asset
-                                let operation = await umatiLogosCollection.replaceOne(
+                                await umatiLogosCollection.replaceOne(
                                     {id: targetUmati.umatiId}, 
                                     {
                                         id: targetUmati.umatiId,
@@ -686,8 +693,13 @@ app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authe
                                     },
                                     {upsert: true}
                                 );
-                                console.log(operation);
                             }
+                            if (body.logo == "") {
+                                await umatiLogosCollection.remove(
+                                    {id: targetUmati.umatiId}
+                                );
+                            }
+                            
 
                             let logoLink = "/assets/umatiLogo/" + targetUmati.umatiId;
 

@@ -493,12 +493,20 @@ function Account(props) {
 					style={{display: "none"}}
 					ref={inputFile}
 					/>
-					<Button onClick={onChangeAvatarClick} variant="contained" type="button">
-					Change avatar
-					</Button>
-					<Button form="usernameAvatarForm" variant="contained" color="primary" type="submit" isPrimary className={classes.submit} disabled={!validUsernameAvatarForm()} >
-					Save
-					</Button>
+
+					<div>
+						<Button onClick={onChangeAvatarClick} key="addAvatar" variant="contained" type="button">
+						Change avatar
+						</Button>
+						<Button 
+						onClick={() => setSelectedAvatarFile("")}
+						 key="clearAvatar" variant="contained" type="button">
+						Remove avatar
+						</Button>
+						<Button form="usernameAvatarForm" key="submit" variant="contained" color="primary" type="submit" isPrimary className={classes.submit} disabled={!validUsernameAvatarForm()} >
+						Save
+						</Button>
+					</div>
 				</form>
 				</div>
 				</Modal>
