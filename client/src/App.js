@@ -5,6 +5,7 @@ import Account from "./views/Account.js";
 import Register from "./views/Register.js";
 import Umatis from "./views/Umatis.js";
 import CreateUmati from "./views/CreateUmati.js";
+import CreatePost from "./views/CreatePost.js";
 import UmatiView from "./views/UmatiView.js";
 import './App.css';
 
@@ -129,15 +130,15 @@ class App extends Component {
 					path="/@:username"
 				/>
 				</Route>
-				<Route path="/u/:umati/submit">
-					<UmatiView
-					path="/u/:umati/submit"
+				<Route path="/u/:umatiname/submit">
+					<CreatePost
+					path="/u/:umatiname/submit"
 				/>
 				</Route>
 
-				<Route path="/u/:umati">
+				<Route path="/u/:umatiname">
 					<UmatiView
-					path="/u/:umati"
+					path="/u/:umatiname"
 				/>
 				</Route>
 				<Route path="/umatis/createUmati">

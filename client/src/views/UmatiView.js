@@ -33,6 +33,7 @@ import { Cookies, useCookies } from 'react-cookie';
 import validator from "validator";
 import jwt_decode from "jwt-decode";
 
+import PostCard from "./components/PostCard.js";
 import UserLink from "./components/UserLink.js";
 
 const useStyles = makeStyles(theme => ({
@@ -84,76 +85,16 @@ function UmatiView(props) {
 	const inputFile = useRef(null);
 	const [selectedLogoFile,setSelectedLogoFile] = useState("");
 
-    const params = useParams();
-	const umatiname = params.umati;
+    const { umatiname } = useParams();
 	const classes = useStyles();
 
 	const inputRef = useRef();
   	const [desctext, setDescText] = useState("");
 
+	const [loadCards, setLoadCards] = useState([]);
+	const [postsData, setPostsData] = useState([]);
 
-	async function postJson(url, body) {
-		let response = await fetch(url, {
-			method: "post",
-			mode: "cors", 
-			body: JSON.stringify(body),
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			credentials: "include"
-		});
-		if (!response.ok) {
-			throw new Error("HTTP error, status = " + response.status);
-		}
-		else {
-			await response.json()
-			.then(json => {
-				console.log(json);
-			});
-		}
-	}
 
-    async function getUmatiData () {
-		const cookieDat = token.token ? jwt_decode(token.token) : null ;
-		let response = await fetch("/api/umatiData/" + umatiname, {
-			method: "get",
-			headers: {
-				"Accept": "application/json",
-				"Content-Type": "application/json",
-			},
-			credentials: "include"
-		});
-		if (!response.ok) {
-			throw new Error("HTTP error, status = " + response.status);
-		}
-		else {
-			await response.json()
-			.then(json => {
-                console.log(json);
-				setUmatiDat(json);
-				
-				if (json.logo) {
-					console.log(json.logo);
-					setSelectedLogoFile(json.logo);
-				}
-
-				setUmatinameField(json.umatiname);
-				setDisplayName(json.displayname);
-
-				if (json.description) {
-					setDescText(userDat.description);
-				}
-				if (cookieDat && (json.ownerData.username == cookieDat.username || cookieDat.isAdmin)) {
-					setEditable(true);
-				}
-				return json;
-			})
-			.catch(e => {
-				console.error(e);
-			});
-		}
-	}
 
     function loadCard () {
         return (
@@ -209,13 +150,106 @@ function UmatiView(props) {
 		setUmatiModal(false);
 	};
 
-    useLayoutEffect (() => {
-		setLoading(true);
-		getUmatiData().then(json => {
-			setLoading(false);
-		}).catch(error => {
-			console.error(error);
+	async function postJson(url, body) {
+		let response = await fetch(url, {
+			method: "post",
+			mode: "cors", 
+			body: JSON.stringify(body),
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json'
+			},
+			credentials: "include"
 		});
+		if (!response.ok) {
+			throw new Error("HTTP error, status = " + response.status);
+		}
+		else {
+			await response.json()
+			.then(json => {
+				console.log(json);
+			});
+		}
+	}
+
+    useLayoutEffect (() => {
+		const cookieDat = token.token ? jwt_decode(token.token) : null ;
+		async function getUmatiData () {
+			
+			let response = await fetch("/api/umatiData/" + umatiname, {
+				method: "get",
+				headers: {
+					"Accept": "application/json",
+					"Content-Type": "application/json",
+				},
+				credentials: "include"
+			});
+			if (!response.ok) {
+				throw new Error("HTTP error, status = " + response.status);
+			}
+			else {
+				await response.json()
+				.then(async function (json) {
+					setUmatiDat(json);
+					if (json.logo) {
+						console.log(json.logo);
+						setSelectedLogoFile(json.logo);
+					}
+	
+					setUmatinameField(json.umatiname);
+					setDisplayName(json.displayname);
+	
+					if (json.description) {
+						setDescText(userDat.description);
+					}
+					if (cookieDat && (json.ownerData.username == cookieDat.username || cookieDat.isAdmin)) {
+						setEditable(true);
+					}
+
+
+
+					if (json.umatiId) {
+						console.log("initiating post fetch");
+						let response = await fetch("/api/fetchPosts/umati/" + json.umatiId + window.location.search, {
+							method: "get",
+							headers: {
+								"Accept": "application/json",
+								"Content-Type": "application/json",
+							},
+							credentials: "include"
+						});
+						if (!response.ok) {
+							throw new Error("HTTP error, status = " + response.status);
+						}
+						else {
+							await response.json()
+							.then(function (postData) {
+								setPostsData(postData);
+							})
+							.catch(e => {
+								console.error(e);
+							});
+						}
+					}
+
+					return json;
+				})
+				.catch(e => {
+					console.error(e);
+				});
+			}
+		}
+
+		setLoading(true);
+		let loadlist = []
+        for (let i = 0; i < 10; i++) {
+            loadlist.push(loadCard());
+        }
+        setLoadCards(loadlist);
+
+		getUmatiData().then(a => {
+            setLoading(false);
+        })
 	}, []);
 
 	function onChangeLogoClick () {
@@ -264,9 +298,7 @@ function UmatiView(props) {
 			else {
 				await response.json()
 				.then(json => {
-					console.log(json);
 					window.location.href = "/u/" + formData.umatiname;
-
 					return json;
 				})
 				.catch(e => {
@@ -328,66 +360,82 @@ function UmatiView(props) {
 				py: 3
 			}}
 			>
-			<Container maxWidth="lg">
-				{loading ? loadCard() : <div key={umatiDat.umatiname} className="umatiView" style={{marginTop: "5px"}}>
-				<Card className={classes.root}>
-				<CardHeader
-					avatar={
-					<Avatar
-						variant="rounded"
-						alt={umatiDat.displayname}
-						src={selectedLogoFile}
-						style={{height:64+"px", width:64+"px"}}
-						/>
-					}
-					title={
-						(umatiDat.displayname ? umatiDat.displayname : "u/" + umatiDat.umatiname)
-					}
-					subheader={(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
-					action={
-					(loading || (!token.token)) ? null : (
-						<IconButton aria-label="settings" onClick={handleOpenDropdown}>
-						<MoreVertIcon />
-						</IconButton>
-					)
-					}
+				<Container maxWidth="lg">
+					{loading ? loadCard() : 
 					
-				/>
-				<Menu
-				id="simple-menu"
-				anchorEl={anchor}
-				open={anchor}
-				onClose={handleCloseDropdown}
-				>
-				{editable ? 
-				<Fragment>
-				<MenuItem onClick={handleOpenUmatiModal}>Edit name/logo</MenuItem>
-				</Fragment>
-				: 
-				<MenuItem onClick={handleCloseDropdown}>Join</MenuItem>
-				}
-				</Menu>
-				<CardContent>
-					<Box
-						sx={{
-						alignItems: 'left',
-						display: 'flex',
-						flexDirection: 'column'
-						}}
-					>
-						<span style={{
-						alignItems: 'left',
-						display: 'flex',
-						flexDirection: 'row',
-						}}> Owner: <UserLink data={umatiDat.ownerData}/></span>
-						<p>{umatiDat.description}</p>
-					</Box>
-				</CardContent>
-			</Card>
-		</div>
-		}
-			</Container>
+					<div key={umatiDat.umatiname} className="umatiView" style={{marginTop: "5px"}}>
+						<Card className={classes.root}>
+							<CardHeader
+								avatar={
+								<Avatar
+									variant="rounded"
+									alt={umatiDat.displayname}
+									src={selectedLogoFile}
+									style={{height:64+"px", width:64+"px"}}
+									/>
+								}
+								title={
+									(umatiDat.displayname ? umatiDat.displayname : "u/" + umatiDat.umatiname)
+								}
+								subheader={(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
+								action={
+								(loading || (!token.token)) ? null : (
+									<IconButton aria-label="settings" onClick={handleOpenDropdown}>
+									<MoreVertIcon />
+									</IconButton>
+								)
+								}
+								
+							/>
+							<Menu
+							id="simple-menu"
+							anchorEl={anchor}
+							open={anchor}
+							onClose={handleCloseDropdown}
+							>
+							{editable ? 
+							<Fragment>
+							<MenuItem onClick={handleOpenUmatiModal}>Edit name/logo</MenuItem>
+							</Fragment>
+							: 
+							<MenuItem onClick={handleCloseDropdown}>Join</MenuItem>
+							}
+							</Menu>
+							<CardContent>
+								<Box
+									sx={{
+									alignItems: 'left',
+									display: 'flex',
+									flexDirection: 'column'
+									}}
+								>
+									<span style={{
+									alignItems: 'left',
+									display: 'flex',
+									flexDirection: 'row',
+									}}> Owner: <UserLink data={umatiDat.ownerData}/></span>
+									<p>{umatiDat.description}</p>
+								</Box>
+							</CardContent>
+						</Card>
+						
+					</div>
+			}
+
+			<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
+			{ loading ? loadCards : 
+				(postsData.map(function (post,i) {
+					return (
+						<PostCard key={i} data={post} umatiname={umatiname}/>
+					);
+				}))
+			}
+			</div>
+
+
+				</Container>
 			</Box>
+			
 			<Grid
 			container
 			spacing={0}

@@ -126,3 +126,7 @@ a.user-link:visited
 .MuiSkeleton-root {
     border-radius: 4px;
 }
+
+#postCreationForm:nth-child(2) {
+    align-items: flex-end;
+}

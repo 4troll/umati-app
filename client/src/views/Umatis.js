@@ -29,6 +29,7 @@ import UmatiCard from "./components/UmatiCard.js";
 
 import { Cookies, useCookies } from 'react-cookie';
 
+
 const useStyles = makeStyles(theme => ({
 	root: {
 	  minWidth: 275,

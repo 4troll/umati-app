@@ -67,6 +67,8 @@ function CreateUmati(props) {
     const inputFile = useRef(null);
 	const [selectedLogoFile,setSelectedLogoFile] = useState("");
 
+	
+
     async function postJson(url, body) {
 		let response = await fetch(url, {
 			method: "post",
@@ -118,7 +120,7 @@ function CreateUmati(props) {
 				"logo": selectedLogoFile
 			}
             // console.log(formData);
-			await postJson("/api/createUmati", formData)
+			await postJson("/api/createUmati/", formData)
 			.then(function (data){
 				console.log(data);
 				window.location.href = "/u/" + formData.umatiname;
@@ -192,7 +194,7 @@ function CreateUmati(props) {
                     <Card className={classes.root}>
                     <CardHeader
 								// avatar={}
-								title={"Create Umati"}
+								title={<b>Create Umati</b>}
 							/>
                         <CardContent>
                             <div>
@@ -248,7 +250,7 @@ function CreateUmati(props) {
                                 <Button form="umatiCreationForm" variant="contained" color="primary" type="submit" isPrimary className={classes.submit} 
                                 disabled={!validUmatiForm()} 
                                 >
-                                Save
+                                Create
                                 </Button>
                             </form>
                          </CardContent>

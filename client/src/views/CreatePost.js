@@ -1,4 +1,5 @@
 import React, { useEffect,useLayoutEffect, useRef, useState, Fragment } from "react";
+import {useParams} from "react-router-dom";
 
 import {
     Avatar,
@@ -54,18 +55,24 @@ const useStyles = makeStyles(theme => ({
 	submit: {
 		// margin: theme.spacing(3, 0, 2),
 	},
+	helperText: {
+		position: 'absolute',
+		bottom: '-50%',
+		right: '0%',
+	}
 }));
 
 
 function CreatePost(props) {
     const classes = useStyles();
 
-    const [umatiTitleField,setUmatiTitleField] = useState("");
+    const [postTitle,setPostTitle] = useState("");
     const [postBody, setPostBody] = useState("");
-	const [displayName, setDisplayName] = useState("");
 
     const inputFile = useRef(null);
 	const [selectedPhotoFile,setSelectedPhotoFile] = useState("");
+
+	const { umatiname } = useParams();
 
     async function postJson(url, body) {
 		let response = await fetch(url, {
@@ -89,20 +96,20 @@ function CreatePost(props) {
 		}
 	}
 
-    async function sendUmatiCreationForm(event) {
+    async function sendPostCreationForm(event) {
 		event.preventDefault()
 		var formData;
 		try {
 			formData = {
-				"title": umatiTitleField,
+				"title": postTitle,
 				"body": postBody,
 				"photo": selectedPhotoFile
 			}
             // console.log(formData);
-			await postJson("/api/createUmati", formData)
+			await postJson("/api/createPost/" + umatiname, formData)
 			.then(function (data){
 				console.log(data);
-				// window.location.href = "/u/" + formData.umatiname;
+				window.location.href = "/u/" + umatiname + "/comments/" + data.postId;
 				return data;
 			})
 			.catch(e => {
@@ -117,19 +124,33 @@ function CreatePost(props) {
 		}
 	}
 
-    function checkUmatiname(targetUmatiname) {
-		if (targetUmatiname.length < 3) {
-			return false;
+	function checkTitle() {
+		if (postTitle.length < 1) {
+			return [true, ""];
 		}
-		if (!validator.isAlphanumeric(targetUmatiname)) {
-			return false;
+		if (postTitle.length > 100) {
+			return [true, "Title cannot be more than 100 characters long"];
 		}
-		return true;
+		return [false,""];
+	}
+	function titleValidation() {
+		var variable = checkTitle()
+		return variable[0];
 	}
 
-	function validUmatiForm() {
-		console.log(checkUmatiname(umatiTitleField));
-		if (!checkUmatiname(umatiTitleField)) {
+	function checkBody() {
+		if (postBody.length > 5000) {
+			return [true, (5000 - postBody.length)];
+		}
+		return [false,(5000 - postBody.length)];
+	}
+	function bodyValidation() {
+		var variable = checkBody()
+		return variable[0];
+	}
+
+	function validSubmitForm() {
+		if (titleValidation()) {
 			return false;
 		}
 		return true;
@@ -154,7 +175,7 @@ function CreatePost(props) {
 		};
 	};
 
-	function onChangeLogoClick () {
+	function onChangePhotoClick () {
 		// `current` points to the mounted file input element
 	   inputFile.current.click();
 	};
@@ -173,45 +194,47 @@ function CreatePost(props) {
                     <Card className={classes.root}>
                     <CardHeader
 								// avatar={}
-								title={"Create Umati"}
+								title={<b>Create post</b>}
 							/>
                         <CardContent>
                             <div>
                                 <p>
-                                    Umati (<em>oo•mah•tee</em>) is a social news website that places emphasis on small communities and the individuals within them. Communities in Umati are called Umatis. Each Umati has a unique Umati Name. Users can also assign Titles to their Umatis.
+                                    You are posting to u/{umatiname}
                                 </p>
                             </div>
-                            <form id="umatiCreationForm" className={classes.form}
-                            onSubmit={sendUmatiCreationForm} 
+                            <form id="postCreationForm" className={classes.form}
+                            onSubmit={sendPostCreationForm} 
                             noValidate>
                                 <TextField
                                         variant="outlined"
                                         margin="normal"
                                         required
                                         fullWidth
-                                        id="umatiname"
-                                        label="Umati Name"
-                                        name="umatiname"
-                                        autoComplete="umatiname"
-                                        onChange={(e) => umatinameUpdate(e.target.value)}
-                                        value={umatiTitleField}
-                                        error={taken == true}
-                                        helperText = {taken == true? "Umati Name already taken" : ""}
+                                        id="title"
+                                        label="Title"
+                                        name="title"
+                                        onChange={(e) => setPostTitle(e.target.value)}
+                                        value={postTitle}
+                                        error={postTitle.length > 0 ? titleValidation() : false}
+                                        helperText = {checkTitle()}
                                         autoFocus
                                 />
                                 <TextField
                                         variant="outlined"
                                         margin="normal"
-                                        required
                                         fullWidth
-                                        id="displayname"
-                                        label="Title"
-                                        name="displayname"
-                                        autoComplete="displayname"
+                                        id="body"
+                                        label="Body (optional)"
+                                        name="body"
                                         value={postBody}
                                         onChange={(e) => setPostBody(e.target.value)}
+										error={bodyValidation()}
+                                        helperText = {checkBody()}
+										FormHelperTextProps={{ classes: { root: classes.helperText } }}
+										style={{marginBottom:"30px"}}
+										multiline
                                 />
-								<Avatar style={{height:200+"px", width:200+"px"}} src={selectedPhotoFile} />
+								<img style={{height:"auto", width:"auto"}} src={selectedPhotoFile} />
                                 <input
                                 accept="image/*"
                                 className={classes.input}
@@ -221,16 +244,18 @@ function CreatePost(props) {
                                 style={{display: "none"}}
                                 ref={inputFile}
                                 />
+								<div>
                                 <Button 
-                                onClick={onChangeLogoClick}
+                                onClick={onChangePhotoClick}
                                 variant="contained" type="button">
-                                Select umati image
+                                Select post image (optional)
                                 </Button>
-                                <Button form="umatiCreationForm" variant="contained" color="primary" type="submit" isPrimary className={classes.submit} 
-                                disabled={!validUmatiForm()} 
+                                <Button form="postCreationForm" variant="contained" color="primary" type="submit" isPrimary className={classes.submit} 
+                                disabled={!validSubmitForm()} 
                                 >
-                                Save
+                                Submit
                                 </Button>
+								</div>
                             </form>
                          </CardContent>
                     </Card>

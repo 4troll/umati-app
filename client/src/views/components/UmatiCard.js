@@ -11,6 +11,10 @@ import {
 
 import UserLink from "./UserLink.js";
 
+import {
+    Link
+  } from "react-router-dom";
+
 const useStyles = makeStyles(theme => ({
 	root: {
 	  minWidth: 275,
@@ -44,50 +48,48 @@ const useStyles = makeStyles(theme => ({
 	},
 }));
 
-function clickCard(name) {
-    window.location.href = "/u/" + name;
-}
-
-function umatiCard (props) {
+function UmatiCard (props) {
     const classes = useStyles();
     const umatiDat = props.data
     return (
-        <div key={umatiDat.umatiname} className="umatiCardContainer" style={{marginTop: "5px"}} onClick={() => clickCard(umatiDat.umatiname)}>
-            <Card className={classes.root}>
-            <CardHeader
-                avatar={
-                <Avatar
-                    variant="rounded"
-                    alt={umatiDat.displayname}
-                    src={umatiDat.logo}
-                    style={{height:64+"px", width:64+"px"}}
-                    />
-                }
-                title={
-                    (umatiDat.displayname ? umatiDat.displayname : "u/" + umatiDat.umatiname)
-                }
-                subheader={(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
-            />
-            <CardContent>
-                <Box
-                    sx={{
-                    alignItems: 'left',
-                    display: 'flex',
-                    flexDirection: 'column'
-                    }}
-                >
-                    <span style={{
-                    alignItems: 'left',
-                    display: 'flex',
-                    flexDirection: 'row',
-                    }}> Owner: <UserLink data={umatiDat.ownerData}/></span>
-                    <p>{umatiDat.description}</p>
-                </Box>
-            </CardContent>
-        </Card>
+        <div key={umatiDat.umatiname} className="umatiCardContainer" style={{marginTop: "5px"}}>
+            <Link to={"/u/" + umatiDat.umatiname} style={{textDecoration:"none"}}>
+                <Card className={classes.root}>
+                <CardHeader
+                    avatar={
+                    <Avatar
+                        variant="rounded"
+                        alt={umatiDat.displayname}
+                        src={umatiDat.logo}
+                        style={{height:64+"px", width:64+"px"}}
+                        />
+                    }
+                    title={
+                        (umatiDat.displayname ? umatiDat.displayname : "u/" + umatiDat.umatiname)
+                    }
+                    subheader={(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
+                />
+                <CardContent>
+                    <Box
+                        sx={{
+                        alignItems: 'left',
+                        display: 'flex',
+                        flexDirection: 'column'
+                        }}
+                    >
+                        <span style={{
+                        alignItems: 'left',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        }}> Owner: <UserLink data={umatiDat.ownerData}/></span>
+                        <p>{umatiDat.description}</p>
+                    </Box>
+                </CardContent>
+            </Card>
+        </Link>
     </div>
 
     );
 }
 
-export default umatiCard;
+export default UmatiCard;
