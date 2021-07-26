@@ -112,7 +112,7 @@ function PostCard (props) {
                         {postData.photo ? 
                         
                         <img src={postData.photo} style={{
-                        maxHeight:"1080px",
+                        maxHeight:"720px",
                         objectFit: "contain"
                         }}/>
                         
