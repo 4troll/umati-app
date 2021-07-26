@@ -1,4 +1,6 @@
-import React, { useEffect,useLayoutEffect, useRef, useState, Fragment } from "react";
+import React, { useEffect,useLayoutEffect, useRef, useState, Component, Fragment } from "react";
+
+import {useParams} from "react-router-dom";
 
 import {
     Avatar,
@@ -18,17 +20,20 @@ import {
 	Menu,
 	MenuItem,
 	Modal,
-    Fab
+	Fab
 } from '@material-ui/core';
+import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
+
 import MoreVertIcon from '@material-ui/icons/MoreVert';
-
-import AddIcon from '@material-ui/icons/Add';
-
-import UmatiCard from "./components/UmatiCard.js";
+import CreateIcon from '@material-ui/icons/Create';
 
 import { Cookies, useCookies } from 'react-cookie';
+import validator from "validator";
+import jwt_decode from "jwt-decode";
 
+import PostCard from "./components/PostCard.js";
+import UserLink from "./components/UserLink.js";
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -64,23 +69,27 @@ const useStyles = makeStyles(theme => ({
 }));
 
 
+function Posts(props) {
+	const [token, setToken] = useCookies(["token"]);
 
-function Umatis(props) {
-    const classes = useStyles();
+	const [loading, setLoading] = useState(true);
 
-    const [loading, setLoading] = useState(true);
+	const classes = useStyles();
 
-    const [umatiData, setUmatiData] = useState([]);
-    const [loadCards, setLoadCards] = useState([]);
+	const [loadCards, setLoadCards] = useState([]);
+	const [postsData, setPostsData] = useState([]);
 
-    const [token, setToken] = useCookies(["token"]);
-    
-    
-    function loadCard () {
+
+
+    function loadCard (main) {
         return (
-            <Card className={classes.root}>
+            <Card className={classes.root} style={{marginTop: "5px"}}>
             <CardHeader
-                avatar={<Skeleton animation="wave" variant="rounded" width={64} height={64} />}
+                avatar={
+				main ? 
+				<Skeleton animation="wave" variant="circle" width={64} height={64} />
+				: ""
+			}
                 // action={
                 // loading ? null : (
                 //     <IconButton aria-label="settings" 
@@ -104,7 +113,7 @@ function Umatis(props) {
                 <React.Fragment>
                     <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
                     <Skeleton animation="wave" height={10} width="80%" />
-                </React.Fragment>			
+                </React.Fragment>
                 </Box>
             </CardContent>
         </Card>
@@ -112,9 +121,12 @@ function Umatis(props) {
         );
     }
 
+
     useLayoutEffect (() => {
-        async function fetchUmatiData() {
-            let response = await fetch("/api/fetchUmatis/" + window.location.search, {
+		// const cookieDat = token.token ? jwt_decode(token.token) : null ;
+		async function getPostsData () {
+			console.log("initiating post fetch");
+            let response = await fetch("/api/fetchPosts" + window.location.search, {
                 method: "get",
                 headers: {
                     "Accept": "application/json",
@@ -127,79 +139,53 @@ function Umatis(props) {
             }
             else {
                 await response.json()
-                .then(function (json) {
-                    // await json.forEach(async function(currentUmati, index){
-                    //     await getUserDataFromId(currentUmati.owner)
-                    //     .then(response => {
-                    //         currentUmati.ownerData = response;
-                    //         umatiDataList.push(currentUmati);
-                    //     })
-                    //     .catch (e => {
-                    //         console.error(e);
-                    //     });
-                    // });
-                    setUmatiData(json);
-                    return json;
-                    
+                .then(function (postData) {
+                    setPostsData(postData);
+                    return postData;
                 })
                 .catch(e => {
                     console.error(e);
-                    return error;
+                    return e;
                 });
             }
-        }
+		}
 
 		setLoading(true);
-        let loadlist = []
+		let loadlist = []
         for (let i = 0; i < 10; i++) {
             loadlist.push(loadCard());
         }
         setLoadCards(loadlist);
 
-        async function fetchUmatis() {
-            let json = await fetchUmatiData();
-            if (json) {
-                return json;
-            }
-        }
-        fetchUmatis().then(a => {
+		getPostsData().then(a => {
             setLoading(false);
         })
-        
 	}, []);
+
     return (
-        <Fragment>
-            <Box
-            sx={{
-                backgroundColor: 'background.default',
-                minHeight: '100%',
-                py: 3
-            }}>
-			<Container maxWidth="lg">
-            { loading ? loadCards : 
-            (umatiData.map(function (umati,i) {
-                return (
-                    <UmatiCard key={i} data={umati}/>
-                );
-            }))
-            }
-            </Container>
-		</Box>
-        {
-            (loading || (!token.token)) ? null : 
-        
-            <Fab color="primary" aria-label="add" href="/umatis/createUmati" 
-            style={{margin: 0,
-                top: 'auto',
-                right: 20,
-                bottom: 20,
-                left: 'auto',
-                position: 'fixed'}}>
-                <AddIcon />
-            </Fab>
-        }
-        </Fragment>
+		<Fragment>
+			<Box
+			sx={{
+				backgroundColor: 'background.default',
+				minHeight: '100%',
+				py: 3
+			}}
+			>
+				<Container maxWidth="lg">
+                    <div key="posts" className="PostsView" style={{marginTop: "30px"}}>
+                    { loading ? loadCards : 
+                        (postsData.map(function (post,i) {
+                            return (
+                                <PostCard key={i} data={post} umatiname={post.hostUmatiname} indicateHost={true}/>
+                            );
+                        }))
+                    }
+                    </div>
+
+				</Container>
+			</Box>
+		</Fragment>
     );
 }
 
-export default Umatis;
+export default Posts;

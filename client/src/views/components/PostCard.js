@@ -52,35 +52,24 @@ const useStyles = makeStyles(theme => ({
 //     window.location.href = "/u/" + umatiname + "/comments/" + postid;
 // }
 
-function createSubHeader (authorData) {
+function createSubHeader (authorData,hostname) {
     if (authorData.username) {
-        if (authorData.displayname) {
-            return (
-                <span style={{
-                    alignItems: "left",
-                    display: 'flex',
-                    flexDirection: 'row',
-                }}>
-                {"" + authorData.displayname} 
-                {" ("}
+
+        return (
+            <span style={{
+                alignItems: "left",
+                display: 'flex',
+                flexDirection: 'row',
+            }}>
+                <b>{hostname ? ("u/" + hostname) : ""}</b>
+                {hostname ? <span>&nbsp; &#183; &nbsp;</span> : ""}
+                {" Posted by "}
+                {authorData.displayname ? authorData.displayname : ""} 
+                {authorData.displayname ? "(" : ""}
                 <UserLink data={authorData}/>
-                {")"}
-                </span>
-            )
-        }
-        else {
-            return (
-                <span style={{
-                    alignItems: "left",
-                    display: 'flex',
-                    flexDirection: 'row',
-                }}>
-                
-                <UserLink data={authorData}/>
-                
-                </span>
-            );
-        }
+                {authorData.displayname ? ")" : ""}
+            </span>
+        )
     } 
 }
 
@@ -88,6 +77,7 @@ function PostCard (props) {
     const classes = useStyles();
     const umatiname = props.umatiname;
     const postData = props.data;
+    const hostIndication = props.indicateHost ? umatiname : null;
     const authorData = postData.authorData
 
     const bodySpacing = postData.photo ? "30px" : "0px"
@@ -109,7 +99,7 @@ function PostCard (props) {
                     title={
                         (postData.title)
                     }
-                    subheader={createSubHeader(authorData)}
+                    subheader={createSubHeader(authorData, hostIndication)}
                 />
                 <CardContent>
                     <Box

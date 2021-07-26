@@ -168,6 +168,7 @@ function Account(props) {
 	}
 
 	useLayoutEffect (() => {
+		window.scrollTo(0, 0);
 		setLoading(true);
 		getUserData().then(json => {
 			setLoading(false);

@@ -7,6 +7,7 @@ import Umatis from "./views/Umatis.js";
 import CreateUmati from "./views/CreateUmati.js";
 import CreatePost from "./views/CreatePost.js";
 import UmatiView from "./views/UmatiView.js";
+import Posts from "./views/Posts.js";
 import './App.css';
 
 import { createTheme } from '@material-ui/core/styles';
@@ -120,6 +121,7 @@ class App extends Component {
 					{/* <Home /> */}
 				</Route>
 				<Route path="/login">
+					
 					<Login />
 				</Route>
 				<Route path="/register">
@@ -130,10 +132,12 @@ class App extends Component {
 					path="/@:username"
 				/>
 				</Route>
-				<Route path="/u/:umatiname/submit">
-					<CreatePost
-					path="/u/:umatiname/submit"
-				/>
+				
+				<Route exact path="/umatis">
+					<Umatis />
+				</Route>
+				<Route exact path="/umatis/createUmati">
+					<CreateUmati />
 				</Route>
 
 				<Route path="/u/:umatiname">
@@ -141,11 +145,17 @@ class App extends Component {
 					path="/u/:umatiname"
 				/>
 				</Route>
-				<Route path="/umatis/createUmati">
-					<CreateUmati />
+				<Route path="/u/:umatiname/submit">
+					<CreatePost
+					path="/u/:umatiname/submit"
+				/>
 				</Route>
-				<Route path="/umatis">
-					<Umatis />
+				
+
+				<Route exact path="/posts">
+					<Posts
+					path="/posts"
+				/>
 				</Route>
 				</Switch>
 			

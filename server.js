@@ -613,7 +613,6 @@ app.post("/api/createUmati", [middleware.jsonParser, middleware.authenticateToke
                             }
                             
                                 let insertOperation = await umatisCollection.insertOne(newUmati);
-                                let createPostCollection = await postsDB.createPostCollection(newUmati.umatiId);
                                 res.json(insertOperation).end();
                         }
                     }
@@ -1004,8 +1003,6 @@ app.post("/api/createPost/:umatiname", [middleware.jsonParser, middleware.authen
 
 
                             let insertOperation = await allPostsCollection.insertOne(newPost);
-                            let targetUmatiPostCollection = await postsDB.collection(newPost.hostUmati.toString());
-                            let auxInsertOperation = await targetUmatiPostCollection.insertOne(newPost);
                             res.json(newPost).end();
                         }
                         else {
@@ -1013,6 +1010,84 @@ app.post("/api/createPost/:umatiname", [middleware.jsonParser, middleware.authen
                         }
                    
                 }
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req) {
+        console.log("fetching posts");
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
+
+
+                (async ()=>{
+                    let queryStuff = {
+                        "pageNum": 0,
+                        "limit": 25
+                    }
+
+                    if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
+                        queryStuff.pageNum = parseInt(req.query.page);
+                    }
+
+                    if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
+                        queryStuff.limit = parseInt(req.query.limit);
+                    }
+                    
+                    var postsStream = []
+
+                    let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
+                    
+                    const postsCounter = await postsDB.collection("counter");
+                    var increment = await postsCounter.findOne({_id: "postsCounter" });
+                    var lastPostId = increment.sequence_value;
+                    var maxPostId = lastPostId - startingCount;
+
+                    let cursor = await allPostsCollection.find({ incrementId: { $lte: maxPostId} })
+                    .sort({incrementId:-1})
+                    // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
+                    .limit(queryStuff.limit)
+                    for await (let post of cursor) {
+                        let targetUmati = await umatisCollection.findOne({umatiId: post.hostUmati})
+                        await usersCollection.findOne({userId: post.author})
+                        .then(authorData => {
+                            if (authorData) {
+                                if (!adminMode) {
+                                    delete authorData.email;
+                                    delete authorData.password;
+                                    delete authorData._id;
+                                }
+                                post.authorData = authorData;
+                                post.hostUmatiname = targetUmati.umatiname;
+                                postsStream.push(post);
+                            }
+                        })
+                        .catch(e => {
+                            console.error(e);
+                        })
+                    }
+                    res.json(postsStream).end();
                 })();
             });
         }
@@ -1067,10 +1142,7 @@ app.get("/api/fetchPosts/umati/:umatiId", [middleware.jsonParser, middleware.aut
                     var lastPostId = increment.sequence_value;
                     var maxPostId = lastPostId - startingCount;
 
-                    console.log(req.params.umatiId);
-                    let targetUmatiPostCollection = await postsDB.collection(req.params.umatiId.toString());
-
-                    let cursor = await targetUmatiPostCollection.find({ incrementId: { $lte: maxPostId} })
+                    let cursor = await allPostsCollection.find({ hostUmati: parseInt(req.params.umatiId), incrementId: { $lte: maxPostId} })
                     .sort({incrementId:-1})
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
                     .limit(queryStuff.limit)
