@@ -19,6 +19,7 @@ import GDSTWoff from "./fonts/light-f591b13f7d-v2.woff";
 import jwt_decode from "jwt-decode";
 import { useCookies } from 'react-cookie';
 
+
 const GDSTransportLight = {
 	fontFamily: "GDS Transport",
 	fontStyle: "normal",
@@ -53,6 +54,10 @@ import {
   Redirect
 } from "react-router-dom";
 
+
+
+
+
 class App extends Component {
 	constructor(props) {
 		super(props);
@@ -62,9 +67,70 @@ class App extends Component {
 			loggedIn: false,
 			tabs: []
 		};
-	  }
+
+		// var thirtymins = new Date(new Date().getTime() + 30 * 60 * 1000);
+		// axios.interceptors.request.use(async (config) => {
+		// 	// const expireAt = localStorage.getItem('expiresAt');
+		// 	// let token = localStorage.getItem('authToken');
+		// 	// if (dayjs(expireAt).diff(dayjs()) < 1) {
+		// 	//   const data = onGetForcedToken();
+		// 	//   token = typeof data === 'string' ? data : await data();
+		// 	// }
+		// 	// // setting updated token
+		// 	// localStorage.setItem('authToken', token);
+		// 	let token = Cookies.get("token");
+		// 	if (!token) {
+		// 		let data = getAccessToken();
+		// 		if (data) {
+		// 			token = data.token;
+		// 		}
+		// 	}
+		// 	Cookies.set("token", token, { sameSite: 'strict', expires: thirtymins });
+		// 	return config;
+		// 	}, (err) => {
+		// 		console.log("error in getting ",err)
+		// });
+
+		// axios.interceptors.response.use(response => {
+
+		// 	if (response.status === 401) {
+
+		// 		// destroy authentication keys
+		// 		Cookies.remove("token", {});
+		// 		Cookies.remove("refreshToken", {});
+		// 	}
+		// 	return response;
+		// });
+	}
+	
 
 	componentDidMount() {
+
+		async function getAccessToken() {
+			let response = await fetch("/api/getAccessToken", {
+				method: "get",
+				headers: {
+					"Accept": "application/json",
+					"Content-Type": "application/json",
+				},
+				credentials: "include"
+			});
+			if (!response.ok) {
+				throw new Error("HTTP error, status = " + response.status);
+			}
+			else {
+				await response.json()
+				.then(function (json) {
+					return json;
+				})
+				.catch(e => {
+					console.error(e);
+					return e;
+				});
+			}
+		}
+		
+
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
 		this.setState(prevState => ({
 			tabs: [...prevState.tabs, <Link key="home" className="navlink" to="/">umati</Link>]

@@ -81,7 +81,12 @@ finally {
 }
 
 function generateAccessToken(userJson) {
-    return jwt.sign(userJson, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
+    return jwt.sign(userJson, process.env.TOKEN_SECRET, { expiresIn: "1800s" }); // 30 minutes
+}
+
+function generateRefreshToken() {
+    const randomString = short.generate()
+    return jwt.sign({id: randomString}, process.env.TOKEN_SECRET, { expiresIn: "1800s" }); // 100 days
 }
 
 const middleware = {
@@ -210,9 +215,65 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
                 
 
                 if (user) {
-                    let isAdmin = user.admin
+                    let refreshToken = generateRefreshToken();
+                    const addTokenOperation = await usersCollection.updateOne({userId: user.userId},
+                        {$set: {refreshToken: refreshToken}}
+                    );
+                    console.log(addTokenOperation);
+                    
+                    let isAdmin = user.admin;
                     const token = generateAccessToken({ username: req.body.username, isAdmin: isAdmin, userId: user.userId });
-                    res.json(token).end();
+                    let tokenResponse = {
+                        token: token,
+                        refreshToken: refreshToken
+                    }
+                    res.json(tokenResponse).end();
+                }
+                else {
+                    res.status(403).end();
+                }
+                
+
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.get("/api/getAccessToken", jsonParser, function (req, res) {
+    if (req) {
+        var user;
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
+
+                (async ()=>{
+                let refreshToken = req.cookies.token;
+                user = await usersCollection.findOne({refreshToken: refreshToken});
+                if (user) {
+                    
+                    const token = generateAccessToken({ username: user.username, isAdmin: adminMode, userId: user.userId });
+                    let tokenResponse = {
+                        token: token
+                    }
+                    res.json(tokenResponse).end();
                 }
                 else {
                     res.status(403).end();
@@ -1080,6 +1141,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                                 }
                                 post.authorData = authorData;
                                 post.hostUmatiname = targetUmati.umatiname;
+                                post.umatiData = targetUmati;
                                 postsStream.push(post);
                             }
                         })
@@ -1143,6 +1205,82 @@ app.get("/api/fetchPosts/umati/:umatiId", [middleware.jsonParser, middleware.aut
                     var maxPostId = lastPostId - startingCount;
 
                     let cursor = await allPostsCollection.find({ hostUmati: parseInt(req.params.umatiId), incrementId: { $lte: maxPostId} })
+                    .sort({incrementId:-1})
+                    // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
+                    .limit(queryStuff.limit)
+                    for await (let post of cursor) {
+                        await usersCollection.findOne({userId: post.author})
+                        .then(authorData => {
+                            if (authorData) {
+                                if (!adminMode) {
+                                    delete authorData.email;
+                                    delete authorData.password;
+                                    delete authorData._id;
+                                }
+                                post.authorData = authorData;
+                                postsStream.push(post);
+                            }
+                        })
+                        .catch(e => {
+                            console.error(e);
+                        })
+                    }
+                    res.json(postsStream).end();
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.get("/api/fetchPosts/user/:userId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req && req.params.userId) {
+        console.log("fetching posts");
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
+
+
+                (async ()=>{
+                    let queryStuff = {
+                        "pageNum": 0,
+                        "limit": 25
+                    }
+
+                    if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
+                        queryStuff.pageNum = parseInt(req.query.page);
+                    }
+
+                    if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
+                        queryStuff.limit = parseInt(req.query.limit);
+                    }
+                    
+                    var postsStream = []
+
+                    let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
+                    
+                    const postsCounter = await postsDB.collection("counter");
+                    var increment = await postsCounter.findOne({_id: "postsCounter" });
+                    var lastPostId = increment.sequence_value;
+                    var maxPostId = lastPostId - startingCount;
+
+                    let cursor = await allPostsCollection.find({ author: parseInt(req.params.userId), incrementId: { $lte: maxPostId} })
                     .sort({incrementId:-1})
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
                     .limit(queryStuff.limit)

@@ -1,6 +1,7 @@
 // Editable.js
 import React, { useEffect, useRef, useState, Component } from "react";
 
+
 // Component accept text, placeholder values and also pass what type of Input - input, textarea so that we can use it for styling accordingly
 const Editable = ({
   text,

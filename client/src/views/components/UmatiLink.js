@@ -43,17 +43,18 @@ const useStyles = makeStyles(theme => ({
 	},
 }));
 
-function UserLink (props) {
+function UmatiLink (props) {
     const classes = useStyles();
     const data = props.data
     return (
-        <Link to={"/@" + data.username} class="user-link">
+        <Link to={"/u/" + data.umatiname} class="umati-link">
             <div className="right-hold flexbox">
-                <Avatar style={{height:24+"px", width:24+"px"}} alt={data.displayname ? data.displayname : data.username} src={data.avatar} />
-                <p>{"@" + data.username}</p>
+                <Avatar variant="rounded" style={{height:24+"px", width:24+"px"}} alt={data.displayname ? data.displayname : data.umatiname} src={data.logo} />
+                <span>&nbsp;</span>
+                <p>{"u/" + data.umatiname}</p>
             </div>
         </Link>
     );
 }
 
-export default UserLink;
+export default UmatiLink;

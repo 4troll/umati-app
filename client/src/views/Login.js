@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -72,6 +73,8 @@ export default function Login() {
 		return username.length > 0 && password.length > 0;
 	}
 
+	var thirtymins = new Date(new Date().getTime() + 30 * 60 * 1000);
+	// var hundreddays = new Date(new Date().getTime() + 100 * 24 * 60 * 60 * 1000);
 	async function postJson(url, body) {
 		let response = await fetch(url, {
 			method: "post",
@@ -88,23 +91,17 @@ export default function Login() {
 		else {
 			await response.json()
 			.then(json => {
-				console.log(json);
-				Cookies.set("token", json, { sameSite: 'strict' });
-				// if (rememberMe) {
-                //     Cookies.set("username", username, { expires: 30 });
-                //     Cookies.set("password", password, { expires: 30 });
-                //     Cookies.set("loggedIn", true, { expires: 30 });
-                // }
-                // else {
-                //     Cookies.set("username", username);
-                //     Cookies.set("password", password);
-                //     Cookies.set("loggedIn", true);
-                // }
-                window.location.href = "/@" + username;
+				let accessToken = json.token;
+				let refreshToken = json.refreshToken;
+				
+				Cookies.set("token", accessToken, { sameSite: 'strict', expires: thirtymins });
+				Cookies.set("refreshToken", refreshToken, { sameSite: 'strict', secure: true, expires: 100});
+				window.location.href = "/@" + username;
+				return json;
 			});
 		}
 	}
-
+	
 	async function handleSubmit(event) {
 		event.preventDefault();
 		var loggedAccount = {
@@ -112,8 +109,9 @@ export default function Login() {
 			"password": password
 		}
 		await postJson("/api/loginAccount", loggedAccount)
-		.then(function (data) {
-			return data;
+		.then(function (json) {
+			
+			return json;
 		})
 		.catch((error) => {
 			return error;
