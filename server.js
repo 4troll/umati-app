@@ -80,6 +80,16 @@ finally {
     client.close();
 }
 
+function cleanUserData (userData,adminMode) { // deletes sensitive data
+    if (!adminMode) {
+        delete userData.email;
+        delete userData.password;
+        delete userData._id;
+    }
+    delete userData.refreshToken;
+    return userData;
+}
+
 function generateAccessToken(userJson) {
     return jwt.sign(userJson, process.env.TOKEN_SECRET, { expiresIn: "1800s" }); // 30 minutes
 }
@@ -315,11 +325,7 @@ app.get("/api/userData/:username", [middleware.jsonParser, middleware.authentica
 
                     user = await usersCollection.findOne({username: username});
                     if (user) {
-                        if (!adminMode) {
-                            delete user.email;
-                            delete user.password;
-                            delete user._id;
-                        }
+                        user = cleanUserData(user,adminMode);
                         res.json(user).end();
                     }
                     else {
@@ -360,11 +366,7 @@ app.get("/api/user/id=:id", [middleware.jsonParser, middleware.authenticateToken
 
                     user = await usersCollection.findOne({userId: id}, {});
                     if (user) {
-                        if (!adminMode) {
-                            delete user.email;
-                            delete user.password;
-                            delete user._id;
-                        }
+                        user = cleanUserData(user,adminMode);
                         res.json(user).end();
                     }
                     else {
@@ -821,11 +823,7 @@ app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticate
                         await usersCollection.findOne({userId: umati.owner})
                         .then(ownerData => {
                             if (ownerData) {
-                                if (!adminMode) {
-                                    delete ownerData.email;
-                                    delete ownerData.password;
-                                    delete ownerData._id;
-                                }
+                                ownerData = cleanUserData(ownerData,adminMode);
                                 umati.ownerData = ownerData;
                                 res.json(umati).end();
                             }
@@ -894,11 +892,7 @@ app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken
                         await usersCollection.findOne({userId: umati.owner})
                         .then(ownerData => {
                             if (ownerData) {
-                                if (!adminMode) {
-                                    delete ownerData.email;
-                                    delete ownerData.password;
-                                    delete ownerData._id;
-                                }
+                                ownerData = cleanUserData(ownerData,adminMode);
                                 umati.ownerData = ownerData;
                                 // console.log(umati);
                                 umatiStream.push(umati);
@@ -1134,11 +1128,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                         await usersCollection.findOne({userId: post.author})
                         .then(authorData => {
                             if (authorData) {
-                                if (!adminMode) {
-                                    delete authorData.email;
-                                    delete authorData.password;
-                                    delete authorData._id;
-                                }
+                                authorData = cleanUserData(authorData,adminMode);
                                 post.authorData = authorData;
                                 post.hostUmatiname = targetUmati.umatiname;
                                 post.umatiData = targetUmati;
@@ -1212,11 +1202,7 @@ app.get("/api/fetchPosts/umati/:umatiId", [middleware.jsonParser, middleware.aut
                         await usersCollection.findOne({userId: post.author})
                         .then(authorData => {
                             if (authorData) {
-                                if (!adminMode) {
-                                    delete authorData.email;
-                                    delete authorData.password;
-                                    delete authorData._id;
-                                }
+                                authorData = cleanUserData(authorData,adminMode);
                                 post.authorData = authorData;
                                 postsStream.push(post);
                             }
@@ -1258,50 +1244,52 @@ app.get("/api/fetchPosts/user/:userId", [middleware.jsonParser, middleware.authe
 
 
                 (async ()=>{
-                    let queryStuff = {
-                        "pageNum": 0,
-                        "limit": 25
-                    }
+                    let userData = await usersCollection.findOne({userId: post.author});
+                    userData = cleanUserData(userData,adminMode);
 
-                    if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
-                        queryStuff.pageNum = parseInt(req.query.page);
-                    }
+                    if (userData) {
+                        let queryStuff = {
+                            "pageNum": 0,
+                            "limit": 25
+                        }
 
-                    if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
-                        queryStuff.limit = parseInt(req.query.limit);
-                    }
+                        if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
+                            queryStuff.pageNum = parseInt(req.query.page);
+                        }
+
+                        if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
+                            queryStuff.limit = parseInt(req.query.limit);
+                        }
+                        
+                        var postsStream = []
+
+                        let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
+                        
+                        const postsCounter = await postsDB.collection("counter");
+                        var increment = await postsCounter.findOne({_id: "postsCounter" });
+                        var lastPostId = increment.sequence_value;
+                        var maxPostId = lastPostId - startingCount;
+
                     
-                    var postsStream = []
-
-                    let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
                     
-                    const postsCounter = await postsDB.collection("counter");
-                    var increment = await postsCounter.findOne({_id: "postsCounter" });
-                    var lastPostId = increment.sequence_value;
-                    var maxPostId = lastPostId - startingCount;
-
-                    let cursor = await allPostsCollection.find({ author: parseInt(req.params.userId), incrementId: { $lte: maxPostId} })
-                    .sort({incrementId:-1})
-                    // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
-                    .limit(queryStuff.limit)
-                    for await (let post of cursor) {
-                        await usersCollection.findOne({userId: post.author})
-                        .then(authorData => {
-                            if (authorData) {
-                                if (!adminMode) {
-                                    delete authorData.email;
-                                    delete authorData.password;
-                                    delete authorData._id;
-                                }
-                                post.authorData = authorData;
-                                postsStream.push(post);
+                        let cursor = await allPostsCollection.find({ author: parseInt(req.params.userId), incrementId: { $lte: maxPostId} })
+                        .sort({incrementId:-1})
+                        // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
+                        .limit(queryStuff.limit)
+                        for await (let post of cursor) {
+                            let targetUmati = await umatisCollection.findOne({umatiId: post.hostUmati});
+                            post.authorData = authorData;
+                            if (targetUmati) {
+                                post.hostUmatiname = targetUmati.umatiname;
+                                post.umatiData = targetUmati;
                             }
-                        })
-                        .catch(e => {
-                            console.error(e);
-                        })
+                            postsStream.push(post);
+                        }
+                        res.json(postsStream).end();
                     }
-                    res.json(postsStream).end();
+                    else {
+                        res.status(404).end();
+                    }
                 })();
             });
         }

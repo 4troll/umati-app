@@ -95,7 +95,8 @@ export default function Login() {
 				let refreshToken = json.refreshToken;
 				
 				Cookies.set("token", accessToken, { sameSite: 'strict', expires: thirtymins });
-				Cookies.set("refreshToken", refreshToken, { sameSite: 'strict', secure: true, expires: 100});
+				// Cookies.set("refreshToken", refreshToken, { sameSite: 'strict', secure: true, expires: 100});
+				localStorage.setItem("refreshToken", refreshToken);
 				window.location.href = "/@" + username;
 				return json;
 			});
