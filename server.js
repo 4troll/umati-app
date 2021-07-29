@@ -17,6 +17,7 @@ const sharp = require("sharp"); // img processing
 const app = express();
 const port = process.env.PORT || 5000;
 
+
 var cookies = require("cookie-parser");
 app.use(cookies());
 app.use(cors());
@@ -260,7 +261,7 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
 });
 
 app.get("/api/getAccessToken", jsonParser, function (req, res) {
-    if (req) {
+    if (req) {  
         var user;
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -275,18 +276,33 @@ app.get("/api/getAccessToken", jsonParser, function (req, res) {
                 }
 
                 (async ()=>{
-                let refreshToken = req.cookies.token;
-                user = await usersCollection.findOne({refreshToken: refreshToken});
-                if (user) {
-                    
-                    const token = generateAccessToken({ username: user.username, isAdmin: adminMode, userId: user.userId });
-                    let tokenResponse = {
-                        token: token
-                    }
-                    res.json(tokenResponse).end();
+                let refreshToken = req.cookies.refreshToken;
+                if (refreshToken) {
+                    jwt.verify(refreshToken, process.env.TOKEN_SECRET, async function (err, decoded) {
+                        if (err) {
+                            console.log("Unauthorized");
+                            res.status(401).end(); // unauthorized
+                        }
+                        else {
+                            user = await usersCollection.findOne({refreshToken: refreshToken});
+                            console.log("Looking for user");
+                            if (user) {
+                                const token = generateAccessToken({ username: user.username, isAdmin: adminMode, userId: user.userId });
+                                let tokenResponse = {
+                                    token: token
+                                }
+                                console.log(tokenResponse);
+                                res.json(tokenResponse).end();
+                            }
+                            else {
+                                res.status(401).end();
+                            }
+                        }
+                        return;
+                    });
                 }
                 else {
-                    res.status(403).end();
+                    res.status(403).end(); // no refresh token found
                 }
                 
 

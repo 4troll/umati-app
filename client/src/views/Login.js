@@ -18,6 +18,10 @@ import IconButton from '@material-ui/core/IconButton';
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
+import Cookies from 'universal-cookie';
+ 
+const cookies = new Cookies();
+
 function Copyright() {
 return (
 	<Typography variant="body2" color="textSecondary" align="center">
@@ -74,7 +78,7 @@ export default function Login() {
 	}
 
 	var thirtymins = new Date(new Date().getTime() + 30 * 60 * 1000);
-	// var hundreddays = new Date(new Date().getTime() + 100 * 24 * 60 * 60 * 1000);
+	var hundreddays = new Date(new Date().getTime() + 100 * 24 * 60 * 60 * 1000);
 	async function postJson(url, body) {
 		let response = await fetch(url, {
 			method: "post",
@@ -90,14 +94,13 @@ export default function Login() {
 		}
 		else {
 			await response.json()
-			.then(json => {
+			.then(function (json) {
 				let accessToken = json.token;
 				let refreshToken = json.refreshToken;
-				
-				Cookies.set("token", accessToken, { sameSite: 'strict', expires: thirtymins });
-				// Cookies.set("refreshToken", refreshToken, { sameSite: 'strict', secure: true, expires: 100});
-				localStorage.setItem("refreshToken", refreshToken);
 				window.location.href = "/@" + username;
+				cookies.set("token", accessToken, { sameSite: 'strict', secure: true, expires: thirtymins });
+				cookies.set("refreshToken", refreshToken, { sameSite: 'strict', secure: true, expires: hundreddays});
+				
 				return json;
 			});
 		}
@@ -111,7 +114,6 @@ export default function Login() {
 		}
 		await postJson("/api/loginAccount", loggedAccount)
 		.then(function (json) {
-			
 			return json;
 		})
 		.catch((error) => {
@@ -170,6 +172,7 @@ export default function Login() {
 							onClick={handleClickShowPassword}
 							onMouseDown={handleMouseDownPassword}
 							edge="end"
+							
 						  >
 							{showPassword ? <Visibility /> : <VisibilityOff />}
 						  </IconButton>

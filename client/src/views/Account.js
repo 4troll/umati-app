@@ -337,6 +337,13 @@ function Account(props) {
 	   inputFile.current.click();
 	};
 
+	function createUserTitle() {
+		let title = userDat.displayname ? userDat.displayname : "@" + userDat.username;
+		return (
+			<span>{title}{userDat.admin ? <span style={{color:"#ffaa00", marginLeft:"10px"}}>Umati Administrator</span> : ""}</span>
+		)
+	}
+
 	return (
 		<Fragment>
 		<Box
@@ -371,7 +378,7 @@ function Account(props) {
 								loading ? (
 									<Skeleton animation="wave" height={10} width={160} style={{ marginBottom: 6 }} />
 								) : (
-									(userDat.displayname ? userDat.displayname : "@" + userDat.username)
+									createUserTitle()
 								)
 								}
 								subheader={loading ? <Skeleton animation="wave" height={10} width={80} /> : (userDat.displayname ? ("@" + userDat.username) : "")}

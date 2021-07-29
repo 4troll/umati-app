@@ -54,7 +54,9 @@ import {
   Redirect
 } from "react-router-dom";
 
-
+import Cookies from 'universal-cookie';
+ 
+const cookies = new Cookies();
 
 
 
@@ -63,7 +65,7 @@ class App extends Component {
 		super(props);
 		
 		this.state = {
-			token: Cookies.get("token"),
+			token: cookies.get("token"),
 			loggedIn: false,
 			tabs: []
 		};
@@ -105,30 +107,6 @@ class App extends Component {
 	
 
 	componentDidMount() {
-
-		async function getAccessToken() {
-			let response = await fetch("/api/getAccessToken", {
-				method: "get",
-				headers: {
-					"Accept": "application/json",
-					"Content-Type": "application/json",
-				},
-				credentials: "include"
-			});
-			if (!response.ok) {
-				throw new Error("HTTP error, status = " + response.status);
-			}
-			else {
-				await response.json()
-				.then(function (json) {
-					return json;
-				})
-				.catch(e => {
-					console.error(e);
-					return e;
-				});
-			}
-		}
 		
 
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
@@ -156,9 +134,59 @@ class App extends Component {
 		}));
 	}
 
+	async checkAuth() {
+		const token = cookies.get("token");
+		const refreshToken = cookies.get("refreshToken");
+		if (!token || !refreshToken) {
+			return false;
+		}
+	  
+		try {
+			const { exp } = jwt_decode(refreshToken);
+	  
+			if (exp < new Date().getTime() / 1000) {
+				return false;
+			}
+		} 
+		catch (e) {
+			return false;
+		}
 
+		await fetch("/api/getAccessToken", {
+			method: "get",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+			}
+		})
+		.then(function (json) {
+			if (json.token) {
+				console.log(json);
+				token = json.token;
+				cookies.set("token", token, { sameSite: 'strict', secure: true, expires: thirtymins });
+			}
+		})
+		.catch(e => {   
+			console.error(e);
+			return false;
+		});
+	  
+		return true;
+	};
+	
 	render() {
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
+		const AuthRoute = (Component, ...rest) => {
+			return (
+			<Route
+				{...rest}
+				render={props =>
+				this.checkAuth()
+					? <Component {...props} />
+					: <Redirect to={{ pathname: "/login" }} />}
+			/>
+		)
+		}
 		return (
 			<ThemeProvider theme={theme}>
 			<Router>
@@ -223,6 +251,7 @@ class App extends Component {
 					path="/posts"
 				/>
 				</Route>
+				
 				</Switch>
 			
 			</Router>
