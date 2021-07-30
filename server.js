@@ -97,7 +97,7 @@ function generateAccessToken(userJson) {
 
 function generateRefreshToken() {
     const randomString = short.generate()
-    return jwt.sign({id: randomString}, process.env.TOKEN_SECRET, { expiresIn: "1800s" }); // 100 days
+    return jwt.sign({id: randomString}, process.env.TOKEN_SECRET, { expiresIn: "8640000s" }); // 100 days
 }
 
 const middleware = {
@@ -268,13 +268,6 @@ app.get("/api/getAccessToken", jsonParser, function (req, res) {
             client.connect( (err,db) => {
                 if (err) throw err;
 
-                var tokenData;
-                var adminMode;
-                if (req.decoded) {
-                    var tokenData = req.decoded
-                    var adminMode = tokenData.isAdmin;
-                }
-
                 (async ()=>{
                 let refreshToken = req.cookies.refreshToken;
                 if (refreshToken) {
@@ -287,7 +280,7 @@ app.get("/api/getAccessToken", jsonParser, function (req, res) {
                             user = await usersCollection.findOne({refreshToken: refreshToken});
                             console.log("Looking for user");
                             if (user) {
-                                const token = generateAccessToken({ username: user.username, isAdmin: adminMode, userId: user.userId });
+                                const token = generateAccessToken({ username: user.username, isAdmin: user.admin, userId: user.userId });
                                 let tokenResponse = {
                                     token: token
                                 }
