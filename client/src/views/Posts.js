@@ -126,29 +126,35 @@ function Posts(props) {
     useLayoutEffect (() => {
 		// const cookieDat = token.token ? jwt_decode(token.token) : null ;
 		async function getPostsData () {
-			console.log("initiating post fetch");
-            let response = await fetch("/api/fetchPosts" + window.location.search, {
-                method: "get",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                },
-                credentials: "include"
-            });
-            if (!response.ok) {
-                throw new Error("HTTP error, status = " + response.status);
-            }
-            else {
-                await response.json()
-                .then(function (postData) {
-                    setPostsData(postData);
-                    return postData;
-                })
-                .catch(e => {
-                    console.error(e);
-                    return e;
+            try {
+                console.log("initiating post fetch");
+                let response = await fetch("/api/fetchPosts" + window.location.search, {
+                    method: "get",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include"
                 });
+                if (!response.ok) {
+                    throw new Error("HTTP error, status = " + response.status);
+                }
+                else {
+                    await response.json()
+                    .then(function (postData) {
+                        setPostsData(postData);
+                        return postData;
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        return e;
+                    });
+                }
             }
+            catch(e) {
+                console.error(e);
+            }
+			
 		}
 
 		setLoading(true);

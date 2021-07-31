@@ -29,6 +29,10 @@ import validator from "validator";
 import jwt_decode from "jwt-decode";
 import { useCookies } from 'react-cookie';
 
+import Cookies from 'universal-cookie';
+ 
+const cookies = new Cookies();
+
 const useStyles = makeStyles(theme => ({
 	root: {
 	  minWidth: 275,
@@ -161,9 +165,8 @@ function Account(props) {
 	}
 
 	function onLogout() {
-		// Cookies.set("username", "");
-		// Cookies.set("password", "");
-		// Cookies.set("loggedIn", false);
+		cookies.remove("token",{ sameSite: 'strict', secure: true});
+		cookies.remove("refreshToken",  { sameSite: 'strict', secure: true});
 		window.location.href = "/login";
 	}
 

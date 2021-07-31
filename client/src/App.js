@@ -111,7 +111,12 @@ class App extends Component {
 
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
 		this.setState(prevState => ({
-			tabs: [...prevState.tabs, <Link key="home" className="navlink" to="/">umati</Link>]
+			tabs: [...prevState.tabs, <Link key="home" className="navlink home" to="/">
+				<div className="right-hold flexbox" >
+					<img style={{width:"32px",height:"32px", marginRight:"8px"}} src="/umatiAbstractNavbar.svg"/>
+					umati
+				</div>
+				</Link>]
 		}));
 		if (cookieDat) { // if logged in
 			this.setState({ loggedIn : true })
