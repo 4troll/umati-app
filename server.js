@@ -97,7 +97,7 @@ function generateAccessToken(userJson) {
 
 function generateRefreshToken() {
     const randomString = short.generate()
-    return jwt.sign({id: randomString}, process.env.TOKEN_SECRET, { expiresIn: "8640000s" }); // 100 days
+    return jwt.sign({id: randomString}, process.env.TOKEN_REFRESH_SECRET, { expiresIn: "8640000s" }); // 100 days
 }
 
 const middleware = {
