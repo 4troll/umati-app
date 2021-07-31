@@ -271,7 +271,7 @@ app.get("/api/getAccessToken", jsonParser, function (req, res) {
                 (async ()=>{
                 let refreshToken = req.cookies.refreshToken;
                 if (refreshToken) {
-                    jwt.verify(refreshToken, process.env.TOKEN_SECRET, async function (err, decoded) {
+                    jwt.verify(refreshToken, process.env.TOKEN_REFRESH_SECRET, async function (err, decoded) {
                         if (err) {
                             console.log("Unauthorized");
                             res.status(401).end(); // unauthorized
