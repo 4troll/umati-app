@@ -177,6 +177,7 @@ function Umatis(props) {
                 py: 3
             }}>
 			<Container maxWidth="lg">
+            <h1>Umatis</h1> 
             { loading ? loadCards : 
             (umatiData.map(function (umati,i) {
                 return (

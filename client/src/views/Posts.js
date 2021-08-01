@@ -179,6 +179,7 @@ function Posts(props) {
 			}}
 			>
 				<Container maxWidth="lg">
+                    <h1>Posts</h1> 
                     <div key="posts" className="PostsView" style={{marginTop: "30px"}}>
                     { loading ? loadCards : 
                         (postsData.map(function (post,i) {

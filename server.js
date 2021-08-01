@@ -1253,7 +1253,7 @@ app.get("/api/fetchPosts/user/:userId", [middleware.jsonParser, middleware.authe
 
 
                 (async ()=>{
-                    let userData = await usersCollection.findOne({userId: post.author});
+                    let userData = await usersCollection.findOne({userId: parseInt(req.params.userId)});
                     userData = cleanUserData(userData,adminMode);
 
                     if (userData) {
@@ -1287,7 +1287,7 @@ app.get("/api/fetchPosts/user/:userId", [middleware.jsonParser, middleware.authe
                         .limit(queryStuff.limit)
                         for await (let post of cursor) {
                             let targetUmati = await umatisCollection.findOne({umatiId: post.hostUmati});
-                            post.authorData = authorData;
+                            post.authorData = userData;
                             if (targetUmati) {
                                 post.hostUmatiname = targetUmati.umatiname;
                                 post.umatiData = targetUmati;

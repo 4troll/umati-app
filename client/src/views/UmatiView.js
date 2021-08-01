@@ -426,7 +426,7 @@ function UmatiView(props) {
 						
 					</div>
 			}
-
+			<h1>Posts</h1> 
 			<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
 			{ loading ? loadCards : 
 				(postsData.map(function (post,i) {
@@ -447,7 +447,7 @@ function UmatiView(props) {
 			direction="column"
 			alignItems="center"
 			justify="center"
-			style={{ minHeight: '100vh' }}
+			// style={{ minHeight: '100vh' }}
 			>
 				<Grid item xs={3}>
 					<Modal

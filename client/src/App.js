@@ -122,7 +122,7 @@ class App extends Component {
 			this.setState({ loggedIn : true })
 			var username = cookieDat.username; // username
 			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link className="navlink" key="account" to={"/@" + username}>@{username}</Link>]
+				tabs: [...prevState.tabs, <Link className="navlink" key="account" to={"/@" + username + "?self"}>@{username}</Link>]
 			}));
 		}
 		else {
@@ -181,17 +181,6 @@ class App extends Component {
 	
 	render() {
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
-		const AuthRoute = (Component, ...rest) => {
-			return (
-			<Route
-				{...rest}
-				render={props =>
-				this.checkAuth()
-					? <Component {...props} />
-					: <Redirect to={{ pathname: "/login" }} />}
-			/>
-		)
-		}
 		return (
 			<ThemeProvider theme={theme}>
 			<Router>
@@ -213,7 +202,7 @@ class App extends Component {
 								return (<Redirect to="/login" />);
 							}
 							else {
-								return (<Redirect to={"/@" + cookieDat.username} />);
+								return (<Redirect to={"/@" + cookieDat.username + "?self"} />);
 							}
 						}
 					}
@@ -226,6 +215,7 @@ class App extends Component {
 				<Route path="/register">
 					<Register />
 				</Route>
+
 				<Route path="/@:username">
 					<Account 
 					path="/@:username"

@@ -1,6 +1,6 @@
 import React, { useEffect,useLayoutEffect, useRef, useState, Component, Fragment } from "react";
 
-import {useParams} from "react-router-dom";
+import {useParams, useHistory, useLocation} from "react-router-dom";
 import Editable from "./components/Editable";
 
 import {
@@ -30,6 +30,8 @@ import jwt_decode from "jwt-decode";
 import { useCookies } from 'react-cookie';
 
 import Cookies from 'universal-cookie';
+
+import PostCard from "./components/PostCard.js";
  
 const cookies = new Cookies();
 
@@ -83,7 +85,8 @@ function Account(props) {
 
 	const inputFile = useRef(null);
 	const [selectedAvatarFile,setSelectedAvatarFile] = useState("");
-
+	
+	const [ownsAccount,setOwnsAccount] = useState(false);
 
 	const { username } = useParams();
 	const classes = useStyles();
@@ -91,7 +94,54 @@ function Account(props) {
 	const inputRef = useRef();
   	const [desctext, setDescText] = useState("");
 
+	const [loadCards, setLoadCards] = useState([]);
+	const [postsData, setPostsData] = useState([]);
+
 	const urlCreator = window.URL || window.webkitURL;
+
+	const location = useLocation();
+  	const history = useHistory();
+
+	
+	function loadCard (main) {
+		return (
+			<Card className={classes.root} style={{marginTop: "5px"}}>
+			<CardHeader
+				avatar={
+				main ? 
+				<Skeleton animation="wave" variant="circle" width={64} height={64} />
+				: ""
+			}
+				// action={
+				// loading ? null : (
+				//     <IconButton aria-label="settings" 
+				//     // onClick={handleOpenDropdown}
+				//     >
+				//     <MoreVertIcon />
+				//     </IconButton>
+				// )
+				// }
+				title={<Skeleton animation="wave" height={10} width={160} style={{ marginBottom: 6 }} />}
+				subheader={<Skeleton animation="wave" height={10} width={80} />}
+			/>
+			<CardContent>
+				<Box
+					sx={{
+					alignItems: 'left',
+					display: 'flex',
+					flexDirection: 'column'
+					}}
+				>
+				<React.Fragment>
+					<Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+					<Skeleton animation="wave" height={10} width="80%" />
+				</React.Fragment>
+				</Box>
+			</CardContent>
+		</Card>
+	
+		);
+	}
 
 	async function postJson(url, body) {
 		let response = await fetch(url, {
@@ -119,50 +169,6 @@ function Account(props) {
 		}
 	}
 
-	async function getUserData () {
-		const cookieDat = token.token ? jwt_decode(token.token) : null;
-		console.log(cookieDat);
-		let response = await fetch("/api/userData/" + username, {
-			method: "get",
-			headers: {
-				"Accept": "application/json",
-				"Content-Type": "application/json"
-			},
-			credentials: "include"
-		});
-		if (!response.ok) {
-			throw new Error("HTTP error, status = " + response.status);
-		}
-		else {
-			await response.json()
-			.then(json => {
-				console.log(json);
-				setUserDat(json);
-				
-				if (json.avatar) {
-					console.log(json.avatar);
-					setSelectedAvatarFile(json.avatar);
-				}
-
-				setUsernameField(json.username);
-				setDisplayName(json.displayname);
-
-				if (json.description) {
-					setDescText(userDat.description);
-				}
-				if (cookieDat) {
-					if (username == cookieDat.username || cookieDat.isAdmin) {
-						setEditable(true);
-					}
-				}
-				
-				return json;
-			})
-			.catch(e => {
-				console.error(e);
-			});
-		}
-	}
 
 	function onLogout() {
 		cookies.remove("token",{ sameSite: 'strict', secure: true});
@@ -172,6 +178,103 @@ function Account(props) {
 
 	useLayoutEffect (() => {
 		window.scrollTo(0, 0);
+
+		const queryParams = new URLSearchParams(location.search)
+		if (queryParams.has("self")) {
+			setOwnsAccount(true);
+			queryParams.delete("self");
+			history.replace({
+				search: queryParams.toString(),
+			});
+		}
+
+		async function getUserData () {
+			const cookieDat = token.token ? jwt_decode(token.token) : null;
+			console.log(cookieDat);
+			let response = await fetch("/api/userData/" + username, {
+				method: "get",
+				headers: {
+					"Accept": "application/json",
+					"Content-Type": "application/json"
+				},
+				credentials: "include"
+			});
+			if (!response.ok) {
+				throw new Error("HTTP error, status = " + response.status);
+			}
+			else {
+				await response.json()
+				.then(async (json) => {
+					console.log(json);
+					await getPostsData(json.userId);
+					setUserDat(json);
+					
+					if (json.avatar) {
+						console.log(json.avatar);
+						setSelectedAvatarFile(json.avatar);
+					}
+	
+					setUsernameField(json.username);
+					setDisplayName(json.displayname);
+					
+	
+					if (json.description) {
+						setDescText(userDat.description);
+					}
+					if (cookieDat) {
+						if (username == cookieDat.username || cookieDat.isAdmin) {
+							setEditable(true);
+						}
+					}
+					
+					return json;
+				})
+				.catch(e => {
+					console.error(e);
+					return e;
+				});
+			}
+		}
+
+		async function getPostsData(userId) {
+            try {
+                console.log("initiating post fetch");
+                let response = await fetch("/api/fetchPosts/user/" + userId + window.location.search, {
+                    method: "get",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include"
+                });
+                if (!response.ok) {
+                    throw new Error("HTTP error, status = " + response.status);
+                }
+                else {
+                    await response.json()
+                    .then(function (postData) {
+                        setPostsData(postData);
+                        return postData;
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        return e;
+                    });
+                }
+            }
+            catch(e) {
+                console.error(e);
+            }
+			
+		}
+
+		setLoading(true);
+		let loadlist = []
+        for (let i = 0; i < 10; i++) {
+            loadlist.push(loadCard());
+        }
+        setLoadCards(loadlist);
+
 		setLoading(true);
 		getUserData().then(json => {
 			setLoading(false);
@@ -357,6 +460,7 @@ function Account(props) {
 		}}
 	  	>
 			<Container maxWidth="lg">
+						{(ownsAccount || editable)? <h1>Your account</h1> : ""}
 						<Card className={classes.root}>
 							<CardHeader
 								avatar={
@@ -439,15 +543,28 @@ function Account(props) {
 								</Box>
 							</CardContent>
 						</Card>
+						<h1>Posts</h1> 
+
+						<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
+						{ loading ? loadCards : 
+							(postsData.map(function (post,i) {
+								return (
+									<PostCard key={i} data={post}/>
+								);
+							}))
+						}
+						</div>
 			</Container>
+			
 		</Box>
+		
 		<Grid
 		container
 		spacing={0}
 		direction="column"
 		alignItems="center"
 		justify="center"
-		style={{ minHeight: '100vh' }}
+		// style={{ minHeight: '100vh' }}
 		>
 			<Grid item xs={3}>
 				<Modal

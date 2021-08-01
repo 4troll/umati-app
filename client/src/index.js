@@ -9,7 +9,6 @@ import Cookies from 'universal-cookie';
  
 const cookies = new Cookies();
 
-
 var thirtymins = new Date(new Date().getTime() + 30 * 60 * 1000);
 const constantMock = window.fetch;
 window.fetch = function() {
