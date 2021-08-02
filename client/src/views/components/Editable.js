@@ -28,15 +28,13 @@ const Editable = ({
 		const { key } = event;
 		const keys = ["Escape", "Tab"];
 		const enterKey = "Enter";
-		const allKeys = [...keys, enterKey]; // All keys array
 		
 	/* 
 		- For textarea, check only Escape and Tab key and set the state to false
 		- For everything else, all three keys will set the state to false
 	*/
 		if (
-		(type === "textarea" && keys.indexOf(key) > -1) ||
-		(type !== "textarea" && allKeys.indexOf(key) > -1)
+		(keys.indexOf(key) > -1)
 		) {
 		finishEditing();
 		}

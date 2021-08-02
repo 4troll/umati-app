@@ -37,6 +37,10 @@ import jwt_decode from "jwt-decode";
 import PostCard from "./components/PostCard.js";
 import UserLink from "./components/UserLink.js";
 
+import { MentionsInput, Mention } from "react-mentions";
+
+import MentionSuggestionStyle from "./styles/MentionSuggestionStyle.js";
+
 const useStyles = makeStyles(theme => ({
 	root: {
 	  minWidth: 275,
@@ -95,6 +99,8 @@ function UmatiView(props) {
 	const [loadCards, setLoadCards] = useState([]);
 	const [postsData, setPostsData] = useState([]);
 
+	const [mentionableUsers, setMentionableUsers] = useState([]);
+	const [mentionableUmatis, setMentionableUmatis] = useState([]);
 
 
     function loadCard (main) {
@@ -205,7 +211,7 @@ function UmatiView(props) {
 					setDisplayName(json.displayname);
 	
 					if (json.description) {
-						setDescText(userDat.description);
+						setDescText(json.description);
 					}
 					if (cookieDat && (json.ownerData.username == cookieDat.username || cookieDat.isAdmin)) {
 						setEditable(true);
@@ -244,7 +250,7 @@ function UmatiView(props) {
 				});
 			}
 		}
-
+		findMentionableUmatis()
 		setLoading(true);
 		let loadlist = []
         for (let i = 0; i < 10; i++) {
@@ -356,6 +362,88 @@ function UmatiView(props) {
 		}
 	}
 
+	async function updateDescription() {
+		try {
+			console.log(desctext);
+			var descData = {
+				"description": desctext
+			}
+			let response = await fetch("/api/editDescription/umati/" + umatiname, {
+				method: "post",
+				headers: {
+					"Accept": "application/json",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(descData),
+				credentials: "include"
+			});
+			if (!response.ok) {
+				throw new Error("HTTP error, status = " + response.status);
+			}
+			else {
+				await response.json()
+				.then(json => {
+					console.log(json);
+					return json;
+				})
+				.catch(e => {
+					console.error(e);
+					return e;
+				});
+			}
+		}
+		catch(e) {
+			console.error(e);
+		}
+	}
+
+	const setDesc = e => {
+		setDescText(e.target.value);
+	}
+
+	async function findMentionableUmatis() {
+		let response = await fetch("/api/fetchUmatis", {
+			method: "get",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+			},
+			credentials: "include"
+		});
+		if (!response.ok) {
+			throw new Error("HTTP error, status = " + response.status);
+		}
+		else {
+			await response.json()
+			.then(function (json) {
+				// await json.forEach(async function(currentUmati, index){
+				//     await getUserDataFromId(currentUmati.owner)
+				//     .then(response => {
+				//         currentUmati.ownerData = response;
+				//         umatiDataList.push(currentUmati);
+				//     })
+				//     .catch (e => {
+				//         console.error(e);
+				//     });
+				// });
+				let importantstuff = []
+				for (let i = 0; i < json.length; i++) {
+					importantstuff.push({
+						display: json[i].umatiname,
+						id: json[i].umatiId
+					})
+				}
+				setMentionableUmatis(importantstuff);
+				return json;
+				
+			})
+			.catch(e => {
+				console.error(e);
+				return error;
+			});
+		}
+	}
+
     return (
 		<Fragment>
 			<Box
@@ -419,7 +507,67 @@ function UmatiView(props) {
 									display: 'flex',
 									flexDirection: 'row',
 									}}> Owner: <UserLink data={umatiDat.ownerData}/></span>
-									<p>{umatiDat.description}</p>
+									{loading ? (
+										<React.Fragment>
+											<Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+											<Skeleton animation="wave" height={10} width="80%" />
+										</React.Fragment>
+										) : (
+										<Editable
+											text={desctext || umatiDat.description}
+											placeholder={editable ? "Click me to add a fancy description" : "Welcome to u/" + umatiDat.umatiname + ", one of many Umatis on the social media platform Umati!"}
+											childRef={inputRef}
+											finishEdits={() => updateDescription()}
+											type="input"
+											enabled={editable}
+											style={{whiteSpace: "pre-wrap"}}
+											>
+											<MentionsInput 
+											value={desctext} 
+											onChange={setDesc}
+											style={MentionSuggestionStyle}
+											>
+												<Mention
+												trigger="@"
+												data={mentionableUsers}
+												// renderSuggestion={this.renderUserSuggestion}
+												/>
+												<Mention
+												trigger="u/"
+												data={mentionableUmatis}
+												renderSuggestion={(
+													suggestion,
+													search,
+													highlightedDisplay,
+													index,
+													focused
+												  ) => (
+													<div className={`user ${focused ? "focused" : ""}`}>
+													  {highlightedDisplay}
+													</div>
+												  )}
+												markup="u/[__display__](__id__)"
+												style={{ backgroundColor: "#cee4e5" }}
+												appendSpaceOnAdd={true}
+												
+												/>
+											</MentionsInput>
+											{/* <TextField
+												ref={inputRef}
+												type="text"
+												name="task"
+												placeholder={"Write a fancy description"}
+												multiline={true}
+												fullWidth={true}
+												value={desctext || umatiDat.description}
+												onChange={e => setDescText(e.target.value)}
+												onFocus={e => setDescText(e.target.value)}
+												focused
+												
+												
+											/> */}
+										</Editable>
+									)}		
 								</Box>
 							</CardContent>
 						</Card>

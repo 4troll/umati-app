@@ -54,30 +54,30 @@ const useStyles = makeStyles(theme => ({
 // }
 
 function createSubHeader (authorData,umatiData) {
-    if (authorData.username) {
-        return (
-            <span style={{
-                alignItems: "left",
-                display: 'flex',
-                flexDirection: 'row',
-            }}>
-                <b>{umatiData ? <UmatiLink data={umatiData}/> : ""}</b>
-                {umatiData ? <span>&nbsp; &#183; &nbsp;</span> : ""}
-                {" Posted by "}
-                {authorData.displayname ? authorData.displayname : ""} 
-                {authorData.displayname ? "(" : ""}
-                <UserLink data={authorData}/>
-                {authorData.displayname ? ")" : ""}
-            </span>
-        )
-    } 
+    return (
+        <span style={{
+            alignItems: "left",
+            display: 'flex',
+            flexDirection: 'row',
+        }}>
+            <b>{umatiData ? <UmatiLink data={umatiData}/> : ""}</b>
+            {(umatiData && authorData) ? <span>&nbsp; &#183; &nbsp;</span> : ""}
+            {authorData ? " Posted by " : ""}
+            {(authorData && authorData.displayname) ? authorData.displayname : ""} 
+            {(authorData && authorData.displayname) ? "(" : ""}
+            {authorData ? <UserLink data={authorData}/> : ""}
+            {(authorData && authorData.displayname) ? ")" : ""}
+        </span>
+    )
 }
 
 function PostCard (props) {
     const classes = useStyles();
     const umatiname = props.umatiname;
     const postData = props.data;
+
     const authorData = postData.authorData;
+
     const umatiData = postData.umatiData;
     const hostIndication = props.indicateHost ? umatiData : null;
     

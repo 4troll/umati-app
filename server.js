@@ -396,7 +396,7 @@ app.get("/api/user/id=:id", [middleware.jsonParser, middleware.authenticateToken
     }
 });
 
-app.post("/api/editDescription/:username", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/editDescription/user/:username", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         try {
             var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -795,6 +795,57 @@ app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authe
                         res.status(403).end();
                     }
 
+
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/editDescription/umati/:umatiname", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req) {
+        try {
+            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
+
+                (async ()=>{
+                    console.log(req.decoded);
+                    if (req.decoded) {
+                        let targetUmati = await umatisCollection.findOne({ umatiname: req.params.umatiname});
+                        console.log(req.decoded);
+                        if (targetUmati && (targetUmati.owner = req.decoded.userId || adminMode) ) {
+                            var updateUmati = await umatisCollection.updateOne(
+                                {umatiname: req.params.umatiname},
+                                {$set: {description: req.body.description}}
+                            )
+                            if (updateUmati) {
+                                res.json(updateUmati).end();
+                            }
+                            else {
+                                res.status(403).end();
+                            }
+                        }
+                        else {
+                            res.status(403).end();
+                        }
+                    }
 
                 })();
             });
@@ -1287,7 +1338,6 @@ app.get("/api/fetchPosts/user/:userId", [middleware.jsonParser, middleware.authe
                         .limit(queryStuff.limit)
                         for await (let post of cursor) {
                             let targetUmati = await umatisCollection.findOne({umatiId: post.hostUmati});
-                            post.authorData = userData;
                             if (targetUmati) {
                                 post.hostUmatiname = targetUmati.umatiname;
                                 post.umatiData = targetUmati;

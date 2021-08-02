@@ -87,7 +87,7 @@ class App extends Component {
 		// 			token = data.token;
 		// 		}
 		// 	}
-		// 	Cookies.set("token", token, { sameSite: 'strict', expires: thirtymins });
+		// 	Cookies.set("token", token, { sameSite: 'lax', expires: thirtymins, path: '/'  });
 		// 	return config;
 		// 	}, (err) => {
 		// 		console.log("error in getting ",err)
@@ -168,7 +168,7 @@ class App extends Component {
 			if (json.token) {
 				console.log(json);
 				token = json.token;
-				cookies.set("token", token, { sameSite: 'strict', secure: true, expires: thirtymins });
+				cookies.set("token", token, { sameSite: "lax", secure: true, expires: thirtymins, path: "/" });
 			}
 		})
 		.catch(e => {   

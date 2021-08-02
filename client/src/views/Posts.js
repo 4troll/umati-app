@@ -184,7 +184,7 @@ function Posts(props) {
                     { loading ? loadCards : 
                         (postsData.map(function (post,i) {
                             return (
-                                <PostCard key={i} data={post} umatiname={post.hostUmatiname} indicateHost={true}/>
+                                <PostCard key={i} data={post} umatiname={post.hostUmatiname}/>
                             );
                         }))
                     }

@@ -98,8 +98,8 @@ export default function Login() {
 				let accessToken = json.token;
 				let refreshToken = json.refreshToken;
 				window.location.href = "/@" + username;
-				cookies.set("token", accessToken, { sameSite: 'strict', secure: true, expires: thirtymins });
-				cookies.set("refreshToken", refreshToken, { sameSite: 'strict', secure: true, expires: hundreddays});
+				cookies.set("token", accessToken, { sameSite: "lax", secure: true, expires: thirtymins, path: "/" });
+				cookies.set("refreshToken", refreshToken, { sameSite: "lax", secure: true, expires: hundreddays, path: "/"});
 				
 				return json;
 			});

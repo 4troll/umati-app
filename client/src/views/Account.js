@@ -171,8 +171,8 @@ function Account(props) {
 
 
 	function onLogout() {
-		cookies.remove("token",{ sameSite: 'strict', secure: true});
-		cookies.remove("refreshToken",  { sameSite: 'strict', secure: true});
+		cookies.remove("token",{ sameSite: "lax", secure: true, path: "/"});
+		cookies.remove("refreshToken",  { sameSite: "lax", secure: true, path: "/"});
 		window.location.href = "/login";
 	}
 
@@ -289,7 +289,7 @@ function Account(props) {
 			var descData = {
 				"description": desctext
 			}
-			let response = await fetch("/api/editDescription/" + username, {
+			let response = await fetch("/api/editDescription/user/" + username, {
 				method: "post",
 				headers: {
 					"Accept": "application/json",
@@ -549,7 +549,7 @@ function Account(props) {
 						{ loading ? loadCards : 
 							(postsData.map(function (post,i) {
 								return (
-									<PostCard key={i} data={post}/>
+									<PostCard key={i} data={post} umatiname={post.hostUmatiname} indicateHost={true}/>
 								);
 							}))
 						}

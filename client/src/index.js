@@ -23,7 +23,7 @@ window.fetch = function() {
     
     if (!refreshToken) {
         if (token) {
-            cookies.remove("token",{ sameSite: 'strict', secure: true});
+            cookies.remove("token",{ sameSite: "lax", secure: true, path: "/"});
             window.location.href = "/login";
         }
         return constantMock.apply(self, args);
@@ -33,7 +33,7 @@ window.fetch = function() {
 
     
     // if (token) {
-    //     Cookies.set("token", token, { sameSite: 'strict', expires: thirtymins });
+    //     Cookies.set("token", token, { sameSite: "lax", expires: thirtymins, path: "/" });
     // }
     return constantMock.apply(self, args)
     .then(async function(data) {
@@ -52,7 +52,7 @@ window.fetch = function() {
             .then(function (json) {
                 console.log(json.token);
                 if (json.token) {
-                    cookies.set("token", json.token, { sameSite: 'strict', secure: true, expires: thirtymins });
+                    cookies.set("token", json.token, { sameSite: "lax", secure: true, expires: thirtymins, path: "/" });
                 }
                 return json;
             })
@@ -62,7 +62,6 @@ window.fetch = function() {
             });
             // if status is 401 from token api return empty response to close recursion
             if (response.status === 401) {
-                cookies.set("token", "poo", { sameSite: 'strict', secure: true, expires: thirtymins });
                 return {};
             }
             if (response.status === 404) {
