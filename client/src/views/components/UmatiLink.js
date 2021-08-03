@@ -46,13 +46,18 @@ const useStyles = makeStyles(theme => ({
 function UmatiLink (props) {
     const classes = useStyles();
     const data = props.data
+	const umatiname = props.umatiname || data.umatiname;
+	const umatiId = props.umatiId || data.umatiId;
+	const logo = umatiId ? "/assets/umatiLogo/" + umatiId : "";
     return (
-        <Link to={"/u/" + data.umatiname} class="umati-link">
-            <div className="right-hold flexbox">
-                <Avatar variant="rounded" style={{height:24+"px", width:24+"px"}} alt={data.displayname ? data.displayname : data.umatiname} src={data.logo} />
+        <Link to={"/u/" + umatiname} class="umati-link">
+            <span className="right-hold flexbox">
+                <Avatar variant="rounded" style={{height:24+"px", width:24+"px"}} 
+				// alt={data.displayname ? data.displayname : umatiname} 
+				src={logo} />
                 <span>&nbsp;</span>
-                <p>{"u/" + data.umatiname}</p>
-            </div>
+                <span>{"u/" + umatiname}</span>
+            </span>
         </Link>
     );
 }

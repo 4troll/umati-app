@@ -17,6 +17,9 @@ const sharp = require("sharp"); // img processing
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Ratelimiters
+var RateLimit = require("express-rate-limit");
+var MongoStore = require("rate-limit-mongo");
 
 var cookies = require("cookie-parser");
 app.use(cookies());
@@ -25,6 +28,8 @@ app.use(express.json({limit: '10mb', extended: true}));
 app.use(express.urlencoded({
     extended: true
 }));
+
+app.set('trust proxy', 1);
 
 var jsonParser = bodyParser.json();
 
@@ -40,7 +45,7 @@ app.use(function(req, res, next) {
   });
 
 
-var uri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/test";
+var mongoUri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/test";
 
 var usersDB;
 var usersCollection;
@@ -54,7 +59,7 @@ var umatiLogosCollection;
 var postPhotosCollection;
 
 try {
-    var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
     client.connect( (err,db) => {
         if (err) {
             throw err;
@@ -133,7 +138,67 @@ const middleware = {
         }else {
             return next();
         }
-    }
+    },
+    ratelimitAccounts: new RateLimit({ // harshest ratelimit (5 accounts per hour)
+        store: new MongoStore({
+            uri: mongoUri,
+            collectionName: "accountRateLimit",
+            //   user: "mustafaA",
+            //   password: 'mongopassword',
+            // should match windowMs
+            expireTimeMs: 60 * 60 * 1000,
+            errorHandler: console.error.bind(null, "rate-limit-mongo")
+            // see Configuration section for more options and details
+        }),
+        max: 5,
+        // should match expireTimeMs
+        windowMs: 60 * 60 * 1000
+    }),
+    ratelimitLogin: new RateLimit({ // 30 logins in 5m
+        store: new MongoStore({
+            uri: mongoUri,
+            collectionName: "loginRateLimit",
+            //   user: "mustafaA",
+            //   password: 'mongopassword',
+            // should match windowMs
+            expireTimeMs: 5 * 60 * 1000,
+            errorHandler: console.error.bind(null, "rate-limit-mongo")
+            // see Configuration section for more options and details
+        }),
+        max: 30,
+        // should match expireTimeMs
+        windowMs: 5 * 60 * 1000
+    }),
+    ratelimitAccountEdit: new RateLimit({ // 30 edits in 15m
+        store: new MongoStore({
+            uri: mongoUri,
+            collectionName: "accountEditRateLimit",
+            //   user: "mustafaA",
+            //   password: 'mongopassword',
+            // should match windowMs
+            expireTimeMs: 15 * 60 * 1000,
+            errorHandler: console.error.bind(null, "rate-limit-mongo")
+            // see Configuration section for more options and details
+        }),
+        max: 30,
+        // should match expireTimeMs
+        windowMs: 15 * 60 * 1000
+    }),
+    ratelimitPosts: new RateLimit({ // 10 posts in 5m
+        store: new MongoStore({
+            uri: mongoUri,
+            collectionName: "postsRateLimit",
+            //   user: "mustafaA",
+            //   password: 'mongopassword',
+            // should match windowMs
+            expireTimeMs: 5 * 60 * 1000,
+            errorHandler: console.error.bind(null, "rate-limit-mongo")
+            // see Configuration section for more options and details
+        }),
+        max: 10,
+        // should match expireTimeMs
+        windowMs: 5 * 60 * 1000
+    }),
 }
 
 function checkUsername(targetUsername) {
@@ -152,12 +217,12 @@ function checkUsername(targetUsername) {
 
 // Account Requests
 
-app.post("/api/registerAccount", jsonParser, function (req, res) {
+app.post("/api/registerAccount", [middleware.ratelimitAccounts, jsonParser], function (req, res) {
     if (req) {
         var newAccount;
         var taken;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -168,7 +233,7 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
                     var increment = await usersCounter.findOneAndUpdate(
                         {_id: "userCounter" },
                         {$inc:{sequence_value:1}},
-                        { returnOriginal: false }
+                        {}
                     );  
 
 
@@ -206,11 +271,11 @@ app.post("/api/registerAccount", jsonParser, function (req, res) {
     }
 });
 
-app.post("/api/loginAccount", jsonParser, function (req, res) {
+app.post("/api/loginAccount", [middleware.ratelimitLogin, jsonParser], function (req, res) {
     if (req) {
         var user;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -260,11 +325,11 @@ app.post("/api/loginAccount", jsonParser, function (req, res) {
     }
 });
 
-app.get("/api/getAccessToken", jsonParser, function (req, res) {
+app.get("/api/getAccessToken", [middleware.ratelimitLogin, jsonParser], function (req, res) {
     if (req) {  
         var user;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -319,7 +384,7 @@ app.get("/api/userData/:username", [middleware.jsonParser, middleware.authentica
         var user;
         var username = req.params.username;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -360,7 +425,7 @@ app.get("/api/user/id=:id", [middleware.jsonParser, middleware.authenticateToken
         var user;
         var id = parseInt(req.params.id);
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -396,10 +461,67 @@ app.get("/api/user/id=:id", [middleware.jsonParser, middleware.authenticateToken
     }
 });
 
-app.post("/api/editDescription/user/:username", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.get("/api/fetchUsers", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                
+                var tokenData;
+                var adminMode;
+                if (req.decoded) {
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                }
+                
+
+                (async ()=>{
+                    let queryStuff = {
+                        "pageNum": 0,
+                        "limit": 25
+                    }
+
+                    if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
+                        queryStuff.pageNum = parseInt(req.query.page);
+                    }
+
+                    if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
+                        queryStuff.limit = parseInt(req.query.limit);
+                    }
+                    
+                    var userStream = []
+
+                    let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
+
+                    let cursor = await usersCollection.find({ userId: { $gt: startingCount} })
+                    .sort({userId:1})
+                    // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
+                    .limit( queryStuff.limit )
+                    for await (let user of cursor) {
+                        user = cleanUserData(user,adminMode);
+                        userStream.push(user);
+                    }
+                    res.json(userStream).end();
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/editDescription/user/:username", [middleware.ratelimitAccountEdit, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req) {
+        try {
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 
@@ -443,10 +565,10 @@ app.post("/api/editDescription/user/:username", [middleware.jsonParser, middlewa
     }
 });
 
-app.post("/api/updateNameAvatar/:username", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/updateNameAvatar/:username", [middleware.ratelimitAccountEdit, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && checkUsername(req.body.username)) {
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -557,7 +679,7 @@ app.post("/api/usernameLookup", [middleware.jsonParser, middleware.authenticateT
         var lookup;
         var user;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 var body = req.body;
@@ -592,7 +714,7 @@ app.get("/assets/profilePicture/:id", [middleware.jsonParser, middleware.authent
     if (req) {
         const id = parseInt(req.params.id);
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 (async ()=>{
@@ -623,12 +745,12 @@ app.get("/assets/profilePicture/:id", [middleware.jsonParser, middleware.authent
 
 // Umati (Group) Requests
 
-app.post("/api/createUmati", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/createUmati", [middleware.ratelimitAccounts, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         var newUmati;
         var taken;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -643,7 +765,7 @@ app.post("/api/createUmati", [middleware.jsonParser, middleware.authenticateToke
                             var increment = await usersCounter.findOneAndUpdate(
                                 {_id: "umatisCounter" },
                                 {$inc:{sequence_value:1}},
-                                { returnOriginal: false }
+                                { }
                             );
 
                             if (body.logo && !validator.isURL(body.logo,isUrlOptions)) {
@@ -712,10 +834,10 @@ app.post("/api/createUmati", [middleware.jsonParser, middleware.authenticateToke
     }
 });
 
-app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/updateUmati/:umatiname", [middleware.ratelimitAccountEdit, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && checkUsername(req.body.umatiname)) {
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 
@@ -811,10 +933,10 @@ app.post("/api/updateUmati/:umatiname", [middleware.jsonParser, middleware.authe
     }
 });
 
-app.post("/api/editDescription/umati/:umatiname", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/editDescription/umati/:umatiname", [middleware.ratelimitAccountEdit, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 
@@ -868,7 +990,7 @@ app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticate
         var umatiname = req.params.umati;
         var umati;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 (async ()=>{
@@ -914,7 +1036,7 @@ app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticate
 app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 
@@ -984,7 +1106,7 @@ app.post("/api/umatiLookup", [middleware.jsonParser, middleware.authenticateToke
     if (req && checkUsername(req.body.umatiname)) {
         var umati;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 var body = req.body;
@@ -1016,7 +1138,7 @@ app.get("/assets/umatiLogo/:id", [middleware.jsonParser, middleware.authenticate
     if (req) {
         const id = parseInt(req.params.id);
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 (async ()=>{
@@ -1047,12 +1169,12 @@ app.get("/assets/umatiLogo/:id", [middleware.jsonParser, middleware.authenticate
 
 // Post requests
 
-app.post("/api/createPost/:umatiname", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && req.params.umatiname) {
         var hostUmatiname = req.params.umatiname;
         var newPost;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
 
@@ -1099,7 +1221,7 @@ app.post("/api/createPost/:umatiname", [middleware.jsonParser, middleware.authen
                             var increment = await postsCounter.findOneAndUpdate(
                                 {_id: "postsCounter" },
                                 {$inc:{sequence_value:1}},
-                                { returnOriginal: false }
+                                {}
                             );  
 
                             newPost = {
@@ -1144,7 +1266,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
     if (req) {
         console.log("fetching posts");
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 
@@ -1219,7 +1341,7 @@ app.get("/api/fetchPosts/umati/:umatiId", [middleware.jsonParser, middleware.aut
     if (req && req.params.umatiId) {
         console.log("fetching posts");
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 
@@ -1291,7 +1413,7 @@ app.get("/api/fetchPosts/user/:userId", [middleware.jsonParser, middleware.authe
     if (req && req.params.userId) {
         console.log("fetching posts");
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 
@@ -1368,7 +1490,7 @@ app.get("/assets/postPhoto/:id", [middleware.jsonParser, middleware.authenticate
     if (req) {
         const id = req.params.id;
         try {
-            var client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
                 (async ()=>{

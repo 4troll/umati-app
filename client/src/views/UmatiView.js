@@ -250,7 +250,8 @@ function UmatiView(props) {
 				});
 			}
 		}
-		findMentionableUmatis()
+		findMentionableUmatis();
+		findMentionableUsers();
 		setLoading(true);
 		let loadlist = []
         for (let i = 0; i < 10; i++) {
@@ -444,6 +445,49 @@ function UmatiView(props) {
 		}
 	}
 
+	async function findMentionableUsers() {
+		let response = await fetch("/api/fetchUsers", {
+			method: "get",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+			},
+			credentials: "include"
+		});
+		if (!response.ok) {
+			throw new Error("HTTP error, status = " + response.status);
+		}
+		else {
+			await response.json()
+			.then(function (json) {
+				// await json.forEach(async function(currentUmati, index){
+				//     await getUserDataFromId(currentUmati.owner)
+				//     .then(response => {
+				//         currentUmati.ownerData = response;
+				//         umatiDataList.push(currentUmati);
+				//     })
+				//     .catch (e => {
+				//         console.error(e);
+				//     });
+				// });
+				let importantstuff = []
+				for (let i = 0; i < json.length; i++) {
+					importantstuff.push({
+						display: json[i].username,
+						id: json[i].userId
+					})
+				}
+				setMentionableUsers(importantstuff);
+				return json;
+				
+			})
+			.catch(e => {
+				console.error(e);
+				return error;
+			});
+		}
+	}
+
     return (
 		<Fragment>
 			<Box
@@ -526,12 +570,11 @@ function UmatiView(props) {
 											value={desctext} 
 											onChange={setDesc}
 											style={MentionSuggestionStyle}
+											multiline
+											ignoreAccents
+											forceSuggestionsAboveCursor={true}
+											allowSuggestionsAboveCursor={true}
 											>
-												<Mention
-												trigger="@"
-												data={mentionableUsers}
-												// renderSuggestion={this.renderUserSuggestion}
-												/>
 												<Mention
 												trigger="u/"
 												data={mentionableUmatis}
@@ -543,12 +586,42 @@ function UmatiView(props) {
 													focused
 												  ) => (
 													<div className={`user ${focused ? "focused" : ""}`}>
+														u/
 													  {highlightedDisplay}
 													</div>
 												  )}
 												markup="u/[__display__](__id__)"
-												style={{ backgroundColor: "#cee4e5" }}
+												style={{ backgroundColor: "#3F50B5", opacity: 0.2}}
 												appendSpaceOnAdd={true}
+												displayTransform={(_, display) => {
+													return `u/${display}`;
+													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
+												}}
+												
+												/>
+
+												<Mention
+												trigger="@"
+												data={mentionableUsers}
+												renderSuggestion={(
+													suggestion,
+													search,
+													highlightedDisplay,
+													index,
+													focused
+												  ) => (
+													<div className={`user ${focused ? "focused" : ""}`}>
+														@
+													  {highlightedDisplay}
+													</div>
+												  )}
+												markup="@[__display__](__id__)"
+												style={{ backgroundColor: "#3F50B5", opacity: 0.2}}
+												appendSpaceOnAdd={true}
+												displayTransform={(_, display) => {
+													return `@${display}`;
+													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
+												}}
 												
 												/>
 											</MentionsInput>

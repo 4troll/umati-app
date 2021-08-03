@@ -10,6 +10,9 @@ import UmatiView from "./views/UmatiView.js";
 import Posts from "./views/Posts.js";
 import './App.css';
 
+import StickyFooter from "./views/components/StickyFooter.js";
+
+
 import { createTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from "@material-ui/core/styles";
 
@@ -18,6 +21,7 @@ import GDSTWoff from "./fonts/light-f591b13f7d-v2.woff";
 
 import jwt_decode from "jwt-decode";
 import { useCookies } from 'react-cookie';
+
 
 
 const GDSTransportLight = {
@@ -61,9 +65,9 @@ const cookies = new Cookies();
 
 
 class App extends Component {
+	
 	constructor(props) {
 		super(props);
-		
 		this.state = {
 			token: cookies.get("token"),
 			loggedIn: false,
@@ -178,6 +182,14 @@ class App extends Component {
 	  
 		return true;
 	};
+
+	reload = ()=>{
+		const current = props.location.pathname;
+		this.props.history.replace(`/reload`);
+			setTimeout(() => {
+				this.props.history.replace(current);
+		});
+	}
 	
 	render() {
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
@@ -216,11 +228,9 @@ class App extends Component {
 					<Register />
 				</Route>
 
-				<Route path="/@:username">
-					<Account 
+				<Route path="/@:username" component={() => (<Account 
 					path="/@:username"
-				/>
-				</Route>
+				/>)}/>
 				
 				<Route exact path="/umatis">
 					<Umatis />
@@ -229,16 +239,19 @@ class App extends Component {
 					<CreateUmati />
 				</Route>
 
-				<Route path="/u/:umatiname">
-					<UmatiView
-					path="/u/:umatiname"
-				/>
-				</Route>
+				
 				<Route path="/u/:umatiname/submit">
 					<CreatePost
 					path="/u/:umatiname/submit"
 				/>
 				</Route>
+
+				<Route path="/u/:umatiname">
+					<UmatiView
+					path="/u/:umatiname"
+				/>
+				</Route>
+				
 				
 
 				<Route exact path="/posts">
@@ -248,7 +261,10 @@ class App extends Component {
 				</Route>
 				
 				</Switch>
-			
+			{/* <div className="footer" style={{backgroundColor:"#808080"}}>
+				
+			</div> */}
+			<StickyFooter/>
 			</Router>
 			</ThemeProvider>
 		);

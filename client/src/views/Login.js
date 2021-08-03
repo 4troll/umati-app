@@ -18,6 +18,8 @@ import IconButton from '@material-ui/core/IconButton';
 import Visibility from '@material-ui/icons/Visibility';
 import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
+import ScrollLock, { TouchScrollable } from 'react-scrolllock';
+
 import Cookies from 'universal-cookie';
  
 const cookies = new Cookies();
@@ -72,7 +74,7 @@ export default function Login() {
 	const [password, setPassword] = useState("");
 	const [rememberMe, setRemember] = useState("");
 	const [showPassword,setShow] = useState("");
-  
+	// window.onscroll = function () { window.scrollTo(0, 0); }; // prevent scroll
 	function validateForm() {
 		return username.length > 0 && password.length > 0;
 	}
@@ -130,8 +132,9 @@ export default function Login() {
 	};
 	
 	return (
-		<Grid container component="main" className={classes.root}>
+		<Grid container component="main" style={{height:"100vh"}}>
 		<CssBaseline />
+		<ScrollLock isActive={true} />
 		<Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
 			<div className={classes.paper}>
 			<Avatar className={classes.avatar}>

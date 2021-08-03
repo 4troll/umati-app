@@ -1,6 +1,8 @@
 // Editable.js
 import React, { useEffect, useRef, useState, Component } from "react";
-
+import RSR from "react-string-replace";
+import UmatiLink from "./UmatiLink";
+import UserLink from "./UserLink";
 
 // Component accept text, placeholder values and also pass what type of Input - input, textarea so that we can use it for styling accordingly
 const Editable = ({
@@ -50,7 +52,44 @@ const Editable = ({
 			setEditing(true);
 		}
 	}
-	
+
+	function buildBody() {
+		var returned;
+		if (text) {
+
+			// Umati Mention Replace
+			returned = RSR(text, /[u]\/\[([^\[]+\]\([0-9]*)\)/g, function (match, i) {
+				const nameId = match.split("](");
+				const umatiname = nameId[0];
+				const umatiId = nameId[1];
+				return (
+					<UmatiLink
+					umatiname={umatiname}
+					umatiId={umatiId}/>
+				);
+			});
+
+			// User Mention Replace
+			returned = RSR(returned, /\@\[([^\[]+\]\([0-9]*)\)/g, function (match, i) {
+				const nameId = match.split("](");
+				const username = nameId[0];
+				const userId = nameId[1];
+				return (
+
+					<UserLink
+					username={username}
+					userId={userId}/>
+				);
+			});
+		}
+		else if (placeholder) {
+			const returned = placeholder;
+		}
+		else {
+			const returned = "Editable content";
+		}
+		return returned;
+	}
 	return (
 		<section {...props}>
 		{isEditing ? (
@@ -64,9 +103,9 @@ const Editable = ({
 			<div
 			onClick={click}
 			>
-			<p>
-				{text || placeholder || "Editable content"}
-			</p>
+			<span style={{display: "inline-block"}}>
+				{buildBody()}
+			</span>
 			</div>
 		)}
 		</section>

@@ -21,6 +21,8 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 import validator from "validator";
 import { FormHelperText } from '@material-ui/core';
 
+import ScrollLock, { TouchScrollable } from 'react-scrolllock';
+
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
@@ -74,6 +76,8 @@ export default function Register() {
 	const [taken,setTaken] = useState(false);
 	const [checkingUsername,setCheckingUsername] = useState(false);
 	const [showPassword,setShow] = useState("");
+
+	// window.onscroll = function () { window.scrollTo(0, 0); }; // prevent scroll
 
   
 	function validateForm() {
@@ -214,6 +218,7 @@ export default function Register() {
 return (
 	<Grid container component="main" className={classes.root}>
 	<CssBaseline />
+	<ScrollLock isActive={true} />
 	<Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
 		<div className={classes.paper}>
 		<Avatar className={classes.avatar}>

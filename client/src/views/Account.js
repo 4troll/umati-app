@@ -178,7 +178,7 @@ function Account(props) {
 
 	useLayoutEffect (() => {
 		window.scrollTo(0, 0);
-
+		
 		const queryParams = new URLSearchParams(location.search)
 		if (queryParams.has("self")) {
 			setOwnsAccount(true);

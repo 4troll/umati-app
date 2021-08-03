@@ -1,3 +1,5 @@
+import zIndex from "@material-ui/core/styles/zIndex";
+
 export default {
     control: {
       backgroundColor: "#fff",
@@ -58,7 +60,8 @@ export default {
       list: {
         backgroundColor: "white",
         border: "1px solid rgba(0,0,0,0.15)",
-        fontSize: 18
+        fontSize: 18,
+        zIndex: 10
       },
   
       item: {
@@ -66,7 +69,7 @@ export default {
         borderBottom: "1px solid rgba(0,0,0,0.15)",
   
         "&focused": {
-          backgroundColor: "#cee4e5"
+          backgroundColor: "rgba(63,80,181,0.3)"
         }
       }
     }

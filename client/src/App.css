@@ -104,15 +104,16 @@ div.umatiCardContainer:hover {
 	display:-moz-box;
     display:-ms-flexbox;
 	display:-webkit-flex;
-	display:flex;
+	display:inline-flex;
 }
 
 .right-hold{
 	margin-left:auto;
 	align-items:center;
+    vertical-align: middle;
 }
 
-a.user-link {
+a.user-link, a.umati-link {
     margin-left:4px;
 	align-items:center;
 }
