@@ -158,8 +158,8 @@ const middleware = {
         store: new MongoStore({
             uri: mongoUri,
             collectionName: "loginRateLimit",
-            //   user: "mustafaA",
-            //   password: 'mongopassword',
+            //user: "mustafaA",
+            //password: "loleris123",
             // should match windowMs
             expireTimeMs: 5 * 60 * 1000,
             errorHandler: console.error.bind(null, "rate-limit-mongo")
