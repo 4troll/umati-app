@@ -58,6 +58,7 @@ Features are currently divided into three areas. Core, Security, and Moderation.
 
 * Token authentication
 * Renewable access tokens, refresh tokens stored in datastore
+* SSL encryption
 
 ### Moderation features
 
