@@ -30,3 +30,36 @@ Umati has a simplistic user interface which allows both desktop and mobile users
 ### Self-governance
 
 By passing the burden of Internet moderation onto the moderators, Umati allows for the creation of vibrant communities that have unique customs and traditions. Each Umati follows the site-wide ToS, which enforces some consistency and safety among the Umatis, yet the Umatis are free to impose additional restrictions and customs on each individual user. Users are also able to post content to their own profile and moderate comments attached to their posts.
+
+# Current features
+
+Features are currently divided into three areas. Core, Security, and Moderation.
+
+### Core features
+
+**User features**
+* Create and access user account
+* Customize username, display name, avatar, and description
+* View posts created by each user
+
+
+**Umati (group) features**
+* Create and view Umatis
+* Customize Umati name, display name, logo, and description
+* View posts created under each Umati
+
+**Posts features**
+* Create posts under Umatis (WIP: be able to create posts under account)
+* Add optional body and picture to post. All assets stored in database
+* View all posts in Umati by opening Posts tab
+* WIP: Comments
+
+### Security features
+
+* Token authentication
+* Renewable access tokens, refresh tokens stored in datastore
+
+### Moderation features
+
+* WIP: Add moderators
+* WIP: Extensive moderation settings
