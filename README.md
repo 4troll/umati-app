@@ -42,7 +42,6 @@ Features are currently divided into three areas. Core, Security, and Moderation.
 * Customize username, display name, avatar, and description
 * View posts created by each user
 
-
 **Umati (group) features**
 * Create and view Umatis
 * Customize Umati name, display name, logo, and description
@@ -51,8 +50,9 @@ Features are currently divided into three areas. Core, Security, and Moderation.
 **Posts features**
 * Create posts under Umatis (WIP: be able to create posts under account)
 * Add optional body and picture to post. All assets stored in database
-* View all posts in Umati by opening Posts tab
+* View all posts in Umati by opening Posts tab (WIP: sort)
 * WIP: Comments
+* WIP: Voting
 
 ### Security features
 
