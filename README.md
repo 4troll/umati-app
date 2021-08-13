@@ -56,11 +56,21 @@ Features are currently divided into three areas. Core, Security, and Moderation.
 
 ### Security features
 
-* Token authentication
-* Renewable access tokens, refresh tokens stored in datastore
+* Token authentication (stateless, prevents storing of permanent password in client storage)
+* Automatic renewal of access tokens, refresh tokens stored in datastore
 * SSL encryption
 
 ### Moderation features
 
 * WIP: Add moderators
 * WIP: Extensive moderation settings
+
+# Technologies
+
+* Node.js backend
+* Express backend
+* React frontend
+* material-ui React library
+* MongoDB backend datastore with Atlas host
+* Heroku host
+* Countless libraries
