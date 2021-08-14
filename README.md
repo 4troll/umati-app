@@ -33,7 +33,7 @@ By passing the burden of Internet moderation onto the moderators, Umati allows f
 
 # Current features
 
-Features are currently divided into three areas. Core, Security, and Moderation.
+Features are currently divided into three areas. **Core**, **Security**, and **Moderation**.
 
 ### Core features
 
