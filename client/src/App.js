@@ -126,7 +126,7 @@ class App extends Component {
 			this.setState({ loggedIn : true })
 			var username = cookieDat.username; // username
 			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link className="navlink" key="account" to={"/@" + username + "?self"}>@{username}</Link>]
+				tabs: [...prevState.tabs, <Link className="navlink" onClick={this.forceUpdate()}  key={username} to={"/@" + username + "?self"}>@{username}</Link>]
 			}));
 		}
 		else {
@@ -228,30 +228,28 @@ class App extends Component {
 					<Register />
 				</Route>
 
-				<Route path="/@:username" component={() => (<Account 
-					path="/@:username"
+				<Route exact path="/@:username" component={(props) => (<Account 
+					path={"/@" + props.match.params.username}
+					key={props.match.params.username}
 				/>)}/>
 				
 				<Route exact path="/umatis">
 					<Umatis />
 				</Route>
+				
 				<Route exact path="/umatis/createUmati">
 					<CreateUmati />
 				</Route>
-
-				
 				<Route path="/u/:umatiname/submit">
 					<CreatePost
 					path="/u/:umatiname/submit"
 				/>
 				</Route>
 
-				<Route path="/u/:umatiname">
-					<UmatiView
-					path="/u/:umatiname"
-				/>
-				</Route>
-				
+				<Route path="/u/:umatiname" render={(props) => (<UmatiView
+					path={"/u/" + props.match.params.umatiname}
+					key={props.match.params.umatiname}
+				/>)}/>
 				
 
 				<Route exact path="/posts">

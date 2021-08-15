@@ -45,7 +45,7 @@ app.use(function(req, res, next) {
   });
 
 
-var mongoUri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/test";
+var mongoUri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/ratelimits";
 
 var usersDB;
 var usersCollection;
@@ -1143,9 +1143,8 @@ app.get("/assets/umatiLogo/:id", [middleware.jsonParser, middleware.authenticate
                 if (err) throw err;
                 (async ()=>{
                     const operation = await umatiLogosCollection.findOne({id: id});
-                    var foundImage = operation.contents;
-                    if (foundImage) {
-                        var img = Buffer.from(foundImage.split(',')[1], "base64");
+                    if (operation && operation.contents) {
+                        var img = Buffer.from(operation.contents.split(',')[1], "base64");
                         res.writeHead(200, {
                             'Content-Type': 'image/png',
                             'Content-Length': img.length

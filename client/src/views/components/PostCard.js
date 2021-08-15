@@ -64,7 +64,7 @@ function createSubHeader (authorData,umatiData) {
             {(umatiData && authorData) ? <span>&nbsp; &#183; &nbsp;</span> : ""}
             {authorData ? " Posted by " : ""}
             {(authorData && authorData.displayname) ? authorData.displayname : ""} 
-            {(authorData && authorData.displayname) ? "(" : ""}
+            {(authorData && authorData.displayname) ? " (" : ""}
             {authorData ? <UserLink data={authorData}/> : ""}
             {(authorData && authorData.displayname) ? ")" : ""}
         </span>
@@ -73,21 +73,17 @@ function createSubHeader (authorData,umatiData) {
 
 function PostCard (props) {
     const classes = useStyles();
-    const umatiname = props.umatiname;
     const postData = props.data;
 
     const authorData = postData.authorData;
-
     const umatiData = postData.umatiData;
     const hostIndication = props.indicateHost ? umatiData : null;
-    
 
     const bodySpacing = postData.photo ? "30px" : "0px"
     
-    console.log(authorData);
     return (
         <div key={postData.postId} className="PostCardContainer" style={{marginTop: "5px"}}>
-            <Link to={"/u/" + umatiname + "/comments/" + postData.postId} style={{textDecoration:"none"}}>
+            <Link to={"/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId} style={{textDecoration:"none"}}>
                 <Card className={classes.root}>
                 <CardHeader
                     // avatar={

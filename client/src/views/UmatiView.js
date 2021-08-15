@@ -487,7 +487,7 @@ function UmatiView(props) {
 			});
 		}
 	}
-
+	let container;
     return (
 		<Fragment>
 			<Box
@@ -496,11 +496,18 @@ function UmatiView(props) {
 				minHeight: '100%',
 				py: 3
 			}}
+
 			>
 				<Container maxWidth="lg">
 					{loading ? loadCard(true) : 
 					
-					<div key={umatiDat.umatiname} className="umatiView" style={{marginTop: "5px"}}>
+					<div key={umatiDat.umatiname} className="umatiView" style={{marginTop: "5px"}} 
+					
+					ref={el => {
+						container = el
+					  }}
+					  
+					  >
 						<Card className={classes.root}>
 							<CardHeader
 								avatar={
@@ -545,6 +552,7 @@ function UmatiView(props) {
 									display: 'flex',
 									flexDirection: 'column'
 									}}
+									
 								>
 									<span style={{
 									alignItems: 'left',
@@ -565,6 +573,7 @@ function UmatiView(props) {
 											type="input"
 											enabled={editable}
 											style={{whiteSpace: "pre-wrap"}}
+											
 											>
 											<MentionsInput 
 											value={desctext} 
@@ -572,8 +581,9 @@ function UmatiView(props) {
 											style={MentionSuggestionStyle}
 											multiline
 											ignoreAccents
-											forceSuggestionsAboveCursor={true}
+											suggestionsPortalHost={container}
 											allowSuggestionsAboveCursor={true}
+											
 											>
 												<Mention
 												trigger="u/"
