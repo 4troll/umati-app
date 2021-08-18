@@ -140,7 +140,13 @@ function CreateUmati(props) {
 	}
 
     function checkUmatiname(targetUmatiname) {
+		if (!targetUmatiname) {
+			return false;
+		}
 		if (targetUmatiname.length < 3) {
+			return false;
+		}
+		if (targetUmatiname.length > 25) {
 			return false;
 		}
 		if (!validator.isAlphanumeric(targetUmatiname)) {

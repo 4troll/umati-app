@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect,useLayoutEffect, useRef, useState, Fragment } from "react";
 
 import {
     Avatar,
@@ -6,8 +6,15 @@ import {
     Card,
     CardContent,
 	makeStyles,
-	CardHeader
+	CardHeader,
+    Button,
+    IconButton,
+    ThemeProvider,
+    createTheme
 } from '@material-ui/core';
+import ThumbUpIcon from '@material-ui/icons/ThumbUp';
+import ThumbDownIcon from '@material-ui/icons/ThumbDown';
+import FlagIcon from '@material-ui/icons/Flag'; 
 
 import UserLink from "./UserLink.js";
 import UmatiLink from "./UmatiLink.js";
@@ -16,38 +23,31 @@ import {
     Link
   } from "react-router-dom";
 
-const useStyles = makeStyles(theme => ({
-	root: {
-	  minWidth: 275,
-	},
-	bullet: {
-	  display: 'inline-block',
-	  margin: '0 2px',
-	  transform: 'scale(0.8)',
-	},
-	title: {
-	  fontSize: 14,
-	},
-	pos: {
-	  marginBottom: 12,
-	},
-	paper: {
-		position: 'absolute',
-		width: 400,
-		backgroundColor: theme.palette.background.paper,
-		border: '2px solid #000',
-		boxShadow: theme.shadows[5],
-		padding: theme.spacing(2, 4, 3),
-		transform: "translate(-$50%, -$50%)"
-	  },
-	form: {
-		width: '100%', // Fix IE 11 issue.
-		marginTop: theme.spacing(1),
-	},
-	submit: {
-		margin: theme.spacing(3, 0, 2),
-	},
-}));
+  const useStyles = makeStyles((theme) => ({
+    root: {
+      display: 'flex',
+    },
+    details: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+    content: {
+      flex: '1 0 auto',
+    },
+    cover: {
+      width: 151,
+    },
+    controls: {
+      display: 'flex',
+      alignItems: 'center',
+      paddingLeft: theme.spacing(1),
+      paddingBottom: theme.spacing(1),
+    },
+    playIcon: {
+      height: 38,
+      width: 38,
+    },
+  }));
 
 // function clickCard(umatiname,postid) {
 //     window.location.href = "/u/" + umatiname + "/comments/" + postid;
@@ -71,6 +71,19 @@ function createSubHeader (authorData,umatiData) {
     )
 }
 
+function determineColor(current,num) {
+    if (current != num) {
+        return "aaa";
+    }
+    else if (num == 1) {
+        return "primary";
+    }
+    else if (num == -1) {
+        return "secondary";
+    }
+    return "aaa";
+}
+
 function PostCard (props) {
     const classes = useStyles();
     const postData = props.data;
@@ -78,13 +91,99 @@ function PostCard (props) {
     const authorData = postData.authorData;
     const umatiData = postData.umatiData;
     const hostIndication = props.indicateHost ? umatiData : null;
-
     const bodySpacing = postData.photo ? "30px" : "0px"
+
+    const [voteStatus,setVoteStatus] = useState(postData.userVote || 0);
+    const [loadingVote,setLoadingVote] = useState(false);
+
+    async function handleVote(originalVote,targetVote) {
+		var voteData;
+        console.log("sent")
+        setLoadingVote(true);
+		try {
+			voteData = {
+				"vote": targetVote
+			}
+            // console.log(formData);
+			await fetch("/api/voteOnPost/" + postData.postId, {
+				method: "post",
+                mode: "cors", 
+				body: JSON.stringify(voteData),
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				credentials: "include"
+			})
+			.then(function (data){
+				return data;
+			})
+			.catch(e => {
+                setVoteStatus(originalVote);
+				console.error(e);
+			});
+		}
+		catch(e) {
+			console.error(e);
+		}
+		finally {
+            setLoadingVote(false);
+		}
+	}
+
+    async function setVote(buttonClicked) {
+        if (!loadingVote) {
+            if (buttonClicked == voteStatus) { // if toggling
+                setVoteStatus(0);
+                await handleVote(voteStatus,0);
+            }
+            else {
+                setVoteStatus(buttonClicked);
+                await handleVote(voteStatus,buttonClicked);
+            }
+        }
+    }
+    useLayoutEffect (() => {
+        
+    }, []);
+
+
     
     return (
         <div key={postData.postId} className="PostCardContainer" style={{marginTop: "5px"}}>
-            <Link to={"/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId} style={{textDecoration:"none"}}>
-                <Card className={classes.root}>
+            
+                
+            <Card className={classes.root}>
+
+                <Box style={{ alignItems: 'center',
+                    display: 'flex',
+                    flexDirection: 'column'  }}>
+                
+                <IconButton 
+                color={determineColor(1,voteStatus)}
+                aria-label="like" component="span"
+                onClick={() => {setVote(1)}}
+                >
+                    <ThumbUpIcon />
+                </IconButton>
+
+                <span>{(postData.voteCount || 0) - (postData.userVote || 0) + voteStatus}</span>
+
+                <IconButton 
+                color={determineColor(-1,voteStatus)}
+                aria-label="dislike" 
+                component="span"
+                onClick={() => {setVote(-1)}}>
+                    <ThumbDownIcon />
+                </IconButton>
+
+
+                <IconButton color="secondary" aria-label="flag" component="span">
+                    <FlagIcon />
+                </IconButton>
+                </Box>
+
+                <Link to={"/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId} style={{textDecoration:"none", color:"inherit", flex: "1"}}>
                 <CardHeader
                     // avatar={
                     // <Avatar
@@ -99,7 +198,9 @@ function PostCard (props) {
                     }
                     subheader={createSubHeader(authorData, hostIndication)}
                 />
+                
                 <CardContent>
+                
                     <Box
                         sx={{
                         alignItems: 'left',
@@ -118,10 +219,9 @@ function PostCard (props) {
                         <p style={{marginTop: bodySpacing}}>{postData.body ? postData.body : "This post has no body."}</p>
                     </Box>
                 </CardContent>
+                </Link>
             </Card>
-        </Link>
     </div>
-
     );
 }
 

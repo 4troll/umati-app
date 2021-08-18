@@ -48,7 +48,7 @@ function UserLink (props) {
     const data = props.data
 	const username = props.username || data.username;
 	const userId = props.userId || data.userId;
-	const avatar = userId ? "/assets/umatiLogo/" + userId : "";
+	const avatar = userId ? "/assets/profilePicture/" + userId : "";
     return (
         <Link to={"/@" + username} class="user-link">
             <div className="right-hold flexbox">

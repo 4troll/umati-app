@@ -193,13 +193,12 @@ export default function Register() {
 		var variable = checkPassword()
 		return variable[0];
 	}
-
 	function checkUsername() {
 		if (username.length < 3) {
 			return [true, "Username must be at least 3 characters long"];
 		}
-		if (username.length > 20) {
-			return [true, "Username must be less than 20 characters long"];
+		if (username.length > 25) {
+			return [true, "Username must be less than 25 characters long"];
 		}
 		if (!validator.isAlphanumeric(username)) {
 			return [true, "Username must be alphanumeric (no spaces, only numbers and letters)"];

@@ -239,7 +239,7 @@ function Account(props) {
 		async function getPostsData(userId) {
             try {
                 console.log("initiating post fetch");
-                let response = await fetch("/api/fetchPosts/user/" + userId + window.location.search, {
+                let response = await fetch("/api/fetchPosts/" + ("?userId=" + userId + "&") + window.location.search.slice(1), {
                     method: "get",
                     headers: {
                         "Accept": "application/json",
@@ -383,7 +383,13 @@ function Account(props) {
 
 
 	function checkUsername(targetUsername) {
+		if (!targetUsername) {
+			return false;
+		}
 		if (targetUsername.length < 3) {
+			return false;
+		}
+		if (targetUsername.length > 25) {
 			return false;
 		}
 		if (!validator.isAlphanumeric(targetUsername)) {

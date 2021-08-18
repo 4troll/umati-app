@@ -221,7 +221,7 @@ function UmatiView(props) {
 
 					if (json.umatiId) {
 						console.log("initiating post fetch");
-						let response = await fetch("/api/fetchPosts/umati/" + json.umatiId + window.location.search, {
+						let response = await fetch("/api/fetchPosts/" + ("?umatiId=" + json.umatiId + "&") + window.location.search.slice(1), {
 							method: "get",
 							headers: {
 								"Accept": "application/json",
@@ -328,7 +328,13 @@ function UmatiView(props) {
 	}
 
 	function checkUmatiname(targetUmatiname) {
+		if (!targetUmatiname) {
+			return false;
+		}
 		if (targetUmatiname.length < 3) {
+			return false;
+		}
+		if (targetUmatiname.length > 25) {
 			return false;
 		}
 		if (!validator.isAlphanumeric(targetUmatiname)) {
@@ -496,6 +502,9 @@ function UmatiView(props) {
 				minHeight: '100%',
 				py: 3
 			}}
+			ref={el => {
+				container = el
+			  }}
 
 			>
 				<Container maxWidth="lg">
@@ -503,9 +512,7 @@ function UmatiView(props) {
 					
 					<div key={umatiDat.umatiname} className="umatiView" style={{marginTop: "5px"}} 
 					
-					ref={el => {
-						container = el
-					  }}
+					
 					  
 					  >
 						<Card className={classes.root}>
@@ -621,8 +628,12 @@ function UmatiView(props) {
 													focused
 												  ) => (
 													<div className={`user ${focused ? "focused" : ""}`}>
-														@
-													  {highlightedDisplay}
+														<div className="right-hold flexbox">
+															<Avatar style={{height:24+"px", width:24+"px"}} 
+															src={"/assets/profilePicture/" + suggestion.id} />
+															{"@"}
+															{highlightedDisplay}
+														</div>
 													</div>
 												  )}
 												markup="@[__display__](__id__)"

@@ -72,6 +72,7 @@ try {
 
         postsDB = client.db("posts");
         allPostsCollection = postsDB.collection("all");
+        postVotesCollection = postsDB.collection("votes")
         
         assetsDB = client.db("assets");
         pfpsCollection = assetsDB.collection("pfps");
@@ -206,6 +207,9 @@ function checkUsername(targetUsername) {
         return false;
     }
     if (targetUsername.length < 3) {
+        return false;
+    }
+    if (targetUsername.length > 25) {
         return false;
     }
     if (!validator.isAlphanumeric(targetUsername)) {
@@ -1176,13 +1180,11 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
             var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
                 if (err) throw err;
-
-                var body = req.body;
-                (async ()=>{
-                let targetUmati = await umatisCollection.findOne({umatiname: hostUmatiname});
-                if (targetUmati && body.title.length > 0) { // if umati actually exists, and title exists
-                        
-                        if (req.decoded) { // if logged in
+                if (req.decoded) {
+                    var body = req.body;
+                    (async ()=>{
+                        let targetUmati = await umatisCollection.findOne({umatiname: hostUmatiname});
+                        if (targetUmati && body.title.length > 0) { // if umati actually exists, and title exists
                             const postId = short.generate();
 
                             const isUrlOptions = {require_tld: false, require_protocol: false, require_host: false, require_port: false, require_valid_protocol: false, allow_underscores: false, host_whitelist: false, host_blacklist: false, allow_trailing_dot: false, allow_protocol_relative_urls: true, disallow_auth: false, validate_length: true };
@@ -1240,14 +1242,14 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
 
                             let insertOperation = await allPostsCollection.insertOne(newPost);
                             res.json(newPost).end();
+                        
                         }
-                        else {
-                            res.status(403).end();
-                        }
-                   
+                    })();
                 }
-                })();
-            });
+                else {
+                    res.status(403).end();
+                }
+            }); 
         }
         catch(e) {
             console.error(e);
@@ -1255,6 +1257,131 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
         finally {
             client.close();
         }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+    if (req && req.params.postId) {
+        try {
+            if (req.decoded) {
+            
+            client.connect( (err,db) => {
+                if (err) throw err;
+                
+                    var body = req.body;
+                    (async ()=>{
+                        let loggedUser = await usersCollection.findOne({userId: req.decoded.userId});
+                        let targetPost = await allPostsCollection.findOne({postId: req.params.postId});
+                        if (targetPost && loggedUser.username == req.decoded.username) { // verify logged in
+                            const postId = req.params.postId;
+                            const settings = {upsert:true};
+
+                            var counterInc = 0;
+                            var voterType = null;
+
+                            if (body.vote == 0) {
+                                postVotesCollection.updateOne({postId: postId},{
+                                    $pull: {
+                                        "dislikers": req.decoded.username
+                                    }
+                                }, (error, result) => {
+                                    if(result.modifiedCount > 0){
+                                        postVotesCollection.updateOne({postId: postId},{
+                                            $inc: {
+                                                "voteCount": 1
+                                            }
+                                        });
+                                    }
+                                    else{
+                                        postVotesCollection.updateOne({postId: postId},{
+                                            $pull: {
+                                                "likers": req.decoded.username
+                                            }
+                                        }, (error, result) => {
+                                            if(result.modifiedCount > 0){
+                                                postVotesCollection.updateOne({postId: postId},{
+                                                    $inc: {
+                                                        "voteCount": -1
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            else if(body.vote == 1){
+                                voterType = "likers";
+                                postVotesCollection.updateOne({"postId": postId},{
+                                    $pull: {
+                                        "dislikers": req.decoded.username
+                                    },
+                                }, settings, (error,result) => {
+                                    if(result.modifiedCount > 0){
+                                        counterInc = 2;
+                                    }
+                                    else{
+                                        counterInc = 1;
+                                    }
+                                });
+                            }
+                            else if(body.vote == -1){
+                                voterType = "dislikers";
+                                postVotesCollection.updateOne({"postId": postId},{
+                                    $pull: {
+                                        "likers": req.decoded.username
+                                    },
+                                }, settings, (error,result) => {
+                                    if(result.modifiedCount > 0){
+                                        counterInc = -2;
+                                    }
+                                    else{
+                                        counterInc = -1;
+                                    }
+                                });
+                            } 
+                            if(body.vote !== 0){
+                                postVotesCollection.updateOne({"postId": postId},{
+                                        $addToSet: {
+                                            [voterType]: req.decoded.username
+                                        }
+                                    }, settings, (error,result) => {
+                                        if(result.modifiedCount > 0){
+                                            postVotesCollection.updateOne({"postId": postId},{
+                                                $inc: {
+                                                    "voteCount": counterInc
+                                                }
+                                            }, settings);
+                                        }
+                                });
+                            }
+                            // await allPostsCollection.updateOne(
+                            //     {postId: postId},
+                            //     {$inc: {description: req.body.description}}
+                            // )
+
+                            res.json(req.body).end();
+                        
+                        }
+                    })();
+                
+                
+            }); 
+            }
+            else {
+                res.status(403).end();
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    
     }
     else {
         res.status(404).end();
@@ -1300,176 +1427,74 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                     var lastPostId = increment.sequence_value;
                     var maxPostId = lastPostId - startingCount;
 
-                    let cursor = await allPostsCollection.find({ incrementId: { $lte: maxPostId} })
+                    var query = { incrementId: { $lte: maxPostId} };
+                    if (parseInt(req.query.umatiId)) {
+                        query["hostUmati"] = parseInt(req.query.umatiId);
+                    }
+                    else if (parseInt(req.query.userId)) {
+                        query["author"] = parseInt(req.query.userId);
+                    }
+                    
+
+                    let cursor = await allPostsCollection.find(query)
                     .sort({incrementId:-1})
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
                     .limit(queryStuff.limit)
+
+                    parseInt(req.query.info)
+
+                    var targetUmati;
+                    var targetUser;
+                    if (parseInt(req.query.umatiId)) {
+                        targetUmati = await umatisCollection.findOne({umatiId: parseInt(req.query.umatiId)})
+                    }
+                    else if (parseInt(req.query.userId)) {
+                        targetUser = await usersCollection.findOne({userId: parseInt(req.query.userId)})
+                    }
+
                     for await (let post of cursor) {
-                        let targetUmati = await umatisCollection.findOne({umatiId: post.hostUmati})
-                        await usersCollection.findOne({userId: post.author})
-                        .then(authorData => {
-                            if (authorData) {
-                                authorData = cleanUserData(authorData,adminMode);
-                                post.authorData = authorData;
-                                post.hostUmatiname = targetUmati.umatiname;
-                                post.umatiData = targetUmati;
-                                postsStream.push(post);
+                        let user = targetUser || await usersCollection.findOne({userId: post.author});
+                        let umati = targetUmati || await umatisCollection.findOne({umatiId: post.hostUmati});
+                        let voteStatus = await postVotesCollection.findOne({postId: post.postId});
+                        // if (!parseInt(req.query.umatiId) && !parseInt(req.query.userId)) {
+                        //     let umati = targetUmati || await umatisCollection.findOne({umatiId: post.hostUmati});
+                            
+                        // }
+                        user = cleanUserData(user,adminMode);
+                        post.authorData = user;
+                        
+                        post.hostUmatiname = umati.umatiname;
+                        post.umatiData = umati;
+
+                        let userVoteStatus = 0;
+
+                        
+
+                        if (voteStatus) {
+                            if (voteStatus.likers) {
+                                for (let i = 0; i < voteStatus.likers.length; i++) {
+                                    if (voteStatus.likers[i] == req.decoded.username) {
+                                        userVoteStatus = 1;
+                                    }
+                                }
                             }
-                        })
-                        .catch(e => {
-                            console.error(e);
-                        })
-                    }
-                    res.json(postsStream).end();
-                })();
-            });
-        }
-        catch(e) {
-            console.error(e);
-        }
-        finally {
-            client.close();
-        }
-    }
-    else {
-        res.status(404).end();
-    }
-});
-
-app.get("/api/fetchPosts/umati/:umatiId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
-    if (req && req.params.umatiId) {
-        console.log("fetching posts");
-        try {
-            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
-            client.connect( (err,db) => {
-                if (err) throw err;
-                
-                var tokenData;
-                var adminMode;
-                if (req.decoded) {
-                    var tokenData = req.decoded
-                    var adminMode = tokenData.isAdmin;
-                }
-
-
-                (async ()=>{
-                    let queryStuff = {
-                        "pageNum": 0,
-                        "limit": 25
-                    }
-
-                    if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
-                        queryStuff.pageNum = parseInt(req.query.page);
-                    }
-
-                    if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
-                        queryStuff.limit = parseInt(req.query.limit);
-                    }
-                    
-                    var postsStream = []
-
-                    let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
-                    
-                    const postsCounter = await postsDB.collection("counter");
-                    var increment = await postsCounter.findOne({_id: "postsCounter" });
-                    var lastPostId = increment.sequence_value;
-                    var maxPostId = lastPostId - startingCount;
-
-                    let cursor = await allPostsCollection.find({ hostUmati: parseInt(req.params.umatiId), incrementId: { $lte: maxPostId} })
-                    .sort({incrementId:-1})
-                    // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
-                    .limit(queryStuff.limit)
-                    for await (let post of cursor) {
-                        await usersCollection.findOne({userId: post.author})
-                        .then(authorData => {
-                            if (authorData) {
-                                authorData = cleanUserData(authorData,adminMode);
-                                post.authorData = authorData;
-                                postsStream.push(post);
+                            
+                            if (voteStatus.dislikers) {
+                                for (let i = 0; i < voteStatus.dislikers.length; i++) {
+                                    if (voteStatus.dislikers[i] == req.decoded.username) {
+                                        userVoteStatus = -1;
+                                    }
+                                }
                             }
-                        })
-                        .catch(e => {
-                            console.error(e);
-                        })
-                    }
-                    res.json(postsStream).end();
-                })();
-            });
-        }
-        catch(e) {
-            console.error(e);
-        }
-        finally {
-            client.close();
-        }
-    }
-    else {
-        res.status(404).end();
-    }
-});
-
-app.get("/api/fetchPosts/user/:userId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
-    if (req && req.params.userId) {
-        console.log("fetching posts");
-        try {
-            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
-            client.connect( (err,db) => {
-                if (err) throw err;
-                
-                var tokenData;
-                var adminMode;
-                if (req.decoded) {
-                    var tokenData = req.decoded
-                    var adminMode = tokenData.isAdmin;
-                }
-
-
-                (async ()=>{
-                    let userData = await usersCollection.findOne({userId: parseInt(req.params.userId)});
-                    userData = cleanUserData(userData,adminMode);
-
-                    if (userData) {
-                        let queryStuff = {
-                            "pageNum": 0,
-                            "limit": 25
-                        }
-
-                        if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
-                            queryStuff.pageNum = parseInt(req.query.page);
-                        }
-
-                        if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
-                            queryStuff.limit = parseInt(req.query.limit);
+    
+                            post.userVote = userVoteStatus;
+                            post.voteCount = voteStatus.voteCount;
                         }
                         
-                        var postsStream = []
-
-                        let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
                         
-                        const postsCounter = await postsDB.collection("counter");
-                        var increment = await postsCounter.findOne({_id: "postsCounter" });
-                        var lastPostId = increment.sequence_value;
-                        var maxPostId = lastPostId - startingCount;
-
-                    
-                    
-                        let cursor = await allPostsCollection.find({ author: parseInt(req.params.userId), incrementId: { $lte: maxPostId} })
-                        .sort({incrementId:-1})
-                        // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
-                        .limit(queryStuff.limit)
-                        for await (let post of cursor) {
-                            let targetUmati = await umatisCollection.findOne({umatiId: post.hostUmati});
-                            if (targetUmati) {
-                                post.hostUmatiname = targetUmati.umatiname;
-                                post.umatiData = targetUmati;
-                            }
-                            postsStream.push(post);
-                        }
-                        res.json(postsStream).end();
+                        postsStream.push(post);
                     }
-                    else {
-                        res.status(404).end();
-                    }
+                    res.json(postsStream).end();
                 })();
             });
         }
