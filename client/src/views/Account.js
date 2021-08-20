@@ -494,7 +494,16 @@ function Account(props) {
 									createUserTitle()
 								)
 								}
-								subheader={loading ? <Skeleton animation="wave" height={10} width={80} /> : (userDat.displayname ? ("@" + userDat.username) : "")}
+								subheader={loading ? 
+								<Fragment>
+								<Skeleton animation="wave" height={10} width={80} /> 
+								</Fragment>
+								: 
+								<Fragment>
+								{(userDat.displayname ? ("@" + userDat.username) : "")}
+								<p style={{color:"#ffaa00"}}>{(userDat.rep || 0) + " reputation"}</p>
+								</Fragment>
+							}
 							/>
 							<Menu
 							id="simple-menu"
