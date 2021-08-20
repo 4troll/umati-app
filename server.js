@@ -1241,6 +1241,7 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
 
 
                             let insertOperation = await allPostsCollection.insertOne(newPost);
+                            let voteDoc = await postVotesCollection.insertOne({postId: postId, voteCount: 0});
                             res.json(newPost).end();
                         
                         }
@@ -1266,6 +1267,11 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
 async function updateReputation(senderId,authorId,postId,change,voterType) {
     const settings = {upsert:true};
     if (voterType == "undo") { // new votes already checked
+        await postVotesCollection.updateOne({"postId": postId},{
+            $inc: {
+                "voteCount": change
+            }
+            }, settings);
         await usersCollection.updateOne({userId: authorId}, { $inc: {rep: change}});
     }
     else { // vote-changing not checked yet
