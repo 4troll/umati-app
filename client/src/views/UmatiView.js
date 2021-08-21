@@ -36,6 +36,7 @@ import jwt_decode from "jwt-decode";
 
 import PostCard from "./components/PostCard.js";
 import UserLink from "./components/UserLink.js";
+import SortDropdown from "./components/SortDropdown";
 
 import { MentionsInput, Mention } from "react-mentions";
 
@@ -668,7 +669,10 @@ function UmatiView(props) {
 						
 					</div>
 			}
-			<h1>Posts</h1> 
+			<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", marginBottom:"-20px"}}>
+				<h1>Posts</h1>
+				<SortDropdown/>
+            </span>
 			<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
 			{ loading ? loadCards : 
 				(postsData.map(function (post,i) {

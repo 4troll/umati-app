@@ -1518,74 +1518,252 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                     var lastPostId = increment.sequence_value;
                     var maxPostId = lastPostId - startingCount;
 
-                    var query = { incrementId: { $lte: maxPostId} };
+                    // var query = { incrementId: { $lte: maxPostId} };
+                    var query = {};
                     if (parseInt(req.query.umatiId)) {
                         query["hostUmati"] = parseInt(req.query.umatiId);
                     }
                     else if (parseInt(req.query.userId)) {
                         query["author"] = parseInt(req.query.userId);
                     }
-                    
 
-                    let cursor = await allPostsCollection.find(query)
-                    .sort({incrementId:-1})
+                    const chosenSort = req.query.sort || (query["author"] ? "new" : "trending");
+                    console.log(chosenSort);
+
+                    const match = {$match: query};
+                    const lookup = {$lookup: {
+                        from: "votes",
+                        localField: "postId",
+                        foreignField: "postId",
+                        as: "voteData"
+                    }};
+                    const skip = {$skip: startingCount};
+                    const limit = {$limit: queryStuff.limit};
+
+                    var aggregation;
+                    switch(chosenSort) {
+                        case "new":
+                            // New Sort
+                            // Sort by newest
+                            aggregation = await allPostsCollection.aggregate([
+                                match, lookup,
+                                {$sort: {incrementId: -1}},
+
+                                skip, limit
+                            ]);
+                            break;
+                        case "new":
+                            // New Sort
+                            // Sort by newest
+                            aggregation = await allPostsCollection.aggregate([
+                                match, lookup,
+                                {$sort: {incrementId: -1}},
+
+                                skip, limit
+                            ]);
+                            break;
+                        case "old":
+                            // Old Sort
+                            // Sort by oldest
+                            aggregation = await allPostsCollection.aggregate([
+                                match, lookup,
+                                {$sort: {incrementId: 1}},
+
+                                skip, limit
+                            ]);
+                            break;
+                        case "top":
+                            // Top Sort
+                            // https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
+                            // "We need to balance the proportion of positive ratings with the uncertainty of a small number of observations."
+                            aggregation = await allPostsCollection.aggregate([
+                                match, lookup,
+                                {$addFields: {
+                                    likeCount: {$cond: {if: {$gt:[{$first: "$voteData.likers"}, null]}, then: {$size: {$first: "$voteData.likers"}}, else: 0}},
+                                    dislikeCount: {$cond: {if: {$gt:[{$first: "$voteData.dislikers"}, null]}, then: {$size: {$first: "$voteData.dislikers"}}, else: 0}}
+                                }},
+                                {$addFields: {
+                                    topScore: { $cond: { if: {$eq: [{$add: ["$likeCount", "$dislikeCount"]}, 0]}, then: 0, else: { // if like + dislike = 0
+                                        // Lower bound of Wilson score confidence interval for a Bernoulli parameter
+                                        // Implemented in MongoDB Aggregation Pipeline
+                                        // https://stackoverflow.com/questions/55851612/score-lower-bound-of-wilson-score-confidence-interval-for-a-bernoulli-paramete
+                                        $divide: [
+                                                {
+                                                    $subtract: [
+                                                            {
+                                                                $divide: [
+                                                                    { $add: ["$likeCount",1.9208] },
+                                                                    { $add: ["$likeCount","$dislikeCount"] }
+                                                                ],
+                                                            },
+                                                            {
+                                                                $multiply: [
+                                                                    1.96,
+                                                                    {
+                                                                        $divide: [ 
+                                                                            { 
+                                                                                $sqrt: { 
+                                                                                    $add: [
+                                                                                        { 
+                                                                                            $divide: [ 
+                                                                                                {
+                                                                                                    $multiply: ["$likeCount","$dislikeCount"] 
+                                                                                                }, 
+                                                                                                {   
+                                                                                                    $add: ["$likeCount","$dislikeCount"]
+                                                                                                } 
+                                                                                            ] 
+                                                                                        },
+                                                                                        0.9604
+                                                                                    ]
+                                                                                }
+                                                                            },
+                                                                            {   
+                                                                                $add: ["$likeCount","$dislikeCount"]
+                                                                            }
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                    ]
+                                                },
+                                                {
+                                                    $add: [
+                                                        {
+                                                            $divide: [ 3.8416, {$add: ["$likeCount","$dislikeCount"]}  ]
+                                                        },
+                                                        1
+                                                    ]
+                                                }
+                                        ]
+                                    },
+                                    }}
+                                }},
+                                {$sort: {topScore: -1}},
+
+                                skip, limit
+                            ]);
+                            break;
+                        case "controversial":
+                            // Controversial Sort
+                            // Posts closest to 50% upvoted are shown first
+                            aggregation = await allPostsCollection.aggregate([
+                                match, lookup,
+                                {$addFields: {
+                                    likeCount: {$cond: {if: {$gt:[{$first: "$voteData.likers"}, null]}, then: {$size: {$first: "$voteData.likers"}}, else: 0}},
+                                    dislikeCount: {$cond: {if: {$gt:[{$first: "$voteData.dislikers"}, null]}, then: {$size: {$first: "$voteData.dislikers"}}, else: 0}}
+                                }},
+                                {$addFields: {
+                                    totalVotes: {$add: ["$likeCount","$dislikeCount"]},
+                                    voteBal: {$cond: { if : {$and: [{$gt: ["$likeCount", 0]},{$gt: ["$dislikeCount", 0]} ]}, 
+                                                            then: {$cond: {if: {$gt: ["$likeCount", "$dislikeCount"]}, 
+                                                                                then: {$divide: ["$dislikeCount", "$likeCount"]},
+                                                                                else: {$divide: ["$likeCount", "$dislikeCount"]} }}, 
+                                                            else: 0
+
+                                    }},
+                                }},
+                                {$addFields: {
+                                    controScore: {$cond: {if: {$gt: ["$voteBal", 0]}, then: {$pow: ["$totalVotes","$voteBal"]}, else: 0}}
+                                }},
+                                {$sort: {controScore: -1}},
+
+                                skip, limit
+                            ]);
+                            break;
+                        case "hot":
+
+                        default:
+                            // Trending Sort
+                            // Same algorithm as reddit's hot (time and votes) sort
+                            aggregation = await allPostsCollection.aggregate([
+                                match, lookup,
+
+                                {$addFields: {
+                                    repSign: {$cond: {if : {$lt : [{$first: "$voteData.voteCount"}, 0]}, then: -1, 
+                                        else: {$cond: {if : {$gt : [{$first: "$voteData.voteCount"}, 0]}, then: 1, else: 0}}
+                                    }},
+                                    order: {$log: [{$max: [{$abs: {$first: "$voteData.voteCount"}},1]},10]},
+                                    // msSincePost: {$subtract: [{$toDouble: "$$NOW"}, {$first: "$postData.creationDate"}]},
+                                }},
+                                {$addFields: {
+                                    trendScore: {$add: [ {$multiply: ["$repSign", "$order"]}, {$divide : [{$subtract: ["$creationDate", 1600000000000]}, 450000000]}]}
+                                }},
+                                {$sort: {trendScore: -1}},
+
+                                skip, limit
+                            ]);
+                    }
+
+                    // for await (let post of aggregation) {
+                    //     console.log(post);
+                    // }
+
+
+                    // let cursor = await allPostsCollection.find(query)
+                    // .sort({incrementId:-1})
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
-                    .limit(queryStuff.limit)
+                    // .limit(queryStuff.limit)
 
-                    parseInt(req.query.info)
+                    // parseInt(req.query.info)
 
-                    var targetUmati;
-                    var targetUser;
-                    if (parseInt(req.query.umatiId)) {
-                        targetUmati = await umatisCollection.findOne({umatiId: parseInt(req.query.umatiId)})
-                    }
-                    else if (parseInt(req.query.userId)) {
-                        targetUser = await usersCollection.findOne({userId: parseInt(req.query.userId)})
-                    }
-
-                    for await (let post of cursor) {
-                        let user = targetUser || await usersCollection.findOne({userId: post.author});
-                        let umati = targetUmati || await umatisCollection.findOne({umatiId: post.hostUmati});
-                        let voteStatus = await postVotesCollection.findOne({postId: post.postId});
-                        // if (!parseInt(req.query.umatiId) && !parseInt(req.query.userId)) {
-                        //     let umati = targetUmati || await umatisCollection.findOne({umatiId: post.hostUmati});
-                            
-                        // }
-                        user = cleanUserData(user,adminMode);
-                        post.authorData = user;
-                        
-                        post.hostUmatiname = umati.umatiname;
-                        post.umatiData = umati;
-
-                        let userVoteStatus = 0;
-
-                        
-
-                        if (voteStatus) {
-                            if (voteStatus.likers) {
-                                for (let i = 0; i < voteStatus.likers.length; i++) {
-                                    if (voteStatus.likers[i] == req.decoded.userId) {
-                                        userVoteStatus = 1;
-                                    }
-                                }
-                            }
-                            
-                            if (voteStatus.dislikers) {
-                                for (let i = 0; i < voteStatus.dislikers.length; i++) {
-                                    if (voteStatus.dislikers[i] == req.decoded.userId) {
-                                        userVoteStatus = -1;
-                                    }
-                                }
-                            }
-    
-                            post.userVote = userVoteStatus;
-                            post.voteCount = voteStatus.voteCount;
+                    
+                    if (aggregation) {
+                        var targetUmati;
+                        var targetUser;
+                        if (parseInt(req.query.umatiId)) {
+                            targetUmati = await umatisCollection.findOne({umatiId: parseInt(req.query.umatiId)})
                         }
-                        
-                        
-                        postsStream.push(post);
+                        else if (parseInt(req.query.userId)) {
+                            targetUser = await usersCollection.findOne({userId: parseInt(req.query.userId)})
+                        }
+                        for await (let post of aggregation) {
+                            let user = targetUser || await usersCollection.findOne({userId: post.author});
+                            let umati = targetUmati || await umatisCollection.findOne({umatiId: post.hostUmati});
+                            let voteStatus = post.voteData[0];
+                            // if (!parseInt(req.query.umatiId) && !parseInt(req.query.userId)) {
+                            //     let umati = targetUmati || await umatisCollection.findOne({umatiId: post.hostUmati});
+                                
+                            // }
+                            user = cleanUserData(user,adminMode);
+                            post.authorData = user;
+                            
+                            post.hostUmatiname = umati.umatiname;
+                            post.umatiData = umati;
+
+                            let userVoteStatus = 0;
+
+                            
+
+                            if (voteStatus) {
+                                if (voteStatus.likers) {
+                                    for (let i = 0; i < voteStatus.likers.length; i++) {
+                                        if (voteStatus.likers[i] == req.decoded.userId) {
+                                            userVoteStatus = 1;
+                                        }
+                                    }
+                                }
+                                
+                                if (voteStatus.dislikers) {
+                                    for (let i = 0; i < voteStatus.dislikers.length; i++) {
+                                        if (voteStatus.dislikers[i] == req.decoded.userId) {
+                                            userVoteStatus = -1;
+                                        }
+                                    }
+                                }
+        
+                                post.userVote = userVoteStatus;
+                                post.voteCount = voteStatus.voteCount;
+                            }
+                            
+                            
+                            postsStream.push(post);
+                        }
+                        res.json(postsStream).end();
                     }
-                    res.json(postsStream).end();
+                    else {
+                        res.status(404).end();
+                    }
                 })();
             });
         }

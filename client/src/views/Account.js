@@ -32,6 +32,8 @@ import { useCookies } from 'react-cookie';
 import Cookies from 'universal-cookie';
 
 import PostCard from "./components/PostCard.js";
+
+import SortDropdown from "./components/SortDropdown";
  
 const cookies = new Cookies();
 
@@ -558,7 +560,10 @@ function Account(props) {
 								</Box>
 							</CardContent>
 						</Card>
-						<h1>Posts</h1> 
+						<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", marginBottom:"-20px"}}>
+							<h1>Posts</h1>
+							<SortDropdown newdefault={true}/>
+                   	 	</span>
 
 						<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
 						{ loading ? loadCards : 

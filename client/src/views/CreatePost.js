@@ -108,7 +108,7 @@ function CreatePost(props) {
 				"photo": selectedPhotoFile
 			}
             // console.log(formData);
-			await fetch("/api/createPost/" + umatiname, {
+			let response = await fetch("/api/createPost/" + umatiname, {
 				method: "post",
 				body: JSON.stringify(formData),
 				headers: {
@@ -117,14 +117,20 @@ function CreatePost(props) {
 				},
 				credentials: "include"
 			})
-			.then(function (data){
-				console.log(data);
-				window.location.href = "/u/" + umatiname + "/comments/" + data.postId;
-				return data;
-			})
-			.catch(e => {
-				console.error(e);
-			});
+			if (!response.ok) {
+				throw new Error("HTTP error, status = " + response.status);
+			}
+			else {
+				await response.json()
+				.then(function (postData) {
+					console.log(postData);
+					window.location.href = "/u/" + umatiname + "/comments/" + postData.postId;
+					return postData;
+				})
+				.catch(e => {
+					console.error(e);
+				});
+			}
 		}
 		catch(e) {
 			console.error(e);
