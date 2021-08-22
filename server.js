@@ -651,7 +651,7 @@ app.post("/api/updateNameAvatar/:username", [middleware.ratelimitAccountEdit, mi
                                 
                             }
                             else { // if no credentials
-                                res.status(403).end();
+                                res.status(401).end();
                             }
                         }
                         else{ // if username taken
@@ -815,7 +815,7 @@ app.post("/api/createUmati", [middleware.ratelimitAccounts, middleware.jsonParse
                         }
                     }
                     else {
-                        res.status(403).end();
+                        res.status(401).end();
                     }
                     
                    
@@ -1552,16 +1552,6 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                                 skip, limit
                             ]);
                             break;
-                        case "new":
-                            // New Sort
-                            // Sort by newest
-                            aggregation = await allPostsCollection.aggregate([
-                                match, lookup,
-                                {$sort: {incrementId: -1}},
-
-                                skip, limit
-                            ]);
-                            break;
                         case "old":
                             // Old Sort
                             // Sort by oldest
@@ -1644,6 +1634,32 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                                 skip, limit
                             ]);
                             break;
+                            case "liked":
+                                // Liked Sort
+                                // Sort by most liked
+                                aggregation = await allPostsCollection.aggregate([
+                                    match, lookup,
+                                    {$addFields: {
+                                        likeCount: {$cond: {if: {$gt:[{$first: "$voteData.likers"}, null]}, then: {$size: {$first: "$voteData.likers"}}, else: 0}}
+                                    }},
+                                    {$sort: {likeCount: -1}},
+
+                                    skip, limit
+                                ]);
+                                break;
+                            case "disliked":
+                                // Disliked Sort
+                                // Sort by most disliked
+                                aggregation = await allPostsCollection.aggregate([
+                                    match, lookup,
+                                    {$addFields: {
+                                        dislikeCount: {$cond: {if: {$gt:[{$first: "$voteData.dislikers"}, null]}, then: {$size: {$first: "$voteData.dislikers"}}, else: 0}}
+                                    }},
+                                    {$sort: {dislikeCount: -1}},
+
+                                    skip, limit
+                                ]);
+                                break;
                         case "controversial":
                             // Controversial Sort
                             // Posts closest to 50% upvoted are shown first
@@ -1718,6 +1734,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                             targetUser = await usersCollection.findOne({userId: parseInt(req.query.userId)})
                         }
                         for await (let post of aggregation) {
+                            
                             let user = targetUser || await usersCollection.findOne({userId: post.author});
                             let umati = targetUmati || await umatisCollection.findOne({umatiId: post.hostUmati});
                             let voteStatus = post.voteData[0];
@@ -1735,7 +1752,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
 
                             
 
-                            if (voteStatus) {
+                            if (voteStatus && req.decoded) {
                                 if (voteStatus.likers) {
                                     for (let i = 0; i < voteStatus.likers.length; i++) {
                                         if (voteStatus.likers[i] == req.decoded.userId) {

@@ -19,7 +19,8 @@ import {
 	Menu,
 	MenuItem,
 	Modal,
-    Fab
+    Fab,
+    Tooltip
 } from '@material-ui/core';
 import { Skeleton } from '@material-ui/lab';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
@@ -113,7 +114,7 @@ function Umatis(props) {
         );
     }
 
-    useLayoutEffect (() => {
+    useEffect (() => {
         async function fetchUmatiData() {
             let response = await fetch("/api/fetchUmatis/" + window.location.search, {
                 method: "get",
@@ -188,8 +189,8 @@ function Umatis(props) {
             </Container>
 		</Box>
         {
-            (loading || (!token.token)) ? null : 
-        
+            (loading) ? null : 
+            <Tooltip title={token.token ? "Create umati" : "Only Umati accounts can create umatis"} placement="left">
             <Fab color="primary" aria-label="add" href="/umatis/createUmati" 
             style={{margin: 0,
                 top: 'auto',
@@ -199,6 +200,7 @@ function Umatis(props) {
                 position: 'fixed'}}>
                 <AddIcon />
             </Fab>
+            </Tooltip>
         }
         </Fragment>
     );

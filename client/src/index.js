@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
+
 import { CookiesProvider } from 'react-cookie';
 
 import Cookies from 'universal-cookie';
@@ -20,7 +21,7 @@ window.fetch = function() {
     let self = this;
     let args = arguments;
 
-    if (arguments[0] == "/api/loginAccount" ) { // if just logging in
+    if (arguments[0] == "/api/loginAccount" || arguments[0] == "/api/getAccessToken") { // if just logging in
         return constantMock.apply(self, args);
     }
     

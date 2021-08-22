@@ -37,6 +37,9 @@ import PostCard from "./components/PostCard.js";
 import UserLink from "./components/UserLink.js";
 import SortDropdown from "./components/SortDropdown";
 
+import { useSnackbar } from 'notistack';
+
+
 const useStyles = makeStyles(theme => ({
 	root: {
 	  minWidth: 275,
@@ -81,7 +84,7 @@ function Posts(props) {
 	const [loadCards, setLoadCards] = useState([]);
 	const [postsData, setPostsData] = useState([]);
 
-
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
     function loadCard (main) {
         return (
@@ -124,8 +127,14 @@ function Posts(props) {
     }
 
 
-    useLayoutEffect (() => {
-		// const cookieDat = token.token ? jwt_decode(token.token) : null ;
+    useEffect (() => {
+		const cookieDat = token.token ? jwt_decode(token.token) : null ;
+        var searchParams = new URLSearchParams(window.location.search);
+		if (searchParams.has("welcome") && cookieDat) {
+            enqueueSnackbar("Welcome, @" + cookieDat.username + "!", { 
+                variant: "success"
+            });
+        }
 		async function getPostsData () {
             try {
                 console.log("initiating post fetch");
@@ -188,7 +197,7 @@ function Posts(props) {
                     { loading ? loadCards : 
                         (postsData.map(function (post,i) {
                             return (
-                                <PostCard key={i} data={post} umatiData={post.umatiData} indicateHost={true}/>
+                                <PostCard key={i} data={post} umatiData={post.umatiData} indicateHost={true} loggedIn = {token.token ? true : false}/>
                             );
                         }))
                     }

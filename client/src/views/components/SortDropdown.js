@@ -50,7 +50,7 @@ function SortDropdown (props) {
     const [currentSort, setCurrentSort] = useState(newIsDefault ? "new" : "trending");
     
    
-    useLayoutEffect (() => {
+    useEffect (() => {
         var searchParams = new URLSearchParams(window.location.search);
         var sort = searchParams.get("sort");
         setCurrentSort(sort);
@@ -91,6 +91,8 @@ function SortDropdown (props) {
         }
           
           <option value={"top"}>Top</option>
+          <option value={"liked"}>Liked</option>
+          <option value={"disliked"}>Disliked</option>
           <option value={"controversial"}>Controversial</option>
           <option value={"old"}>Old</option>
         </Select>

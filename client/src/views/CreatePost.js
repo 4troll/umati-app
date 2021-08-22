@@ -24,6 +24,7 @@ import {
 } from '@material-ui/core';
 
 import validator from "validator";
+import { Cookies, useCookies } from 'react-cookie';
 
 const useStyles = makeStyles(theme => ({
 	root: {

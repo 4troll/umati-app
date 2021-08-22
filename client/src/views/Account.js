@@ -34,6 +34,11 @@ import Cookies from 'universal-cookie';
 import PostCard from "./components/PostCard.js";
 
 import SortDropdown from "./components/SortDropdown";
+
+import { MentionsInput, Mention } from "react-mentions";
+
+import MentionSuggestionStyle from "./styles/MentionSuggestionStyle.js";
+
  
 const cookies = new Cookies();
 
@@ -94,7 +99,7 @@ function Account(props) {
 	const classes = useStyles();
 
 	const inputRef = useRef();
-  	const [desctext, setDescText] = useState("");
+  	const [descText, setDescText] = useState("");
 
 	const [loadCards, setLoadCards] = useState([]);
 	const [postsData, setPostsData] = useState([]);
@@ -103,6 +108,9 @@ function Account(props) {
 
 	const location = useLocation();
   	const history = useHistory();
+
+	const [mentionableUsers, setMentionableUsers] = useState([]);
+	const [mentionableUmatis, setMentionableUmatis] = useState([]);
 
 	
 	function loadCard (main) {
@@ -178,7 +186,7 @@ function Account(props) {
 		window.location.href = "/login";
 	}
 
-	useLayoutEffect (() => {
+	useEffect (() => {
 		window.scrollTo(0, 0);
 		
 		const queryParams = new URLSearchParams(location.search)
@@ -269,6 +277,8 @@ function Account(props) {
             }
 			
 		}
+		findMentionableUmatis();
+		findMentionableUsers();
 
 		setLoading(true);
 		let loadlist = []
@@ -277,19 +287,19 @@ function Account(props) {
         }
         setLoadCards(loadlist);
 
-		setLoading(true);
+		
 		getUserData().then(json => {
+			console.log(userDat);
 			setLoading(false);
-		}).catch(error => {
-			console.error(error);
 		});
+		
 	}, []);
 
 	async function setDescription() {
 		try {
-			console.log(desctext);
+			console.log(descText);
 			var descData = {
-				"description": desctext
+				"description": descText
 			}
 			let response = await fetch("/api/editDescription/user/" + username, {
 				method: "post",
@@ -458,6 +468,95 @@ function Account(props) {
 		)
 	}
 
+	async function findMentionableUmatis() {
+		let response = await fetch("/api/fetchUmatis", {
+			method: "get",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+			},
+			credentials: "include"
+		});
+		if (!response.ok) {
+			throw new Error("HTTP error, status = " + response.status);
+		}
+		else {
+			await response.json()
+			.then(function (json) {
+				// await json.forEach(async function(currentUmati, index){
+				//     await getUserDataFromId(currentUmati.owner)
+				//     .then(response => {
+				//         currentUmati.ownerData = response;
+				//         umatiDataList.push(currentUmati);
+				//     })
+				//     .catch (e => {
+				//         console.error(e);
+				//     });
+				// });
+				let importantstuff = []
+				for (let i = 0; i < json.length; i++) {
+					importantstuff.push({
+						display: json[i].umatiname,
+						id: json[i].umatiId
+					})
+				}
+				setMentionableUmatis(importantstuff);
+				return json;
+				
+			})
+			.catch(e => {
+				console.error(e);
+				return error;
+			});
+		}
+	}
+
+	async function findMentionableUsers() {
+		let response = await fetch("/api/fetchUsers", {
+			method: "get",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json",
+			},
+			credentials: "include"
+		});
+		if (!response.ok) {
+			throw new Error("HTTP error, status = " + response.status);
+		}
+		else {
+			await response.json()
+			.then(function (json) {
+				// await json.forEach(async function(currentUmati, index){
+				//     await getUserDataFromId(currentUmati.owner)
+				//     .then(response => {
+				//         currentUmati.ownerData = response;
+				//         umatiDataList.push(currentUmati);
+				//     })
+				//     .catch (e => {
+				//         console.error(e);
+				//     });
+				// });
+				let importantstuff = []
+				for (let i = 0; i < json.length; i++) {
+					importantstuff.push({
+						display: json[i].username,
+						id: json[i].userId
+					})
+				}
+				setMentionableUsers(importantstuff);
+				return json;
+				
+			})
+			.catch(e => {
+				console.error(e);
+				return error;
+			});
+		}
+	}
+	const setDesc = e => {
+		setDescText(e.target.value);
+	}
+	let container;
 	return (
 		<Fragment>
 		<Box
@@ -466,6 +565,9 @@ function Account(props) {
 			minHeight: '100%',
 			py: 3
 		}}
+		ref={el => {
+			container = el
+		  }}
 	  	>
 			<Container maxWidth="lg">
 						{(ownsAccount || editable)? <h1>Your account</h1> : ""}
@@ -536,25 +638,95 @@ function Account(props) {
 											<Skeleton animation="wave" height={10} width="80%" />
 										</React.Fragment>
 										) : (
-										<Editable
-											text={desctext || userDat.description}
-											placeholder={editable ? "Click me to add a fancy description" : "Hello. I am @" + userDat.username + ", an Umati user."}
+											// <span/>
+											<Editable
+											text={descText || userDat.description}
+											placeholder={editable ? "Click me to add a fancy description" : "Welcome to u/" + userDat.username + ", one of many Umatis on the social media platform Umati!"}
 											childRef={inputRef}
-											finishEdits={() => setDescription()}
+											finishEdits={() => updateDescription()}
 											type="input"
 											enabled={editable}
+											style={{whiteSpace: "pre-wrap"}}
+											
 											>
-											<TextField
+											<MentionsInput 
+											value={descText} 
+											onChange={setDesc}
+											style={MentionSuggestionStyle}
+											multiline
+											ignoreAccents
+											suggestionsPortalHost={container}
+											allowSuggestionsAboveCursor={true}
+											
+											>
+												<Mention
+												trigger="u/"
+												data={mentionableUmatis}
+												renderSuggestion={(
+													suggestion,
+													search,
+													highlightedDisplay,
+													index,
+													focused
+												  ) => (
+													<div className={`user ${focused ? "focused" : ""}`}>
+														u/
+													  {highlightedDisplay}
+													</div>
+												  )}
+												markup="u/[__display__](__id__)"
+												style={{ backgroundColor: "#3F50B5", opacity: 0.2}}
+												appendSpaceOnAdd={true}
+												displayTransform={(_, display) => {
+													return `u/${display}`;
+													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
+												}}
+												
+												/>
+
+												<Mention
+												trigger="@"
+												data={mentionableUsers}
+												renderSuggestion={(
+													suggestion,
+													search,
+													highlightedDisplay,
+													index,
+													focused
+												  ) => (
+													<div className={`user ${focused ? "focused" : ""}`}>
+														<div className="right-hold flexbox">
+															<Avatar style={{height:24+"px", width:24+"px"}} 
+															src={"/assets/profilePicture/" + suggestion.id} />
+															{"@"}
+															{highlightedDisplay}
+														</div>
+													</div>
+												  )}
+												markup="@[__display__](__id__)"
+												style={{ backgroundColor: "#3F50B5", opacity: 0.2}}
+												appendSpaceOnAdd={true}
+												displayTransform={(_, display) => {
+													return `@${display}`;
+													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
+												}}
+												
+												/>
+											</MentionsInput>
+											{/* <TextField
 												ref={inputRef}
 												type="text"
 												name="task"
 												placeholder={"Write a fancy description"}
 												multiline={true}
 												fullWidth={true}
-												value={desctext || userDat.description}
+												value={desctext || umatiDat.description}
 												onChange={e => setDescText(e.target.value)}
 												onFocus={e => setDescText(e.target.value)}
-											/>
+												focused
+												
+												
+											/> */}
 										</Editable>
 									)}				
 								</Box>
@@ -569,7 +741,7 @@ function Account(props) {
 						{ loading ? loadCards : 
 							(postsData.map(function (post,i) {
 								return (
-									<PostCard key={i} data={post} umatiname={post.hostUmatiname} indicateHost={true}/>
+									<PostCard key={i} data={post} umatiname={post.hostUmatiname} indicateHost={true} loggedIn = {token.token ? true : false}/>
 								);
 							}))
 						}

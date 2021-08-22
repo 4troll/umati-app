@@ -10,7 +10,8 @@ import {
     Button,
     IconButton,
     ThemeProvider,
-    createTheme
+    createTheme,
+    Tooltip
 } from '@material-ui/core';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
@@ -18,6 +19,8 @@ import FlagIcon from '@material-ui/icons/Flag';
 
 import UserLink from "./UserLink.js";
 import UmatiLink from "./UmatiLink.js";
+
+
 
 import {
     Link
@@ -87,6 +90,7 @@ function determineColor(current,num) {
 function PostCard (props) {
     const classes = useStyles();
     const postData = props.data;
+    const loggedIn = props.loggedIn;
 
     const authorData = postData.authorData;
     const umatiData = postData.umatiData;
@@ -95,6 +99,8 @@ function PostCard (props) {
 
     const [voteStatus,setVoteStatus] = useState(postData.userVote || 0);
     const [loadingVote,setLoadingVote] = useState(false);
+
+    
 
     async function handleVote(originalVote,targetVote) {
 		var voteData;
@@ -132,7 +138,7 @@ function PostCard (props) {
 	}
 
     async function setVote(buttonClicked) {
-        if (!loadingVote) {
+        if (!loadingVote && loggedIn) {
             if (buttonClicked == voteStatus) { // if toggling
                 setVoteStatus(0);
                 await handleVote(voteStatus,0);
@@ -142,8 +148,11 @@ function PostCard (props) {
                 await handleVote(voteStatus,buttonClicked);
             }
         }
+        if (!loggedIn) {
+            window.location.href = "/register?to=vote&vote=like";
+        }
     }
-    useLayoutEffect (() => {
+    useEffect (() => {
         
     }, []);
 
@@ -159,23 +168,27 @@ function PostCard (props) {
                     display: 'flex',
                     flexDirection: 'column'  }}>
                 
-                <IconButton 
-                color={determineColor(1,voteStatus)}
-                aria-label="like" component="span"
-                onClick={() => {setVote(1)}}
-                >
-                    <ThumbUpIcon />
-                </IconButton>
+                <Tooltip title={loggedIn ? "Like" : "Only Umati accounts can like posts"} placement="left">
+                    <IconButton
+                    color={determineColor(1,voteStatus)}
+                    aria-label="like" component="span"
+                    onClick={() => {setVote(1)}}
+                    >
+                        <ThumbUpIcon />
+                    </IconButton>
+                </Tooltip>
 
                 <span>{(postData.voteCount || 0) - (postData.userVote || 0) + voteStatus}</span>
 
-                <IconButton 
-                color={determineColor(-1,voteStatus)}
-                aria-label="dislike" 
-                component="span"
-                onClick={() => {setVote(-1)}}>
-                    <ThumbDownIcon />
-                </IconButton>
+                <Tooltip title={loggedIn ? "Dislike" : "Only Umati accounts can dislike posts"} placement="left">
+                    <IconButton 
+                    color={determineColor(-1,voteStatus)}
+                    aria-label="dislike" 
+                    component="span"
+                    onClick={() => {setVote(-1)}}>
+                        <ThumbDownIcon />
+                    </IconButton>
+                </Tooltip>
 
 
                 <IconButton color="secondary" aria-label="flag" component="span">

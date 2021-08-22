@@ -22,7 +22,8 @@ import {
 	Menu,
 	MenuItem,
 	Modal,
-	Fab
+	Fab,
+	Tooltip
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
@@ -41,6 +42,9 @@ import SortDropdown from "./components/SortDropdown";
 import { MentionsInput, Mention } from "react-mentions";
 
 import MentionSuggestionStyle from "./styles/MentionSuggestionStyle.js";
+
+
+
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -102,6 +106,7 @@ function UmatiView(props) {
 
 	const [mentionableUsers, setMentionableUsers] = useState([]);
 	const [mentionableUmatis, setMentionableUmatis] = useState([]);
+	
 
 
     function loadCard (main) {
@@ -184,7 +189,7 @@ function UmatiView(props) {
 		}
 	}
 
-    useLayoutEffect (() => {
+    useEffect (() => {
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
 		async function getUmatiData () {
 			
@@ -262,7 +267,7 @@ function UmatiView(props) {
 
 		getUmatiData().then(a => {
             setLoading(false);
-        })
+        });
 	}, []);
 
 	function onChangeLogoClick () {
@@ -677,7 +682,7 @@ function UmatiView(props) {
 			{ loading ? loadCards : 
 				(postsData.map(function (post,i) {
 					return (
-						<PostCard key={i} data={post} umatiname={umatiname}/>
+						<PostCard key={i} data={post} umatiname={umatiname} loggedIn = {token.token ? true : false}/>
 					);
 				}))
 			}
@@ -762,8 +767,9 @@ function UmatiView(props) {
 				</Grid>
 			</Grid>
 			{
-            (loading || (!token.token)) ? null : 
-        
+            (loading) ? null : 
+
+			<Tooltip title={token.token ? "Create post" : "Only Umati accounts can create posts"} placement="left">
             <Fab color="secondary" aria-label="add" href={"/u/" + umatiDat.umatiname + "/submit"} 
             style={{margin: 0,
                 top: 'auto',
@@ -773,6 +779,7 @@ function UmatiView(props) {
                 position: 'fixed'}}>
                 <CreateIcon />
             </Fab>
+			</Tooltip>
         }
 		</Fragment>
     );

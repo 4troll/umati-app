@@ -20,6 +20,8 @@ import VisibilityOff from '@material-ui/icons/VisibilityOff';
 
 import ScrollLock, { TouchScrollable } from 'react-scrolllock';
 
+import { useSnackbar } from 'notistack';
+
 import Cookies from 'universal-cookie';
  
 const cookies = new Cookies();
@@ -74,6 +76,11 @@ export default function Login() {
 	const [password, setPassword] = useState("");
 	const [rememberMe, setRemember] = useState("");
 	const [showPassword,setShow] = useState("");
+
+	const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
+	const [loggingIn, setLoggingIn] = useState(false);
+
 	// window.onscroll = function () { window.scrollTo(0, 0); }; // prevent scroll
 	function validateForm() {
 		return username.length > 0 && password.length > 0;
@@ -99,7 +106,7 @@ export default function Login() {
 			.then(function (json) {
 				let accessToken = json.token;
 				let refreshToken = json.refreshToken;
-				window.location.href = "/@" + username;
+				window.location.href = "/posts?welcome";
 				cookies.set("token", accessToken, { sameSite: "lax", secure: true, expires: thirtymins, path: "/" });
 				cookies.set("refreshToken", refreshToken, { sameSite: "lax", secure: true, expires: hundreddays, path: "/"});
 				
@@ -114,13 +121,26 @@ export default function Login() {
 			"username": username,
 			"password": password
 		}
+		setLoggingIn(true);
+		const key = enqueueSnackbar("Logging in...", { 
+			variant: "info",
+			persist: true,
+		});
 		await postJson("/api/loginAccount", loggedAccount)
 		.then(function (json) {
+			// enqueueSnackbar("Logged in!", { 
+			// 	variant: "success"
+			// });
 			return json;
 		})
 		.catch((error) => {
+			enqueueSnackbar("Something went wrong.", { 
+				variant: "error"
+			});
 			return error;
 		});
+		closeSnackbar(key);
+		setLoggingIn(false);
 	}
 
 	function handleClickShowPassword() {

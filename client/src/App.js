@@ -22,6 +22,8 @@ import GDSTWoff from "./fonts/light-f591b13f7d-v2.woff";
 import jwt_decode from "jwt-decode";
 import { useCookies } from 'react-cookie';
 
+import { SnackbarProvider } from 'notistack';
+
 
 
 const GDSTransportLight = {
@@ -70,7 +72,7 @@ class App extends Component {
 		super(props);
 		this.state = {
 			token: cookies.get("token"),
-			loggedIn: false,
+			cookieDat: {},
 			tabs: []
 		};
 
@@ -112,35 +114,6 @@ class App extends Component {
 
 	componentDidMount() {
 		
-
-		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
-		this.setState(prevState => ({
-			tabs: [...prevState.tabs, <Link key="home" className="navlink home" to="/">
-				<div className="right-hold flexbox" >
-					<img style={{width:"32px",height:"32px", marginRight:"8px"}} src="/umatiAbstractNavbar.svg"/>
-					umati
-				</div>
-				</Link>]
-		}));
-		if (cookieDat) { // if logged in
-			this.setState({ loggedIn : true })
-			var username = cookieDat.username; // username
-			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link className="navlink" onClick={this.forceUpdate()}  key={username} to={"/@" + username + "?self"}>@{username}</Link>]
-			}));
-		}
-		else {
-			this.setState({ loggedIn : false })
-			this.setState(prevState => ({
-				tabs: [...prevState.tabs, <Link className="navlink" key="login" to="/login">Login</Link>]
-			}));
-		}
-		this.setState(prevState => ({
-			tabs: [...prevState.tabs, <Link className="navlink" key="posts" to="/posts">Posts</Link>]
-		}));
-		this.setState(prevState => ({
-			tabs: [...prevState.tabs, <Link className="navlink" key="umatis" to="/umatis">Umatis</Link>]
-		}));
 	}
 
 	async checkAuth() {
@@ -189,15 +162,38 @@ class App extends Component {
 			setTimeout(() => {
 				this.props.history.replace(current);
 		});
+		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
+		if (cookieDat) { // if logged in
+			this.setState({ cookieDat : cookieDat})
+		}
 	}
 	
 	render() {
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
+		let username;
+		if (cookieDat) {
+			username = cookieDat.username;
+		}
+		
+		
 		return (
 			<ThemeProvider theme={theme}>
+			<SnackbarProvider maxSnack={3}>
 			<Router>
 			<div className="navbar">
-				{this.state.tabs}
+				<Link key="home" className="navlink home" to="/">
+					<div className="right-hold flexbox" >
+						<img style={{width:"32px",height:"32px", marginRight:"8px"}} src="/umatiAbstractNavbar.svg"/>
+						umati
+					</div>
+				</Link>
+				{username ? 
+				(<Link className="navlink"   key={username} to={"/@" + username + "?self"}>@{username}</Link>)
+				: 
+				<Link className="navlink" key="login" to="/login">Login</Link>
+				}
+				<Link className="navlink" key="posts" to="/posts">Posts</Link>
+				<Link className="navlink" key="umatis" to="/umatis">Umatis</Link>
 			</div>
 				{/*
 				A <Switch> looks through all its children <Route>
@@ -214,7 +210,7 @@ class App extends Component {
 								return (<Redirect to="/login" />);
 							}
 							else {
-								return (<Redirect to={"/@" + cookieDat.username + "?self"} />);
+								return (<Redirect to={"/posts"} />);
 							}
 						}
 					}
@@ -238,12 +234,25 @@ class App extends Component {
 				</Route>
 				
 				<Route exact path="/umatis/createUmati">
-					<CreateUmati />
+						{function() {
+							if (!cookieDat) {
+								return (<Redirect to="/register?to=umati" />);
+							}
+							else {
+								return (<CreateUmati />);
+							}
+						}}
 				</Route>
 				<Route path="/u/:umatiname/submit">
-					<CreatePost
-					path="/u/:umatiname/submit"
-				/>
+					{function() {
+							if (!cookieDat) {
+								return (<Redirect to="/register?to=post" />);
+							}
+							else {
+								return (<CreatePost path="/u/:umatiname/submit"/>);
+							}
+						}}
+					
 				</Route>
 
 				<Route path="/u/:umatiname" render={(props) => (<UmatiView
@@ -264,7 +273,9 @@ class App extends Component {
 			</div> */}
 			<StickyFooter/>
 			</Router>
+			</SnackbarProvider>
 			</ThemeProvider>
+			
 		);
 	}
 }

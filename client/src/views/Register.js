@@ -23,6 +23,8 @@ import { FormHelperText } from '@material-ui/core';
 
 import ScrollLock, { TouchScrollable } from 'react-scrolllock';
 
+import { useSnackbar } from 'notistack';
+
 function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
@@ -76,6 +78,10 @@ export default function Register() {
 	const [taken,setTaken] = useState(false);
 	const [checkingUsername,setCheckingUsername] = useState(false);
 	const [showPassword,setShow] = useState("");
+
+	const [registerMessage,setRegisterMessage] = useState("");
+
+	const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
 	// window.onscroll = function () { window.scrollTo(0, 0); }; // prevent scroll
 
@@ -212,7 +218,31 @@ export default function Register() {
 		var variable = checkUsername()
 		return variable[0];
 	}
-
+	useEffect (() => {
+		var searchParams = new URLSearchParams(window.location.search);
+		var reason = searchParams.get("to");
+		if (reason == "vote") {
+			let action = searchParams.get("vote");
+			enqueueSnackbar("Could not " + action +" post. To vote on content, you must register an Umati account.", { 
+                variant: 'warning',
+            });
+			setRegisterMessage("Join Umati to vote on content");
+		}
+		else if (reason == "post") {
+			enqueueSnackbar("Could not create post. To create posts, you must register an Umati account.", { 
+                variant: 'warning',
+            });
+			setRegisterMessage("Join Umati to make insightful posts");
+		}
+		else if (reason == "umati") {
+			enqueueSnackbar("Could not create Umati. To create Umatis, you must register an Umati account.", { 
+                variant: 'warning',
+            });
+			setRegisterMessage("Join Umati to assemble your own community");
+		}
+        
+    }, []);
+	
 
 return (
 	<Grid container component="main" className={classes.root}>
@@ -224,7 +254,7 @@ return (
 			<PeopleOutlineOutlinedIcon />
 		</Avatar>
 		<Typography component="h1" variant="h5">
-			Register
+			{registerMessage || "Register"}
 		</Typography>
 		<form className={classes.form} onSubmit={handleSubmit} noValidate>
 		<TextField
