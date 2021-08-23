@@ -498,11 +498,40 @@ app.get("/api/fetchUsers", [middleware.jsonParser, middleware.authenticateToken]
 
                     let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
 
-                    let cursor = await usersCollection.find({ userId: { $gt: startingCount} })
-                    .sort({userId:1})
+                    const skip = {$skip: startingCount};
+                    const limit = {$limit: queryStuff.limit};
+                    var query = "";
+
+                    let aggregation;
+                    if (req.query.search && req.query.search.length > 0) {
+                        query = req.query.search;
+                        console.log("query: " + query);
+                        aggregation = await usersCollection.aggregate([
+                            {$search: {index: "userSearch", "autocomplete": {
+                                "query": query,
+                                "path": "username",
+                                "tokenOrder": "any",
+                                "fuzzy": {}
+                            }} },
+                            {$addFields: {
+                                searchScore: { $meta: "searchScore" }
+                            }},
+                            { $sort: {searchScore: 1} },
+                            {$skip: startingCount},
+                            {$limit: queryStuff.limit}
+                        ]);
+                    }
+                    else {
+                        aggregation = await usersCollection.aggregate([
+                            { $sort: {userId:1}},
+                            skip,limit
+                        ]);
+                    }
+                    // let cursor = await usersCollection.find({ userId: { $gt: startingCount} })
+                    // .sort({userId:1})
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
-                    .limit( queryStuff.limit )
-                    for await (let user of cursor) {
+                    // .limit( queryStuff.limit )
+                    for await (let user of aggregation) {
                         user = cleanUserData(user,adminMode);
                         userStream.push(user);
                     }
@@ -1066,15 +1095,45 @@ app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken
                         queryStuff.limit = parseInt(req.query.limit);
                     }
                     
-                    var umatiStream = []
+                    
 
                     let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
 
-                    let cursor = await umatisCollection.find({ umatiId: { $gt: startingCount} })
-                    .sort({umatiId:1})
+                    const skip = {$skip: startingCount};
+                    const limit = {$limit: queryStuff.limit};
+                    var query = "";
+
+                    let aggregation;
+                    if (req.query.search && req.query.search.length > 0) {
+                        query = req.query.search;
+                        console.log("query: " + query);
+                        aggregation = await umatisCollection.aggregate([
+                            {$search: {index: "umatiSearch", "autocomplete": {
+                                "query": query,
+                                "path": "umatiname",
+                                "tokenOrder": "any",
+                                "fuzzy": {}
+                            }} },
+                            {$addFields: {
+                                searchScore: { $meta: "searchScore" }
+                            }},
+                            { $sort: {searchScore: 1} },
+                            {$skip: startingCount},
+                            {$limit: queryStuff.limit}
+                        ]);
+                    }
+                    else {
+                        aggregation = await umatisCollection.aggregate([
+                            { $sort: {umatiId:1}},
+                            skip,limit
+                        ]);
+                    }
+                    var umatiStream = []
+                    // let cursor = await umatisCollection.find({ umatiId: { $gt: startingCount} })
+                    // .sort({umatiId:1})
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
-                    .limit( queryStuff.limit )
-                    for await (let umati of cursor) {
+                    // .limit( queryStuff.limit )
+                    for await (let umati of aggregation) {
                         await usersCollection.findOne({userId: umati.owner})
                         .then(ownerData => {
                             if (ownerData) {

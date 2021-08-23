@@ -109,9 +109,7 @@ function Account(props) {
 	const location = useLocation();
   	const history = useHistory();
 
-	const [mentionableUsers, setMentionableUsers] = useState([]);
-	const [mentionableUmatis, setMentionableUmatis] = useState([]);
-
+	const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 	
 	function loadCard (main) {
 		return (
@@ -215,7 +213,7 @@ function Account(props) {
 			else {
 				await response.json()
 				.then(async (json) => {
-					console.log(json);
+					// console.log(json);
 					await getPostsData(json.userId);
 					setUserDat(json);
 					
@@ -227,10 +225,11 @@ function Account(props) {
 					setUsernameField(json.username);
 					setDisplayName(json.displayname);
 					
-	
+					console.log(json.description);
 					if (json.description) {
-						setDescText(userDat.description);
+						setDescText(json.description);
 					}
+					console.log(descText);
 					if (cookieDat) {
 						if (username == cookieDat.username || cookieDat.isAdmin) {
 							setEditable(true);
@@ -317,9 +316,11 @@ function Account(props) {
 				await response.json()
 				.then(json => {
 					console.log(json);
+					return json;
 				})
 				.catch(e => {
 					console.error(e);
+					return e;
 				});
 			}
 		}
@@ -468,8 +469,13 @@ function Account(props) {
 		)
 	}
 
-	async function findMentionableUmatis() {
-		let response = await fetch("/api/fetchUmatis", {
+	const findMentionableUmatis = async (query, callback) => {
+		setLoadingSuggestions(true);
+		let urlquery = "";
+		if (query && query.length > 0) {
+			urlquery = "?search=" + query
+		}
+		let response = await fetch("/api/fetchUmatis" + urlquery, {
 			method: "get",
 			headers: {
 				"Accept": "application/json",
@@ -500,19 +506,24 @@ function Account(props) {
 						id: json[i].umatiId
 					})
 				}
-				setMentionableUmatis(importantstuff);
-				return json;
+				return callback(importantstuff);
 				
 			})
 			.catch(e => {
 				console.error(e);
-				return error;
+				return e;
 			});
 		}
+		setLoadingSuggestions(false);
 	}
 
-	async function findMentionableUsers() {
-		let response = await fetch("/api/fetchUsers", {
+	const findMentionableUsers = async (query, callback) => {
+		setLoadingSuggestions(true);
+		let urlquery = "";
+		if (query && query.length > 0) {
+			urlquery = "?search=" + query
+		}
+		let response = await fetch("/api/fetchUsers" + urlquery, {
 			method: "get",
 			headers: {
 				"Accept": "application/json",
@@ -543,15 +554,15 @@ function Account(props) {
 						id: json[i].userId
 					})
 				}
-				setMentionableUsers(importantstuff);
-				return json;
+				return callback(importantstuff);
 				
 			})
 			.catch(e => {
 				console.error(e);
-				return error;
+				return e;
 			});
 		}
+		setLoadingSuggestions(false);
 	}
 	const setDesc = e => {
 		setDescText(e.target.value);
@@ -640,10 +651,10 @@ function Account(props) {
 										) : (
 											// <span/>
 											<Editable
-											text={descText || userDat.description}
+											text={descText}
 											placeholder={editable ? "Click me to add a fancy description" : "Welcome to u/" + userDat.username + ", one of many Umatis on the social media platform Umati!"}
 											childRef={inputRef}
-											finishEdits={() => updateDescription()}
+											finishEdits={() => setDescription()}
 											type="input"
 											enabled={editable}
 											style={{whiteSpace: "pre-wrap"}}
@@ -661,7 +672,7 @@ function Account(props) {
 											>
 												<Mention
 												trigger="u/"
-												data={mentionableUmatis}
+												data={findMentionableUmatis}
 												renderSuggestion={(
 													suggestion,
 													search,
@@ -681,12 +692,13 @@ function Account(props) {
 													return `u/${display}`;
 													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
 												}}
+												isLoading={loadingSuggestions}
 												
 												/>
 
 												<Mention
 												trigger="@"
-												data={mentionableUsers}
+												data={findMentionableUsers}
 												renderSuggestion={(
 													suggestion,
 													search,
@@ -710,7 +722,7 @@ function Account(props) {
 													return `@${display}`;
 													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
 												}}
-												
+												isLoading={loadingSuggestions}
 												/>
 											</MentionsInput>
 											{/* <TextField

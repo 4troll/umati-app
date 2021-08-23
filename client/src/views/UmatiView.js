@@ -103,10 +103,8 @@ function UmatiView(props) {
 
 	const [loadCards, setLoadCards] = useState([]);
 	const [postsData, setPostsData] = useState([]);
-
-	const [mentionableUsers, setMentionableUsers] = useState([]);
-	const [mentionableUmatis, setMentionableUmatis] = useState([]);
 	
+	const [loadingSuggestions, isLoadingSuggestions] = useState(false);
 
 
     function loadCard (main) {
