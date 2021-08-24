@@ -99,6 +99,7 @@ function Account(props) {
 	const classes = useStyles();
 
 	const inputRef = useRef();
+	const cardRef = useRef();
   	const [descText, setDescText] = useState("");
 
 	const [loadCards, setLoadCards] = useState([]);
@@ -567,7 +568,6 @@ function Account(props) {
 	const setDesc = e => {
 		setDescText(e.target.value);
 	}
-	let container;
 	return (
 		<Fragment>
 		<Box
@@ -576,9 +576,7 @@ function Account(props) {
 			minHeight: '100%',
 			py: 3
 		}}
-		ref={el => {
-			container = el
-		  }}
+		ref={cardRef}
 	  	>
 			<Container maxWidth="lg">
 						{(ownsAccount || editable)? <h1>Your account</h1> : ""}
@@ -666,7 +664,7 @@ function Account(props) {
 											style={MentionSuggestionStyle}
 											multiline
 											ignoreAccents
-											suggestionsPortalHost={container}
+											suggestionsPortalHost={cardRef.current}
 											allowSuggestionsAboveCursor={true}
 											
 											>
@@ -692,7 +690,6 @@ function Account(props) {
 													return `u/${display}`;
 													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
 												}}
-												isLoading={loadingSuggestions}
 												
 												/>
 
@@ -722,7 +719,6 @@ function Account(props) {
 													return `@${display}`;
 													// return (<a href={"/u/" + display}>{"u/" + display}</a>);
 												}}
-												isLoading={loadingSuggestions}
 												/>
 											</MentionsInput>
 											{/* <TextField

@@ -99,12 +99,13 @@ function UmatiView(props) {
 	const classes = useStyles();
 
 	const inputRef = useRef();
+	const cardRef = useRef();
   	const [desctext, setDescText] = useState("");
 
 	const [loadCards, setLoadCards] = useState([]);
 	const [postsData, setPostsData] = useState([]);
 	
-	const [loadingSuggestions, isLoadingSuggestions] = useState(false);
+	const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
 
     function loadCard (main) {
@@ -412,8 +413,13 @@ function UmatiView(props) {
 		setDescText(e.target.value);
 	}
 
-	async function findMentionableUmatis() {
-		let response = await fetch("/api/fetchUmatis", {
+	const findMentionableUmatis = async (query, callback) => {
+		setLoadingSuggestions(true);
+		let urlquery = "";
+		if (query && query.length > 0) {
+			urlquery = "?search=" + query
+		}
+		let response = await fetch("/api/fetchUmatis" + urlquery, {
 			method: "get",
 			headers: {
 				"Accept": "application/json",
@@ -444,19 +450,24 @@ function UmatiView(props) {
 						id: json[i].umatiId
 					})
 				}
-				setMentionableUmatis(importantstuff);
-				return json;
+				return callback(importantstuff);
 				
 			})
 			.catch(e => {
 				console.error(e);
-				return error;
+				return e;
 			});
 		}
+		setLoadingSuggestions(false);
 	}
 
-	async function findMentionableUsers() {
-		let response = await fetch("/api/fetchUsers", {
+	const findMentionableUsers = async (query, callback) => {
+		setLoadingSuggestions(true);
+		let urlquery = "";
+		if (query && query.length > 0) {
+			urlquery = "?search=" + query
+		}
+		let response = await fetch("/api/fetchUsers" + urlquery, {
 			method: "get",
 			headers: {
 				"Accept": "application/json",
@@ -487,17 +498,16 @@ function UmatiView(props) {
 						id: json[i].userId
 					})
 				}
-				setMentionableUsers(importantstuff);
-				return json;
+				return callback(importantstuff);
 				
 			})
 			.catch(e => {
 				console.error(e);
-				return error;
+				return e;
 			});
 		}
+		setLoadingSuggestions(false);
 	}
-	let container;
     return (
 		<Fragment>
 			<Box
@@ -506,9 +516,7 @@ function UmatiView(props) {
 				minHeight: '100%',
 				py: 3
 			}}
-			ref={el => {
-				container = el
-			  }}
+			ref={cardRef}
 
 			>
 				<Container maxWidth="lg">
@@ -592,13 +600,13 @@ function UmatiView(props) {
 											style={MentionSuggestionStyle}
 											multiline
 											ignoreAccents
-											suggestionsPortalHost={container}
+											suggestionsPortalHost={cardRef.current}
 											allowSuggestionsAboveCursor={true}
 											
 											>
 												<Mention
 												trigger="u/"
-												data={mentionableUmatis}
+												data={findMentionableUmatis}
 												renderSuggestion={(
 													suggestion,
 													search,
@@ -623,7 +631,7 @@ function UmatiView(props) {
 
 												<Mention
 												trigger="@"
-												data={mentionableUsers}
+												data={findMentionableUsers}
 												renderSuggestion={(
 													suggestion,
 													search,

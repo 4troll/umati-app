@@ -1,7 +1,7 @@
 import React, { useEffect,useLayoutEffect, useRef, useState, Component, Fragment } from "react";
 
 
-import {useParams} from "react-router-dom";
+import {useParams, useHistory, useLocation} from "react-router-dom";
 
 import {
     Avatar,
@@ -23,6 +23,8 @@ import {
 	Modal,
 	Fab
 } from '@material-ui/core';
+
+
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
 
@@ -84,6 +86,9 @@ function Posts(props) {
 	const [loadCards, setLoadCards] = useState([]);
 	const [postsData, setPostsData] = useState([]);
 
+    const location = useLocation();
+  	const history = useHistory();
+
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
     function loadCard (main) {
@@ -131,6 +136,10 @@ function Posts(props) {
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
         var searchParams = new URLSearchParams(window.location.search);
 		if (searchParams.has("welcome") && cookieDat) {
+            searchParams.delete("welcome");
+            history.replace({
+                search: searchParams.toString(),
+            });
             enqueueSnackbar("Welcome, @" + cookieDat.username + "!", { 
                 variant: "success"
             });
