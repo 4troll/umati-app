@@ -1,12 +1,134 @@
 // Editable.js
 import React, { useEffect, useRef, useState, Component } from "react";
 import RSR from "react-string-replace";
+import RSRR from "react-string-replace-recursively";
 import UmatiLink from "./UmatiLink";
 import UserLink from "./UserLink";
+
+
 
 import {
     Button,
 } from '@material-ui/core';
+
+var config = {
+	// 'hashTag': {
+	//   pattern: /(#[a-z\d][\w-]*)/ig,
+	//   matcherFn: function (rawText, processed, key) {
+	// 	return <Link key={key} to={"tags/" + rawText}>{processed}</Link>;
+	//   }
+	// },
+	"header3": {
+		pattern: /^(?:###)(.*$)/gim,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<h3>{processed}</h3>
+			);
+		}
+	},
+	"header2": {
+		pattern: /^(?:##)(.*$)/gim,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<h2>{processed}</h2>
+			);
+		}
+	},
+	"header": {
+		pattern: /^(?:#)(.*$)/gim,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<h1>{processed}</h1>
+			);
+		}
+	},
+	"quote": {
+		pattern: />(.*)/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<blockquote style={{background:"rgb(220,220,220)", color: "rgb(128,128,128)", marginTop: "10px" }}>{processed}</blockquote>
+			);
+		}
+	},
+	"link": {
+		pattern: /\[([^\[]+\]\([^\)]+)\)/g,
+		matcherFn: function (rawText, processed, key) {
+			var nameId = rawText.split("](");
+			const linkname = nameId[0]
+			const link = nameId[1]
+			return (
+				<a href={link}>{linkname}</a>
+			);
+		}
+	},
+	"bold": {
+		pattern: /(?:\*\*)(.*?)(?:\*\*)/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<strong>{processed}</strong>
+			);
+		}
+	},
+	"italics": {
+		pattern: /(?:\*)(.*?)(?:\*)/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<em>{processed}</em>
+			);
+		}
+	},
+	"bulletList": {
+		pattern: /\n\*(.*)/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<li>{processed}</li>
+			);
+		}
+	},
+	"numberList": {
+		pattern: /\n[0-9]+\.(.*)/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<ol><li>{processed}</li></ol>
+			);
+		}
+	},
+	"hr": {
+		pattern: /\n-{5,}/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<hr/>
+			);
+		}
+	},
+	"umatiMention": {
+		pattern: /[u]\/\[([^\[]+\]\[[0-9]*)\]/g,
+		matcherFn: function (rawText, processed, key) {
+			const nameId = rawText.split("][");
+			const umatiname = nameId[0];
+			const umatiId = nameId[1];
+			return (
+				<UmatiLink key={key}
+				umatiname={umatiname}
+				umatiId={umatiId}/>
+			);
+		}
+	},
+	"userMention": {
+		pattern: /\@\[([^\[]+\]\[[0-9]*)\]/g,
+		matcherFn: function (rawText, processed, key) {
+			const nameId = rawText.split("][");
+			const username = nameId[0];
+			const userId = nameId[1];
+			return (
+				<UserLink key={key}
+					username={username}
+					userId={userId}/>
+			);
+		}
+	},
+	
+};
 
 // Component accept text, placeholder values and also pass what type of Input - input, textarea so that we can use it for styling accordingly
 const Editable = ({
@@ -68,30 +190,81 @@ const Editable = ({
 		var returned;
 		if (textInput) {
 
-			// Umati Mention Replace
-			returned = RSR(textInput, /[u]\/\[([^\[]+\]\([0-9]*)\)/g, function (match, i) {
-				const nameId = match.split("](");
-				const umatiname = nameId[0];
-				const umatiId = nameId[1];
-				return (
-					<UmatiLink
-					umatiname={umatiname}
-					umatiId={umatiId}/>
-				);
-			});
+			// // Umati Mention Replace
+			// returned = RSR(textInput, /[u]\/\[([^\[]+\]\[[0-9]*)\]/g, function (match, i) {
+			// 	const nameId = match.split("][");
+			// 	const umatiname = nameId[0];
+			// 	const umatiId = nameId[1];
+			// 	return (
+			// 		<UmatiLink
+			// 		umatiname={umatiname}
+			// 		umatiId={umatiId}/>
+			// 	);
+			// });
 
-			// User Mention Replace
-			returned = RSR(returned, /\@\[([^\[]+\]\([0-9]*)\)/g, function (match, i) {
-				const nameId = match.split("](");
-				const username = nameId[0];
-				const userId = nameId[1];
-				return (
+			
 
-					<UserLink
-					username={username}
-					userId={userId}/>
-				);
-			});
+			// // User Mention Replace
+			// returned = RSR(returned, /\@\[([^\[]+\]\[[0-9]*)\]/g, function (match, i) {
+			// 	const nameId = match.split("][");
+			// 	const username = nameId[0];
+			// 	const userId = nameId[1];
+			// 	return (
+
+			// 		<UserLink
+			// 		username={username}
+			// 		userId={userId}/>
+			// 	);
+			// });
+			// // Bullet List
+			// returned = RSR(returned, /\n\*(.*)/g, function (match, i) {
+			// 	return (
+			// 		<li>{match}</li>
+			// 	);
+			// });
+			// // Number List
+			// returned = RSR(returned, /\n[0-9]+\.(.*)/g, function (match, i) {
+			// 	return (
+			// 		<ol>{match}</ol>
+			// 	);
+			// });
+
+			// // Quote
+			// returned = RSR(returned, />(.*)/g, function (match, i) {
+			// 	return (
+			// 		<blockquote style={{background:"rgb(220,220,220)", color: "rgb(128,128,128)", marginTop: "10px" }}>{match}</blockquote>
+			// 	);
+			// });
+			
+			// // Link
+			// returned = RSR(returned, /\[([^\[]+\]\([^\)]+)\)/g, function (match, i) {
+			// 	var nameId = match.split("](");
+			// 	const linkname = nameId[0]
+			// 	const link = nameId[1]
+			// 	return (
+			// 		<a href={link}>{linkname}</a>
+			// 	);
+			// });
+
+			// // Bold
+			// returned = RSR(returned, /(?:\*\*)(.*?)(?:\*\*)/g, function (match, i) {
+			// 	return (
+			// 		<strong>{match}</strong>
+			// 	);
+			// });
+
+			// // Italics
+			// returned = RSR(returned, /(?:\*)(.*?)(?:\*)/g, function (match, i) {
+			// 	return (
+			// 		<em>{match}</em>
+			// 	);
+			// });
+
+			returned = RSRR(config)(textInput);
+
+			
+
+
 		}
 		else if (placeholder) {
 			const returned = placeholder;

@@ -683,7 +683,7 @@ function Account(props) {
 													  {highlightedDisplay}
 													</div>
 												  )}
-												markup="u/[__display__](__id__)"
+												markup="u/[__display__][__id__]"
 												style={{ backgroundColor: "#3F50B5", opacity: 0.2}}
 												appendSpaceOnAdd={true}
 												displayTransform={(_, display) => {
@@ -712,7 +712,7 @@ function Account(props) {
 														</div>
 													</div>
 												  )}
-												markup="@[__display__](__id__)"
+												markup="@[__display__][__id__]"
 												style={{ backgroundColor: "#3F50B5", opacity: 0.2}}
 												appendSpaceOnAdd={true}
 												displayTransform={(_, display) => {

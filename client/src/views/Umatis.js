@@ -146,7 +146,7 @@ function Umatis(props) {
                 })
                 .catch(e => {
                     console.error(e);
-                    return error;
+                    return e;
                 });
             }
         }

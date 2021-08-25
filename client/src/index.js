@@ -58,6 +58,7 @@ window.fetch = function() {
                 if (json.token) {
                     cookies.set("token", json.token, { sameSite: "lax", secure: true, expires: thirtymins, path: "/" });
                 }
+                window.location.reload();
                 return json;
             })
             .catch(e => {   
@@ -68,10 +69,13 @@ window.fetch = function() {
             if (response.status === 401) {
                 return {};
             }
+            if (response.status === 500) {
+                return {};
+            }
             if (response.status === 404) {
               return {};
             }
-            window.location.reload();
+            
             return constantMock.apply(self,args);
         }
         if (data.status === 200) console.log("---------Status 200----------");
@@ -82,9 +86,12 @@ window.fetch = function() {
           // return fetch(...args); <- change to this for real scenarios
           // return fetch(args[0], args[1]); <- or to this for real scenarios
           return constantMock.apply(self, args)
-        } else {
+        } 
+        if (data.status === 500 || !data) return {};
+        else {
           return data;
         }
+        
       });
 }
 
