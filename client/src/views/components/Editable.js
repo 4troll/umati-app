@@ -19,77 +19,161 @@ var config = {
 	//   }
 	// },
 	"header3": {
-		pattern: /^(?:###)(.*$)/gim,
+		pattern: /^([\\]?(?:###).*$)/gim,
 		matcherFn: function (rawText, processed, key) {
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				return (
+					<span>{processed}</span>
+				);
+			}
 			return (
 				<h3>{processed}</h3>
 			);
 		}
 	},
 	"header2": {
-		pattern: /^(?:##)(.*$)/gim,
+		pattern: /^([\\]?(?:##).*$)/gim,
 		matcherFn: function (rawText, processed, key) {
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				return (
+					<span>{processed}</span>
+				);
+			}
 			return (
 				<h2>{processed}</h2>
 			);
 		}
 	},
 	"header": {
-		pattern: /^(?:#)(.*$)/gim,
+		pattern: /^([\\]?(?:#).*$)/gim,
 		matcherFn: function (rawText, processed, key) {
-			return (
-				<h1>{processed}</h1>
-			);
-		}
-	},
-	"quote": {
-		pattern: />(.*)/g,
-		matcherFn: function (rawText, processed, key) {
-			return (
-				<blockquote style={{background:"rgb(220,220,220)", color: "rgb(128,128,128)", marginTop: "10px" }}>{processed}</blockquote>
-			);
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				console.log(processed);
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				processed[0] = processed[0].slice(1);
+				return (
+					<h1>{processed}</h1>
+				);
+			}
+			
 		}
 	},
 	"link": {
-		pattern: /\[([^\[]+\]\([^\)]+)\)/g,
+		pattern: /([\\]?\[[^\[]+\]\([^\)]+\))/g,
 		matcherFn: function (rawText, processed, key) {
-			var nameId = rawText.split("](");
-			const linkname = nameId[0]
-			const link = nameId[1]
-			return (
-				<a href={link}>{linkname}</a>
-			);
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				console.log(processed);
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				var nameId = processed[0].split("](");
+				const linkname = nameId[0].slice(1);
+				const link = nameId[1].slice(0,-1);
+				return (
+					<a href={link}>{linkname}</a>
+				);
+			}
 		}
 	},
 	"bold": {
-		pattern: /(?:\*\*)(.*?)(?:\*\*)/g,
+		pattern: /([\\]?(?:\*\*)(?:.+)(?:\*\*))/g,
 		matcherFn: function (rawText, processed, key) {
-			return (
-				<strong>{processed}</strong>
-			);
+			if (rawText.charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				console.log(processed);
+				console.log("escaped");
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				console.log(rawText);
+				console.log("bold applied");
+				processed[0] = processed[0].slice(2,-2);
+				return (
+					<strong>{processed}</strong>
+				);
+			}
 		}
 	},
 	"italics": {
-		pattern: /(?:\*)(.*?)(?:\*)/g,
+		pattern: /(?<!\*)([\\]?(?:\*)(?:[^*\n]+?)(?:\*))(?!\*)/g,
 		matcherFn: function (rawText, processed, key) {
-			return (
-				<em>{processed}</em>
-			);
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				console.log(processed);
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				processed[0] = processed[0].slice(1,-1);
+				return (
+					<em>{processed}</em>
+				);
+			}
 		}
 	},
+	
 	"bulletList": {
-		pattern: /\n\*(.*)/g,
+		pattern: /((?:\n\*.+)+)/g,
 		matcherFn: function (rawText, processed, key) {
+			let listItems = rawText.split("*");
 			return (
-				<li>{processed}</li>
+				<ul>
+				{
+				listItems.map(function (item,i) {
+					if (item.length > 1) {
+						return (
+							<li>{item}</li>
+						);
+					}
+					
+				})
+				}
+				</ul>
 			);
 		}
 	},
 	"numberList": {
-		pattern: /\n[0-9]+\.(.*)/g,
+		pattern: /((?:\n[0-9]+\..*)+)/g,
+		matcherFn: function (rawText, processed, key) {
+			let listItems = processed[0].split("\n");
+			return (
+				<ol>
+				{
+				listItems.map(function (item,i) {
+					item = item.replace(/[0-9]+\./g, "");
+					if (item.length > 1) {
+						return (
+							<li>{item}</li>
+						);
+					}
+					
+				})
+				}
+				</ol>
+			);
+		}
+	},
+	"quote": {
+		pattern: /^>(.*)/g,
 		matcherFn: function (rawText, processed, key) {
 			return (
-				<ol><li>{processed}</li></ol>
+				<blockquote style={{background:"rgb(220,220,220)", 
+				color: "rgb(128,128,128)", 
+				marginTop: "10px",
+				marginBottom: "10px" }}>{processed}</blockquote>
 			);
 		}
 	},
@@ -127,6 +211,31 @@ var config = {
 			);
 		}
 	},
+	"listFix": {
+		pattern: /<\/ul>\s?<ul>/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				""
+			);
+		}
+	},
+	"numberedFix": {
+		pattern: /<\/ol>\s?<ol>/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				""
+			);
+		}
+	},
+	"quoteFix": {
+		pattern: /<\/blockquote><blockquote>/g,
+		matcherFn: function (rawText, processed, key) {
+			return (
+				<br/>
+			);
+		}
+	},
+
 	
 };
 
@@ -287,7 +396,7 @@ const Editable = ({
 			<div
 			onClick={click}
 			>
-			<span style={{display: "inline-block"}}>
+			<span style={{display: "inline-block", width: "100%"}}>
 				{buildBody(initialText)}
 			</span>
 			</div>
