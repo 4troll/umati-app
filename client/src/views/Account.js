@@ -277,8 +277,6 @@ function Account(props) {
             }
 			
 		}
-		findMentionableUmatis();
-		findMentionableUsers();
 
 		setLoading(true);
 		let loadlist = []
@@ -669,7 +667,7 @@ function Account(props) {
 											
 											>
 												<Mention
-												trigger="u/"
+												trigger={/(u\/([a-zA-Z0-9]+))/}
 												data={findMentionableUmatis}
 												renderSuggestion={(
 													suggestion,
@@ -679,8 +677,12 @@ function Account(props) {
 													focused
 												  ) => (
 													<div className={`user ${focused ? "focused" : ""}`}>
-														u/
-													  {highlightedDisplay}
+														<div className="right-hold flexbox">
+															<Avatar variant="rounded" style={{height:24+"px", width:24+"px", marginRight: "10px"}} 
+															src={"/assets/umatiLogo/" + suggestion.id} />
+															{"u/"}
+															{highlightedDisplay}
+														</div>
 													</div>
 												  )}
 												markup="u/[__display__][__id__]"

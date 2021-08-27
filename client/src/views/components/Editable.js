@@ -11,6 +11,13 @@ import {
     Button,
 } from '@material-ui/core';
 
+function appendToArray(array1, array2) {
+	for (let i = 0; i < array2.length; i++) {
+		array1.push(array2[i]);
+	}
+	return array1;
+}
+
 var config = {
 	// 'hashTag': {
 	//   pattern: /(#[a-z\d][\w-]*)/ig,
@@ -19,7 +26,7 @@ var config = {
 	//   }
 	// },
 	"header3": {
-		pattern: /^([\\]?(?:###).*$)/gim,
+		pattern: /^([\\]?(?:###)[^#].*$)/gim,
 		matcherFn: function (rawText, processed, key) {
 			if (processed[0].charAt(0) == '\\') {
 				processed[0] = processed[0].replace("\\", "");
@@ -27,13 +34,17 @@ var config = {
 					<span>{processed}</span>
 				);
 			}
-			return (
-				<h3>{processed}</h3>
-			);
+			else {
+				processed[0] = processed[0].slice(3);
+				return (
+					<h3>{processed}</h3>
+				);
+			}
+			
 		}
 	},
 	"header2": {
-		pattern: /^([\\]?(?:##).*$)/gim,
+		pattern: /^([\\]?(?:##)[^#].*$)/gim,
 		matcherFn: function (rawText, processed, key) {
 			if (processed[0].charAt(0) == '\\') {
 				processed[0] = processed[0].replace("\\", "");
@@ -41,13 +52,17 @@ var config = {
 					<span>{processed}</span>
 				);
 			}
-			return (
-				<h2>{processed}</h2>
-			);
+			else {
+				processed[0] = processed[0].slice(2);
+				return (
+					<h2>{processed}</h2>
+				);
+			}
+			
 		}
 	},
 	"header": {
-		pattern: /^([\\]?(?:#).*$)/gim,
+		pattern: /^([\\]?(?:#)[^#].*$)/gim,
 		matcherFn: function (rawText, processed, key) {
 			if (processed[0].charAt(0) == '\\') {
 				processed[0] = processed[0].replace("\\", "");
@@ -81,6 +96,27 @@ var config = {
 				const link = nameId[1].slice(0,-1);
 				return (
 					<a href={link}>{linkname}</a>
+				);
+			}
+		}
+	},
+	"italibold": {
+		pattern: /([\\]?(?:\*\*\*)(?:.+)(?:\*\*\*))/g,
+		matcherFn: function (rawText, processed, key) {
+			if (rawText.charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				console.log(processed);
+				console.log("escaped");
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				console.log(rawText);
+				console.log("italibold applied");
+				processed[0] = processed[0].slice(3,-3);
+				return (
+					<em><strong>{processed}</strong></em>
 				);
 			}
 		}
@@ -126,9 +162,15 @@ var config = {
 	},
 	
 	"bulletList": {
-		pattern: /((?:\n\*.+)+)/g,
+		pattern: /((?:\n\* .+)+)/g,
 		matcherFn: function (rawText, processed, key) {
-			let listItems = rawText.split("*");
+			let listItems = processed[0].split("*");
+			// for (let i = 0; i < processed.length; i++) {
+			// 	if (processed[i].length > 1) {
+			// 		let split = listItems.split("*");
+			// 		listItems = appendToArray(listItems,split);
+			// 	}
+			// }
 			return (
 				<ul>
 				{
@@ -145,16 +187,25 @@ var config = {
 			);
 		}
 	},
+	"bulletEscape": {
+		pattern: /(?<=\n)([\\]\*.+)/g,
+		matcherFn: function (rawText, processed, key) {
+			processed[0] = processed[0].slice(1);
+			return (
+				<span>{processed}</span>
+			);
+		}
+	},
 	"numberList": {
-		pattern: /((?:\n[0-9]+\..*)+)/g,
+		pattern: /((?:\n[0-9]+\. .*)+)/g,
 		matcherFn: function (rawText, processed, key) {
 			let listItems = processed[0].split("\n");
 			return (
 				<ol>
 				{
 				listItems.map(function (item,i) {
-					item = item.replace(/[0-9]+\./g, "");
-					if (item.length > 1) {
+					item = item.replace(/[0-9]+\. /g, "");
+					if (item.length > 0) {
 						return (
 							<li>{item}</li>
 						);
@@ -166,23 +217,50 @@ var config = {
 			);
 		}
 	},
-	"quote": {
-		pattern: /^>(.*)/g,
+	"numberEscape": {
+		pattern: /(?<=\n)([\\][0-9]+\..*)/g,
 		matcherFn: function (rawText, processed, key) {
+			processed[0] = processed[0].slice(1);
 			return (
-				<blockquote style={{background:"rgb(220,220,220)", 
-				color: "rgb(128,128,128)", 
-				marginTop: "10px",
-				marginBottom: "10px" }}>{processed}</blockquote>
+				<span>{processed}</span>
 			);
 		}
 	},
-	"hr": {
-		pattern: /\n-{5,}/g,
+	"quote": {
+		pattern: /(?<=\n)([\\]?>.*)/g,
 		matcherFn: function (rawText, processed, key) {
-			return (
-				<hr/>
-			);
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				processed[0] = processed[0].slice(1);
+				return (
+					<blockquote style={{background:"rgb(220,220,220)", 
+					color: "rgb(128,128,128)", 
+					marginTop: "10px",
+					marginBottom: "10px" }}>{processed}</blockquote>
+				);
+			}
+			
+		}
+	},
+	"hr": {
+		pattern: /\n[\\]?-{5,}/g,
+		matcherFn: function (rawText, processed, key) {
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				return (
+					<hr/>
+				);
+			}
 		}
 	},
 	"umatiMention": {

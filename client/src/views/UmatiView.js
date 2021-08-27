@@ -605,7 +605,7 @@ function UmatiView(props) {
 											
 											>
 												<Mention
-												trigger="u/"
+												trigger={/(u\/([a-zA-Z0-9]+))/}
 												data={findMentionableUmatis}
 												renderSuggestion={(
 													suggestion,
@@ -615,8 +615,12 @@ function UmatiView(props) {
 													focused
 												  ) => (
 													<div className={`user ${focused ? "focused" : ""}`}>
-														u/
-													  {highlightedDisplay}
+														<div className="right-hold flexbox">
+															<Avatar variant="rounded" style={{height:24+"px", width:24+"px", marginRight: "10px"}} 
+															src={"/assets/umatiLogo/" + suggestion.id} />
+															{"u/"}
+															{highlightedDisplay}
+														</div>
 													</div>
 												  )}
 												markup="u/[__display__][__id__]"
@@ -641,7 +645,7 @@ function UmatiView(props) {
 												  ) => (
 													<div className={`user ${focused ? "focused" : ""}`}>
 														<div className="right-hold flexbox">
-															<Avatar style={{height:24+"px", width:24+"px"}} 
+															<Avatar style={{height:24+"px", width:24+"px", marginRight: "10px"}} 
 															src={"/assets/profilePicture/" + suggestion.id} />
 															{"@"}
 															{highlightedDisplay}

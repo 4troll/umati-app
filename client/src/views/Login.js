@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect,useLayoutEffect, useRef, useState, Component, Fragment } from "react";
 
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
@@ -23,6 +23,9 @@ import ScrollLock, { TouchScrollable } from 'react-scrolllock';
 import { useSnackbar } from 'notistack';
 
 import Cookies from 'universal-cookie';
+
+import Editable from "./components/Editable";
+
  
 const cookies = new Cookies();
 
@@ -80,6 +83,10 @@ export default function Login() {
 	const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
 	const [loggingIn, setLoggingIn] = useState(false);
+
+
+	const inputRef = useRef();
+	const [textText, setTextText] = useState("");
 
 	// window.onscroll = function () { window.scrollTo(0, 0); }; // prevent scroll
 	function validateForm() {
@@ -163,6 +170,30 @@ export default function Login() {
 			<Typography component="h1" variant="h5">
 				Login
 			</Typography>
+			{/* <Editable
+			text={textText}
+			placeholder={"Test"}
+			childRef={inputRef}
+			finishEdits={function(){}}
+			type="input"
+			enabled={true}
+			style={{whiteSpace: "pre-wrap"}}
+			>
+			<TextField
+			variant="outlined"
+			margin="normal"
+			required
+			fullWidth
+			id="test"
+			label="Test"
+			name="test"
+			autoComplete="test"
+			value={textText}
+			onChange={(e) => setTextText(e.target.value)}
+			autoFocus
+			multiline
+			/>
+			</Editable> */}
 			<form className={classes.form} onSubmit={handleSubmit} noValidate>
 				<TextField
 				variant="outlined"
