@@ -152,13 +152,13 @@ blockquote {
     padding: 0.5em 10px;
     width: auto;
 }
-blockquote:before {
+/* blockquote:before {
   color: #ccc;
   font-size: 4em;
   line-height: 0.1em;
   margin-right: 0.25em;
   vertical-align: -0.4em;
-}
+} */
 blockquote p {
   display: inline;
 }

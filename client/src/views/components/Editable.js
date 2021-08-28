@@ -13,7 +13,7 @@ import {
 
 function appendToArray(array1, array2) {
 	for (let i = 0; i < array2.length; i++) {
-		array1.push(array2[i]);
+		array1.push(array2[i].trim());
 	}
 	return array1;
 }
@@ -80,8 +80,128 @@ var config = {
 			
 		}
 	},
+	"quote": {
+		pattern: /(?<=\n)([\\]?>.*)/g,
+		matcherFn: function (rawText, processed, key) {
+			if (processed[0].charAt(0) == '\\') {
+				processed[0] = processed[0].replace("\\", "");
+				return (
+					<span>{processed}</span>
+				);
+			}
+			else {
+				processed[0] = processed[0].slice(1);
+				console.log(processed)
+				return (
+					<blockquote style={{background:"rgb(220,220,220)", 
+					color: "rgb(128,128,128)", 
+					marginTop: "10px",
+					marginBottom: "10px" }}>{processed}</blockquote>
+				);
+			}
+			
+		}
+	},
+	"bulletList": {
+		pattern: /((?:\n\* .+)+)/g,
+		matcherFn: function (rawText, processed, key) {
+			// let listItems = processed[0].split("*");
+			let listItems = [];
+			console.log(processed);
+			for (let i = 0; i < processed.length; i++) {
+				if (processed[i].length > 1) {
+					let split = processed[i].match(/(\n\* .+)/g);
+					for (let j = 0; j < split.length; j++) {
+						split[j] = split[j].slice(2);
+					}
+					listItems = appendToArray(listItems,split);
+					
+				}
+			}
+			
+			return (
+				<ul>
+				{
+				listItems.map(function (item,i) {
+					if (item.length > 0) {
+						return (
+							<li>{item}</li>
+						);
+					}
+					
+				})
+				}
+				</ul>
+			);
+		}
+	},
+	"bulletEscape": {
+		pattern: /(?<=\n)([\\]\*.+)/g,
+		matcherFn: function (rawText, processed, key) {
+			processed[0] = processed[0].slice(1);
+			return (
+				<span>{processed}</span>
+			);
+		}
+	},
+	"numberList": {
+		pattern: /((?:\n[0-9]+\. .*)+)/g,
+		matcherFn: function (rawText, processed, key) {
+			let listItems = processed[0].split("\n");
+			return (
+				<ol>
+				{
+				listItems.map(function (item,i) {
+					item = item.replace(/[0-9]+\. /g, "");
+					if (item.length > 0) {
+						return (
+							<li>{item}</li>
+						);
+					}
+					
+				})
+				}
+				</ol>
+			);
+		}
+	},
+	"numberEscape": {
+		pattern: /(?<=\n)([\\][0-9]+\..*)/g,
+		matcherFn: function (rawText, processed, key) {
+			processed[0] = processed[0].slice(1);
+			return (
+				<span>{processed}</span>
+			);
+		}
+	},
+	"umatiMention": {
+		pattern: /[u]\/\[([^\[]+\]\[[0-9]*)\]/g,
+		matcherFn: function (rawText, processed, key) {
+			const nameId = rawText.split("][");
+			const umatiname = nameId[0];
+			const umatiId = nameId[1];
+			return (
+				<UmatiLink key={key}
+				umatiname={umatiname}
+				umatiId={umatiId}/>
+			);
+		}
+	},
+	"userMention": {
+		pattern: /\@\[([^\[]+\]\[[0-9]*)\]/g,
+		matcherFn: function (rawText, processed, key) {
+			const nameId = rawText.split("][");
+			const username = nameId[0];
+			const userId = nameId[1];
+			return (
+				<UserLink key={key}
+					username={username}
+					userId={userId}/>
+			);
+		}
+	},
 	"link": {
-		pattern: /([\\]?\[[^\[]+\]\([^\)]+\))/g,
+		pattern: /([\\]?\[[^\[\n\s]+\]\([^\)\n\s]+\))/g,
 		matcherFn: function (rawText, processed, key) {
 			if (processed[0].charAt(0) == '\\') {
 				processed[0] = processed[0].replace("\\", "");
@@ -158,95 +278,11 @@ var config = {
 					<em>{processed}</em>
 				);
 			}
-		}
+		},
 	},
 	
-	"bulletList": {
-		pattern: /((?:\n\* .+)+)/g,
-		matcherFn: function (rawText, processed, key) {
-			let listItems = processed[0].split("*");
-			// for (let i = 0; i < processed.length; i++) {
-			// 	if (processed[i].length > 1) {
-			// 		let split = listItems.split("*");
-			// 		listItems = appendToArray(listItems,split);
-			// 	}
-			// }
-			return (
-				<ul>
-				{
-				listItems.map(function (item,i) {
-					if (item.length > 1) {
-						return (
-							<li>{item}</li>
-						);
-					}
-					
-				})
-				}
-				</ul>
-			);
-		}
-	},
-	"bulletEscape": {
-		pattern: /(?<=\n)([\\]\*.+)/g,
-		matcherFn: function (rawText, processed, key) {
-			processed[0] = processed[0].slice(1);
-			return (
-				<span>{processed}</span>
-			);
-		}
-	},
-	"numberList": {
-		pattern: /((?:\n[0-9]+\. .*)+)/g,
-		matcherFn: function (rawText, processed, key) {
-			let listItems = processed[0].split("\n");
-			return (
-				<ol>
-				{
-				listItems.map(function (item,i) {
-					item = item.replace(/[0-9]+\. /g, "");
-					if (item.length > 0) {
-						return (
-							<li>{item}</li>
-						);
-					}
-					
-				})
-				}
-				</ol>
-			);
-		}
-	},
-	"numberEscape": {
-		pattern: /(?<=\n)([\\][0-9]+\..*)/g,
-		matcherFn: function (rawText, processed, key) {
-			processed[0] = processed[0].slice(1);
-			return (
-				<span>{processed}</span>
-			);
-		}
-	},
-	"quote": {
-		pattern: /(?<=\n)([\\]?>.*)/g,
-		matcherFn: function (rawText, processed, key) {
-			if (processed[0].charAt(0) == '\\') {
-				processed[0] = processed[0].replace("\\", "");
-				return (
-					<span>{processed}</span>
-				);
-			}
-			else {
-				processed[0] = processed[0].slice(1);
-				return (
-					<blockquote style={{background:"rgb(220,220,220)", 
-					color: "rgb(128,128,128)", 
-					marginTop: "10px",
-					marginBottom: "10px" }}>{processed}</blockquote>
-				);
-			}
-			
-		}
-	},
+	
+	
 	"hr": {
 		pattern: /\n[\\]?-{5,}/g,
 		matcherFn: function (rawText, processed, key) {
@@ -263,32 +299,7 @@ var config = {
 			}
 		}
 	},
-	"umatiMention": {
-		pattern: /[u]\/\[([^\[]+\]\[[0-9]*)\]/g,
-		matcherFn: function (rawText, processed, key) {
-			const nameId = rawText.split("][");
-			const umatiname = nameId[0];
-			const umatiId = nameId[1];
-			return (
-				<UmatiLink key={key}
-				umatiname={umatiname}
-				umatiId={umatiId}/>
-			);
-		}
-	},
-	"userMention": {
-		pattern: /\@\[([^\[]+\]\[[0-9]*)\]/g,
-		matcherFn: function (rawText, processed, key) {
-			const nameId = rawText.split("][");
-			const username = nameId[0];
-			const userId = nameId[1];
-			return (
-				<UserLink key={key}
-					username={username}
-					userId={userId}/>
-			);
-		}
-	},
+	
 	"listFix": {
 		pattern: /<\/ul>\s?<ul>/g,
 		matcherFn: function (rawText, processed, key) {
