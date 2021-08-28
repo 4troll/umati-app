@@ -105,32 +105,101 @@ var config = {
 	"bulletList": {
 		pattern: /((?:\n\* .+)+)/g,
 		matcherFn: function (rawText, processed, key) {
-			// let listItems = processed[0].split("*");
-			let listItems = [];
-			console.log(processed);
+			var processed2 = []
+			var currentLine = 0;
+			var lines = [];
 			for (let i = 0; i < processed.length; i++) {
-				if (processed[i].length > 1) {
-					let split = processed[i].match(/(\n\* .+)/g);
-					for (let j = 0; j < split.length; j++) {
-						split[j] = split[j].slice(2);
-					}
-					listItems = appendToArray(listItems,split);
-					
+				if (typeof processed[i] == "string") {
+					let split = processed[i].split(/\r?\n/);
+					processed2 = appendToArray(processed2,split);
+				}
+				else if (processed[i]) {
+					processed2.push(processed[i]);
+				}
+				
+			}
+			console.log(processed2);
+
+			for (let i = 0; i < processed2.length; i++) {
+				if (processed2[i]) {
+					let currentLineArray = [];
+					currentLineArray.push(processed2[i]);
+					let forward = 1;
+					while (true) {
+						if ((forward + i) < (processed2.length - 1) ) {
+							let forwardItem = processed2[forward + i];
+							if (!(typeof forwardItem == "string")) {
+								currentLineArray.push(forwardItem);
+							}
+							else {
+								if (forwardItem.charAt(0) != "*") {
+									currentLineArray.push(forwardItem);
+								}
+								else {
+									break;
+								}
+							}
+						}
+						else {
+							break;
+						}
+						forward++;
+				}
+				lines[currentLine] = currentLineArray;
+				currentLine++;
+				i = i + (forward - 1);
 				}
 			}
-			
 			return (
 				<ul>
-				{
+				{/* {
 				listItems.map(function (item,i) {
-					if (item.length > 0) {
-						return (
-							<li>{item}</li>
-						);
+					if (typeof item == "string") {
+						if (item.length > 0)
+						{
+							let forward = 1;
+							let insertedItems = [];
+							insertedItems.push(item);
+							while (true) {
+								if ((i + forward) < (listItems.length - 1) ) {
+									let forwardItem = listItems[i + forward];
+									if (!(typeof forwardItem == "string")) {
+										insertedItems.push(forwardItem);
+									}
+									else {
+										break;
+									}
+								}
+								else {
+									break;
+								}
+								forward++;
+							}
+							console.log(forward);
+							return (
+								<li><span>{insertedItems}</span></li>
+							);
+						}
+						
 					}
+					// else {
+					// 	return (
+					// 			<li>{item}</li>
+					// 		);
+					// }
 					
 				})
-				}
+				} */}
+				{lines.map(function (item,i) {
+					if (item) {
+						// item[0] = item[0].slice(1);
+					}
+					console.log(item);
+					return (
+						<li><span>{item}</span></li>
+					);
+					
+				})}
 				</ul>
 			);
 		}
@@ -263,7 +332,7 @@ var config = {
 		}
 	},
 	"italics": {
-		pattern: /(?<!\*)([\\]?(?:\*)(?:[^*\n]+?)(?:\*))(?!\*)/g,
+		pattern: /(?<!\*)([\\]?(?:\*)(?!\s)(?:[^*\n]+?)(?<!\s)(?:\*))(?!\*)/g,
 		matcherFn: function (rawText, processed, key) {
 			if (processed[0].charAt(0) == '\\') {
 				processed[0] = processed[0].replace("\\", "");
