@@ -55,7 +55,7 @@ function UmatiCard (props) {
     return (
         <div key={umatiDat.umatiname} className="umatiCardContainer" style={{marginTop: "5px"}}>
             <Link to={"/u/" + umatiDat.umatiname} style={{textDecoration:"none"}}>
-                <Card className={classes.root}>
+                <Card className={classes.root} variant="outlined">
                 <CardHeader
                     avatar={
                     <Avatar

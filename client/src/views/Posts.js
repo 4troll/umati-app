@@ -35,7 +35,7 @@ import { Cookies, useCookies } from 'react-cookie';
 import validator from "validator";
 import jwt_decode from "jwt-decode";
 
-import PostCard from "./components/PostCard.js";
+import {LoadPostCard, PostCard} from "./components/PostCard.js";
 import UserLink from "./components/UserLink.js";
 import SortDropdown from "./components/SortDropdown";
 
@@ -91,46 +91,6 @@ function Posts(props) {
 
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
-    function loadCard (main) {
-        return (
-            <Card className={classes.root} style={{marginTop: "5px"}}>
-            <CardHeader
-                avatar={
-				main ? 
-				<Skeleton animation="wave" variant="circle" width={64} height={64} />
-				: ""
-			}
-                // action={
-                // loading ? null : (
-                //     <IconButton aria-label="settings" 
-                //     // onClick={handleOpenDropdown}
-                //     >
-                //     <MoreVertIcon />
-                //     </IconButton>
-                // )
-                // }
-                title={<Skeleton animation="wave" height={10} width={160} style={{ marginBottom: 6 }} />}
-                subheader={<Skeleton animation="wave" height={10} width={80} />}
-            />
-            <CardContent>
-                <Box
-                    sx={{
-                    alignItems: 'left',
-                    display: 'flex',
-                    flexDirection: 'column'
-                    }}
-                >
-                <React.Fragment>
-                    <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
-                    <Skeleton animation="wave" height={10} width="80%" />
-                </React.Fragment>
-                </Box>
-            </CardContent>
-        </Card>
-    
-        );
-    }
-
 
     useEffect (() => {
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
@@ -179,7 +139,7 @@ function Posts(props) {
 		setLoading(true);
 		let loadlist = []
         for (let i = 0; i < 10; i++) {
-            loadlist.push(loadCard());
+            loadlist.push(LoadPostCard());
         }
         setLoadCards(loadlist);
 

@@ -80,7 +80,7 @@ function Umatis(props) {
     
     function loadCard () {
         return (
-            <Card className={classes.root}>
+            <Card className={classes.root} variant="outlined">
             <CardHeader
                 avatar={<Skeleton animation="wave" variant="rounded" width={64} height={64} />}
                 // action={

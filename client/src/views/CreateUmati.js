@@ -198,7 +198,7 @@ function CreateUmati(props) {
             }}
 	  	    >
                 <Container maxWidth="lg">
-                    <Card className={classes.root}>
+                    <Card className={classes.root} variant="outlined">
                     <CardHeader
 								// avatar={}
 								title={<b>Create Umati</b>}

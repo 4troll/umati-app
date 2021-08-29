@@ -20,6 +20,8 @@ import FlagIcon from '@material-ui/icons/Flag';
 import UserLink from "./UserLink.js";
 import UmatiLink from "./UmatiLink.js";
 
+import { Skeleton } from '@material-ui/lab';
+
 
 
 import {
@@ -85,6 +87,98 @@ function determineColor(current,num) {
         return "secondary";
     }
     return "aaa";
+}
+
+function LoadPostCard (main) {
+    // const classes = useStyles();
+
+    return (
+        
+            
+        <Card style={{display: "flex"}} variant="outlined">
+
+            <Box style={{ alignItems: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: "rgba(0, 0, 0, 0.33)"  }}>
+            
+            <Tooltip title={"Like"} placement="left">
+                <IconButton
+                aria-label="like" component="span"
+                onClick={() => {setVote(1)}}
+                disabled={true}
+                >
+                    <ThumbUpIcon />
+                </IconButton>
+            </Tooltip>
+
+            <span>{"-"}</span>
+
+            <Tooltip title={"Dislike"} placement="left">
+                <IconButton 
+                aria-label="dislike" 
+                component="span"
+                disabled={true}>
+                    <ThumbDownIcon />
+                </IconButton>
+            </Tooltip>
+
+
+            <IconButton color="secondary" aria-label="flag" component="span">
+                <FlagIcon />
+            </IconButton>
+            </Box>
+            <Box
+                    sx={{
+                    alignItems: 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: "100%"
+                    }}
+                >
+            <CardHeader
+                // avatar={
+                // <Avatar
+                //     variant="circle"
+                //     alt={authorData.displayname}
+                //     src={authorData.avatar}
+                //     style={{height:32+"px", width:32+"px"}}
+                //     />
+                // }
+                title={
+                    <Skeleton animation="wave" height={10} width={160} style={{ marginBottom: 6 }} />
+                }
+                subheader={<Skeleton animation="wave" height={10} width={80} />}
+            />
+            
+            <CardContent>
+            
+                <Box
+                    sx={{
+                    alignItems: 'left',
+                    display: 'flex',
+                    flexDirection: 'column'
+                    }}
+                >
+                    {/* {postData.photo ? 
+                    
+                    <img style={{
+                    maxHeight:"720px",
+                    objectFit: "contain"
+                    }}/>
+                    
+                    : ""} */}
+                    <React.Fragment>
+                        <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+                        <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+                        <Skeleton animation="wave" height={10} width="80%" />
+                    </React.Fragment>
+                </Box>
+            </CardContent>
+            </Box>
+        </Card>
+
+    );
 }
 
 function PostCard (props) {
@@ -163,11 +257,12 @@ function PostCard (props) {
         <div key={postData.postId} className="PostCardContainer" style={{marginTop: "5px"}}>
             
                 
-            <Card className={classes.root}>
+            <Card className={classes.root} variant="outlined">
 
                 <Box style={{ alignItems: 'center',
                     display: 'flex',
-                    flexDirection: 'column'  }}>
+                    flexDirection: 'column',
+                    backgroundColor: "rgba(0, 0, 0, 0.33)"}}>
                 
                 <Tooltip title={loggedIn ? "Like" : "Only Umati accounts can like posts"} placement="left">
                     <IconButton
@@ -240,4 +335,4 @@ function PostCard (props) {
     );
 }
 
-export default PostCard;
+export {LoadPostCard, PostCard};

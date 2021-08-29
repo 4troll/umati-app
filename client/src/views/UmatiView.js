@@ -35,7 +35,7 @@ import { Cookies, useCookies } from 'react-cookie';
 import validator from "validator";
 import jwt_decode from "jwt-decode";
 
-import PostCard from "./components/PostCard.js";
+import {LoadPostCard, PostCard} from "./components/PostCard.js";
 import UserLink from "./components/UserLink.js";
 import SortDropdown from "./components/SortDropdown";
 
@@ -110,11 +110,11 @@ function UmatiView(props) {
 
     function loadCard (main) {
         return (
-            <Card className={classes.root} style={{marginTop: "5px"}}>
+            <Card className={classes.root} style={{marginTop: "5px"}} variant="outlined">
             <CardHeader
                 avatar={
 				main ? 
-				<Skeleton animation="wave" variant="circle" width={64} height={64} />
+				<Skeleton animation="wave" variant="rounded" width={64} height={64} />
 				: ""
 			}
                 // action={
@@ -145,6 +145,11 @@ function UmatiView(props) {
             </CardContent>
         </Card>
     
+        );
+    }
+	function PostCardLoading (main) {
+        return (
+            <LoadPostCard/>
         );
     }
 
@@ -260,7 +265,7 @@ function UmatiView(props) {
 		setLoading(true);
 		let loadlist = []
         for (let i = 0; i < 10; i++) {
-            loadlist.push(loadCard());
+            loadlist.push(PostCardLoading());
         }
         setLoadCards(loadlist);
 
@@ -527,7 +532,7 @@ function UmatiView(props) {
 					
 					  
 					  >
-						<Card className={classes.root}>
+						<Card className={classes.root} variant="outlined">
 							<CardHeader
 								avatar={
 								<Avatar

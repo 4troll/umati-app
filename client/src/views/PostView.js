@@ -38,7 +38,7 @@ import { Cookies, useCookies } from 'react-cookie';
 import validator from "validator";
 import jwt_decode from "jwt-decode";
 
-import PostCard from "./components/PostCard.js";
+import {LoadPostCard, PostCard} from "./components/PostCard.js";
 import UserLink from "./components/UserLink.js";
 import SortDropdown from "./components/SortDropdown";
 
@@ -132,87 +132,6 @@ function PostView(props) {
 	const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
 
-    function loadCard (main) {
-        return (
-            
-                
-            <Card className={classes.root}>
-
-                <Box style={{ alignItems: 'center',
-                    display: 'flex',
-                    flexDirection: 'column'  }}>
-                
-                <Tooltip title={"Like"} placement="left">
-                    <IconButton
-                    aria-label="like" component="span"
-                    onClick={() => {setVote(1)}}
-                    disabled={true}
-                    >
-                        <ThumbUpIcon />
-                    </IconButton>
-                </Tooltip>
-
-                <span>{"-"}</span>
-
-                <Tooltip title={"Dislike"} placement="left">
-                    <IconButton 
-                    aria-label="dislike" 
-                    component="span"
-                    disabled={true}>
-                        <ThumbDownIcon />
-                    </IconButton>
-                </Tooltip>
-
-
-                <IconButton color="secondary" aria-label="flag" component="span">
-                    <FlagIcon />
-                </IconButton>
-                </Box>
-                <div style={{width: "100%"}}>
-                <CardHeader
-                    // avatar={
-                    // <Avatar
-                    //     variant="circle"
-                    //     alt={authorData.displayname}
-                    //     src={authorData.avatar}
-                    //     style={{height:32+"px", width:32+"px"}}
-                    //     />
-                    // }
-                    title={
-                        <Skeleton animation="wave" height={10} width={160} style={{ marginBottom: 6 }} />
-                    }
-                    subheader={<Skeleton animation="wave" height={10} width={80} />}
-                />
-                
-                <CardContent>
-                
-                    <Box
-                        sx={{
-                        alignItems: 'left',
-                        display: 'flex',
-                        flexDirection: 'column'
-                        }}
-                    >
-                        {/* {postData.photo ? 
-                        
-                        <img style={{
-                        maxHeight:"720px",
-                        objectFit: "contain"
-                        }}/>
-                        
-                        : ""} */}
-                        <React.Fragment>
-                    <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
-                    <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
-                    <Skeleton animation="wave" height={10} width="80%" />
-                </React.Fragment>
-                    </Box>
-                </CardContent>
-                </div>
-            </Card>
-    
-        );
-    }
 
 	const handleOpenDropdown = event => {
 		setAnchor(event.currentTarget);
@@ -261,7 +180,7 @@ function PostView(props) {
 		setLoading(true);
 		let loadlist = []
         for (let i = 0; i < 10; i++) {
-            loadlist.push(loadCard());
+            loadlist.push(LoadPostCard());
         }
         setLoadCards(loadlist);
 
@@ -495,7 +414,7 @@ function PostView(props) {
 			ref={cardRef}
 			>
 				<Container maxWidth="lg">
-					{loading ? loadCard(true) :
+					{loading ? LoadPostCard(true) :
 					
                         (<PostCard data={postDat} loggedIn={token.token ? true : false}/>)
 			        }
