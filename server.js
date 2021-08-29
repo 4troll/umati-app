@@ -1901,9 +1901,9 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                                 }
         
                                 post.userVote = userVoteStatus;
-                                post.voteCount = voteStatus.voteCount;
+                                
                             }
-                            
+                            post.voteCount = voteStatus.voteCount;
                             
                             postsStream.push(post);
                         }
