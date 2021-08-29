@@ -1323,6 +1323,78 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
     }
 });
 
+app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    console.log("recieved at server");
+    if (req && req.params.postId) {
+        var postId = req.params.postId;
+        var umati;
+        try {
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                (async ()=>{
+                    var tokenData;
+                    var adminMode;
+                    if (req.decoded) {
+                        var tokenData = req.decoded
+                        var adminMode = tokenData.isAdmin;
+                    }
+                    post = await allPostsCollection.findOne({postId: postId});
+                    if (post) {
+                        const umatiData = await umatisCollection.findOne({umatiId: post.hostUmati});
+                        const voteStatus = await postVotesCollection.findOne({postId: postId});
+                        await usersCollection.findOne({userId: post.author})
+                        .then(authorData => {
+                            if (authorData && umatiData) {
+                                if (voteStatus && req.decoded) {
+                                    if (voteStatus.likers) {
+                                        for (let i = 0; i < voteStatus.likers.length; i++) {
+                                            if (voteStatus.likers[i] == req.decoded.userId) {
+                                                userVoteStatus = 1;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (voteStatus.dislikers) {
+                                        for (let i = 0; i < voteStatus.dislikers.length; i++) {
+                                            if (voteStatus.dislikers[i] == req.decoded.userId) {
+                                                userVoteStatus = -1;
+                                            }
+                                        }
+                                    }
+            
+                                    post.userVote = userVoteStatus;
+                                    post.voteCount = voteStatus.voteCount;
+                                }
+                                authorData = cleanUserData(authorData,adminMode);
+                                post.umatiData = umatiData;
+                                post.authorData = authorData;
+                                res.json(post).end();
+                            }
+                        })
+                        .catch(e => {
+                            console.error(e);
+                        })
+                        
+                    }
+                    else {
+                        res.status(404).end();
+                    }
+                })();
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 async function updateReputation(senderId,authorId,postId,change,voterType) {
     const settings = {upsert:true};
     if (voterType == "undo") { // new votes already checked

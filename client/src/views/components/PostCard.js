@@ -90,6 +90,7 @@ function determineColor(current,num) {
 function PostCard (props) {
     const classes = useStyles();
     const postData = props.data;
+    const main = props.main;
     const loggedIn = props.loggedIn;
 
     const authorData = postData.authorData;
@@ -197,6 +198,7 @@ function PostCard (props) {
                 </Box>
 
                 <Link to={"/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId} style={{textDecoration:"none", color:"inherit", flex: "1"}}>
+                
                 <CardHeader
                     // avatar={
                     // <Avatar

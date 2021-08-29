@@ -5,9 +5,10 @@ import Account from "./views/Account.js";
 import Register from "./views/Register.js";
 import Umatis from "./views/Umatis.js";
 import CreateUmati from "./views/CreateUmati.js";
-import CreatePost from "./views/CreatePost.js";
 import UmatiView from "./views/UmatiView.js";
+import CreatePost from "./views/CreatePost.js";
 import Posts from "./views/Posts.js";
+import PostView from "./views/PostView.js";
 import './App.css';
 
 import StickyFooter from "./views/components/StickyFooter.js";
@@ -243,6 +244,9 @@ class App extends Component {
 							}
 						}}
 				</Route>
+				<Route exact path="/u/:umatiname/comments/:postId">
+					<PostView/>
+				</Route>
 				<Route path="/u/:umatiname/submit">
 					{function() {
 							if (!cookieDat) {
@@ -266,6 +270,7 @@ class App extends Component {
 					path="/posts"
 				/>
 				</Route>
+				
 				
 				</Switch>
 			{/* <div className="footer" style={{backgroundColor:"#808080"}}>

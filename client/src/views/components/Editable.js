@@ -4,7 +4,7 @@ import RSR from "react-string-replace";
 import RSRR from "react-string-replace-recursively";
 import UmatiLink from "./UmatiLink";
 import UserLink from "./UserLink";
-import { mdconfig } from "../markdown";
+import { mdconfig } from "../config/markdown";
 
 
 
