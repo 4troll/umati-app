@@ -1346,8 +1346,8 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                         await usersCollection.findOne({userId: post.author})
                         .then(authorData => {
                             if (authorData && umatiData) {
-                                if (voteStatus && req.decoded) {
-                                    if (voteStatus.likers) {
+                                if (voteStatus ) {
+                                    if (voteStatus.likers && req.decoded) {
                                         for (let i = 0; i < voteStatus.likers.length; i++) {
                                             if (voteStatus.likers[i] == req.decoded.userId) {
                                                 userVoteStatus = 1;
@@ -1355,7 +1355,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                         }
                                     }
                                     
-                                    if (voteStatus.dislikers) {
+                                    if (voteStatus.dislikers && req.decoded) {
                                         for (let i = 0; i < voteStatus.dislikers.length; i++) {
                                             if (voteStatus.dislikers[i] == req.decoded.userId) {
                                                 userVoteStatus = -1;
@@ -1883,8 +1883,8 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
 
                             
 
-                            if (voteStatus && req.decoded) {
-                                if (voteStatus.likers) {
+                            if (voteStatus) {
+                                if (voteStatus.likers && req.decoded) {
                                     for (let i = 0; i < voteStatus.likers.length; i++) {
                                         if (voteStatus.likers[i] == req.decoded.userId) {
                                             userVoteStatus = 1;
@@ -1892,7 +1892,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                                     }
                                 }
                                 
-                                if (voteStatus.dislikers) {
+                                if (voteStatus.dislikers && req.decoded) {
                                     for (let i = 0; i < voteStatus.dislikers.length; i++) {
                                         if (voteStatus.dislikers[i] == req.decoded.userId) {
                                             userVoteStatus = -1;
