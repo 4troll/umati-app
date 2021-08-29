@@ -1345,6 +1345,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                         const voteStatus = await postVotesCollection.findOne({postId: postId});
                         await usersCollection.findOne({userId: post.author})
                         .then(authorData => {
+                            let userVoteStatus = 0;
                             if (authorData && umatiData) {
                                 if (voteStatus ) {
                                     if (voteStatus.likers && req.decoded) {
@@ -1899,11 +1900,11 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                                         }
                                     }
                                 }
-        
+                                post.voteCount = voteStatus.voteCount;
                                 post.userVote = userVoteStatus;
                                 
                             }
-                            post.voteCount = voteStatus.voteCount;
+                            
                             
                             postsStream.push(post);
                         }
