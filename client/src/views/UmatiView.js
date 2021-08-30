@@ -1,7 +1,7 @@
 import React, { useEffect,useLayoutEffect, useRef, useState, Component, Fragment } from "react";
 
 
-import {useParams} from "react-router-dom";
+import {useParams, useHistory, useLocation} from "react-router-dom";
 import Editable from "./components/Editable";
 
 import {
@@ -44,7 +44,7 @@ import { MentionsInput, Mention } from "react-mentions";
 import MentionSuggestionStyle from "./styles/MentionSuggestionStyle.js";
 
 
-
+import InfiniteScroll from "react-infinite-scroll-component";
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -84,7 +84,10 @@ function UmatiView(props) {
 	const [token, setToken] = useCookies(["token"]);
 
     const [umatiDat, setUmatiDat] = useState({});
+
 	const [loading, setLoading] = useState(true);
+	const [allCaughtUp, setAllCaughtUp] = useState(false);
+
 	const [editable, setEditable] = useState(false);
 	const [anchor, setAnchor] = useState(null);
 
@@ -97,6 +100,8 @@ function UmatiView(props) {
 
     const { umatiname } = useParams();
 	const classes = useStyles();
+	const location = useLocation();
+  	const history = useHistory();
 
 	const inputRef = useRef();
 	const cardRef = useRef();
@@ -192,6 +197,69 @@ function UmatiView(props) {
 			});
 		}
 	}
+	const getPostsData = async (umatiId) => {
+		const targetUmatiId = umatiId || umatiDat.umatiId;
+        try {
+            console.log("initiating post fetch");
+            let response = await fetch("/api/fetchPosts" + ("?umatiId=" + targetUmatiId + "&") + (window.location.search.slice(1)), {
+                method: "get",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                credentials: "include"
+            });
+            if (!response.ok) {
+                throw new Error("HTTP error, status = " + response.status);
+            }
+            else {
+                await response.json()
+                .then(function (json) {
+                    setPostsData(postsData.concat(json));
+                    var searchParams = new URLSearchParams(window.location.search);
+                    const limit = parseInt(searchParams.get("limit")) || 25;
+                    if (json && json.length < limit) {
+                        setAllCaughtUp(true);
+                    }
+                    return json;
+                })
+                .catch(e => {
+                    console.error(e);
+                    setAllCaughtUp(true);
+                    return e;
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        
+    }
+    const loadMorePages = async () => {
+        try {
+            var nextPage = 2;
+            var searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.has("page")) {
+                nextPage = parseInt(searchParams.get("page")) + 1;
+            }
+            searchParams.set("page",nextPage);
+            history.replace({
+				search: searchParams.toString(),
+			});
+            await getPostsData()
+            .then(function (json) {
+                return json;
+            })
+            .catch(function (e) {
+                
+                return e;
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        
+    }
 
     useEffect (() => {
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
@@ -231,28 +299,8 @@ function UmatiView(props) {
 
 					if (json.umatiId) {
 						console.log("initiating post fetch");
-						let response = await fetch("/api/fetchPosts/" + ("?umatiId=" + json.umatiId + "&") + window.location.search.slice(1), {
-							method: "get",
-							headers: {
-								"Accept": "application/json",
-								"Content-Type": "application/json",
-							},
-							credentials: "include"
-						});
-						if (!response.ok) {
-							throw new Error("HTTP error, status = " + response.status);
-						}
-						else {
-							await response.json()
-							.then(function (postData) {
-								setPostsData(postData);
-							})
-							.catch(e => {
-								console.error(e);
-							});
-						}
+						await getPostsData(json.umatiId);
 					}
-
 					return json;
 				})
 				.catch(e => {
@@ -260,8 +308,6 @@ function UmatiView(props) {
 				});
 			}
 		}
-		findMentionableUmatis();
-		findMentionableUsers();
 		setLoading(true);
 		let loadlist = []
         for (let i = 0; i < 10; i++) {
@@ -273,6 +319,7 @@ function UmatiView(props) {
             setLoading(false);
         });
 	}, []);
+	
 
 	function onChangeLogoClick () {
 		// `current` points to the mounted file input element
@@ -694,12 +741,21 @@ function UmatiView(props) {
 				<SortDropdown/>
             </span>
 			<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
-			{ loading ? loadCards : 
-				(postsData.map(function (post,i) {
-					return (
-						<PostCard key={i} data={post} umatiname={umatiname} loggedIn = {token.token ? true : false}/>
-					);
-				}))
+			{ loading ? loadCards :
+				<InfiniteScroll
+				dataLength={postsData.length}
+				next={loadMorePages}
+				hasMore={!allCaughtUp}
+				loader={<LoadPostCard/>}
+				>
+				{
+					postsData.map(function (post,i) {
+						return (
+							<PostCard key={i} data={post} umatiname={umatiname} loggedIn = {token.token ? true : false}/>
+						);
+					})
+				}
+				</InfiniteScroll>
 			}
 			</div>
 

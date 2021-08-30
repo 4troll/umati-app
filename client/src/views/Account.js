@@ -22,6 +22,7 @@ import {
 	MenuItem,
 	Modal
 } from '@material-ui/core';
+import InfiniteScroll from "react-infinite-scroll-component";
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
@@ -82,6 +83,7 @@ function Account(props) {
 
 	const [userDat, setUserDat] = useState({});
 	const [loading, setLoading] = useState(true);
+	const [allCaughtUp, setAllCaughtUp] = useState(false);
 	const [editable, setEditable] = useState(false);
 	const [anchor, setAnchor] = useState(null);
 
@@ -145,7 +147,69 @@ function Account(props) {
 		cookies.remove("refreshToken",  { sameSite: "lax", secure: true, path: "/"});
 		window.location.href = "/login";
 	}
-
+	const getPostsData = async (userId) => {
+		const targetUserId = userId || userDat.userId;
+        try {
+            console.log("initiating post fetch");
+            let response = await fetch("/api/fetchPosts" + ("?userId=" + targetUserId + "&") + window.location.search.slice(1), {
+                method: "get",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                credentials: "include"
+            });
+            if (!response.ok) {
+                throw new Error("HTTP error, status = " + response.status);
+            }
+            else {
+                await response.json()
+                .then(function (json) {
+                    setPostsData(postsData.concat(json));
+                    var searchParams = new URLSearchParams(window.location.search);
+                    const limit = parseInt(searchParams.get("limit")) || 25;
+                    if (json && json.length < limit) {
+                        setAllCaughtUp(true);
+                    }
+                    return json;
+                })
+                .catch(e => {
+                    console.error(e);
+                    setAllCaughtUp(true);
+                    return e;
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        
+    }
+    const loadMorePages = async () => {
+        try {
+            var nextPage = 2;
+            var searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.has("page")) {
+                nextPage = parseInt(searchParams.get("page")) + 1;
+            }
+            searchParams.set("page",nextPage);
+            history.replace({
+				search: searchParams.toString(),
+			});
+            await getPostsData()
+            .then(function (json) {
+                return json;
+            })
+            .catch(function (e) {
+                
+                return e;
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        
+    }
 	useEffect (() => {
 		window.scrollTo(0, 0);
 		
@@ -205,38 +269,6 @@ function Account(props) {
 					return e;
 				});
 			}
-		}
-
-		async function getPostsData(userId) {
-            try {
-                console.log("initiating post fetch");
-                let response = await fetch("/api/fetchPosts/" + ("?userId=" + userId + "&") + window.location.search.slice(1), {
-                    method: "get",
-                    headers: {
-                        "Accept": "application/json",
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include"
-                });
-                if (!response.ok) {
-                    throw new Error("HTTP error, status = " + response.status);
-                }
-                else {
-                    await response.json()
-                    .then(function (postData) {
-                        setPostsData(postData);
-                        return postData;
-                    })
-                    .catch(e => {
-                        console.error(e);
-                        return e;
-                    });
-                }
-            }
-            catch(e) {
-                console.error(e);
-            }
-			
 		}
 
 		setLoading(true);
@@ -710,11 +742,18 @@ function Account(props) {
 
 						<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
 						{ loading ? loadCards : 
-							(postsData.map(function (post,i) {
+							<InfiniteScroll
+							dataLength={postsData.length}
+							next={loadMorePages}
+							hasMore={!allCaughtUp}
+							loader={<LoadPostCard/>}
+							>
+							{postsData.map(function (post,i) {
 								return (
 									<PostCard key={i} data={post} umatiname={post.hostUmatiname} indicateHost={true} loggedIn = {token.token ? true : false}/>
 								);
-							}))
+							})}
+							</InfiniteScroll>
 						}
 						</div>
 			</Container>

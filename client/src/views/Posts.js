@@ -139,10 +139,16 @@ function Posts(props) {
                 await response.json()
                 .then(function (json) {
                     setPostsData(postsData.concat(json));
+                    var searchParams = new URLSearchParams(window.location.search);
+                    const limit = parseInt(searchParams.get("limit")) || 25;
+                    if (json && json.length < limit) {
+                        setAllCaughtUp(true);
+                    }
                     return json;
                 })
                 .catch(e => {
                     console.error(e);
+                    setAllCaughtUp(true);
                     return e;
                 });
             }
@@ -163,15 +169,13 @@ function Posts(props) {
             history.replace({
 				search: searchParams.toString(),
 			});
+            const limit = parseInt(searchParams.get("limit"));
             await getPostsData()
             .then(function (json) {
-                if (json.length < 1) {
-                    setAllCaughtUp(true);
-                }
                 return json;
             })
             .catch(function (e) {
-                setAllCaughtUp(true);
+                
                 return e;
             });
         }
