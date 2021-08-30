@@ -24,6 +24,8 @@ import {
 	Fab
 } from '@material-ui/core';
 
+import InfiniteScroll from "react-infinite-scroll-component";
+
 
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
@@ -80,6 +82,7 @@ function Posts(props) {
 	const [token, setToken] = useCookies(["token"]);
 
 	const [loading, setLoading] = useState(true);
+    const [allCaughtUp, setAllCaughtUp] = useState(false);
 
 	const classes = useStyles();
 
@@ -104,37 +107,8 @@ function Posts(props) {
                 variant: "success"
             });
         }
-		async function getPostsData () {
-            try {
-                console.log("initiating post fetch");
-                let response = await fetch("/api/fetchPosts" + window.location.search, {
-                    method: "get",
-                    headers: {
-                        "Accept": "application/json",
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include"
-                });
-                if (!response.ok) {
-                    throw new Error("HTTP error, status = " + response.status);
-                }
-                else {
-                    await response.json()
-                    .then(function (postData) {
-                        setPostsData(postData);
-                        return postData;
-                    })
-                    .catch(e => {
-                        console.error(e);
-                        return e;
-                    });
-                }
-            }
-            catch(e) {
-                console.error(e);
-            }
-			
-		}
+		
+        
 
 		setLoading(true);
 		let loadlist = []
@@ -147,6 +121,65 @@ function Posts(props) {
             setLoading(false);
         })
 	}, []);
+    const getPostsData = async () => {
+        try {
+            console.log("initiating post fetch");
+            let response = await fetch("/api/fetchPosts" + window.location.search, {
+                method: "get",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                credentials: "include"
+            });
+            if (!response.ok) {
+                throw new Error("HTTP error, status = " + response.status);
+            }
+            else {
+                await response.json()
+                .then(function (json) {
+                    setPostsData(postsData.concat(json));
+                    return json;
+                })
+                .catch(e => {
+                    console.error(e);
+                    return e;
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        
+    }
+    const loadMorePages = async () => {
+        try {
+            var nextPage = 2;
+            var searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.has("page")) {
+                nextPage = parseInt(searchParams.get("page")) + 1;
+            }
+            searchParams.set("page",nextPage);
+            history.replace({
+				search: searchParams.toString(),
+			});
+            await getPostsData()
+            .then(function (json) {
+                if (json.length < 1) {
+                    setAllCaughtUp(true);
+                }
+                return json;
+            })
+            .catch(function (e) {
+                setAllCaughtUp(true);
+                return e;
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        
+    }
 
     return (
 		<Fragment>
@@ -163,15 +196,21 @@ function Posts(props) {
                         <SortDropdown/>
                     </span>
                     <div key="posts" className="PostsView" style={{marginTop: "30px"}}>
-                    { loading ? loadCards : 
-                        (postsData.map(function (post,i) {
-                            return (
-                                <PostCard key={i} data={post} umatiData={post.umatiData} indicateHost={true} loggedIn = {token.token ? true : false}/>
-                            );
-                        }))
-                    }
+                    <InfiniteScroll
+                    dataLength={postsData.length}
+                    next={loadMorePages}
+                    hasMore={!allCaughtUp}
+                    loader={<LoadPostCard/>}
+                    >
+                        { loading ? loadCards : 
+                            (postsData.map(function (post,i) {
+                                return (
+                                    <PostCard key={i} data={post} umatiData={post.umatiData} indicateHost={true} loggedIn = {token.token ? true : false}/>
+                                );
+                            }))
+                        }
+                    </InfiniteScroll>
                     </div>
-
 				</Container>
 			</Box>
 		</Fragment>
