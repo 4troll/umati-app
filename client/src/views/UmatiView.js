@@ -23,7 +23,9 @@ import {
 	MenuItem,
 	Modal,
 	Fab,
-	Tooltip
+	Tooltip,
+	Tab,
+	Tabs
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
@@ -45,6 +47,27 @@ import MentionSuggestionStyle from "./styles/MentionSuggestionStyle.js";
 
 
 import InfiniteScroll from "react-infinite-scroll-component";
+
+import {
+	DndContext, 
+	closestCenter,
+	KeyboardSensor,
+	PointerSensor,
+	useSensor,
+	useSensors,
+  } from "@dnd-kit/core";
+  import {
+	arrayMove,
+	SortableContext,
+	sortableKeyboardCoordinates,
+	verticalListSortingStrategy,
+  } from '@dnd-kit/sortable';
+  import {
+	restrictToVerticalAxis,
+	restrictToParentElement
+  } from '@dnd-kit/modifiers';
+
+import SortableItem from './components/SortableItem';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -84,12 +107,22 @@ function UmatiView(props) {
 	const [token, setToken] = useCookies(["token"]);
 
     const [umatiDat, setUmatiDat] = useState({});
+	const [rules, setRules] = useState(['1', '2', '3']);
+
+	const sensors = useSensors(
+		useSensor(PointerSensor),
+		useSensor(KeyboardSensor, {
+		  coordinateGetter: sortableKeyboardCoordinates,
+		})
+	);
 
 	const [loading, setLoading] = useState(true);
 	const [allCaughtUp, setAllCaughtUp] = useState(false);
 
 	const [editable, setEditable] = useState(false);
 	const [anchor, setAnchor] = useState(null);
+
+	const [currentTab,setCurrentTab] = useState(0);
 
 	const [umatinameField,setUmatinameField] = useState("");
 	const [displayName, setDisplayName] = useState("");
@@ -263,6 +296,15 @@ function UmatiView(props) {
 
     useEffect (() => {
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
+		var url = window.location.href;
+		var final = url.substr(url.lastIndexOf('/') + 1);
+
+		if (final == "rules") {
+			setCurrentTab(1);
+		}
+		else if (final == "members") {
+			setCurrentTab(2);
+		}
 		async function getUmatiData () {
 			
 			let response = await fetch("/api/umatiData/" + umatiname, {
@@ -560,6 +602,77 @@ function UmatiView(props) {
 		}
 		setLoadingSuggestions(false);
 	}
+	const handleDragEnd = (event) => {
+		console.log(event);
+		const {active, over} = event;
+		
+		if (active.id !== over.id) {
+		  setRules((items) => {
+			const oldIndex = items.indexOf(active.id);
+			const newIndex = items.indexOf(over.id);
+			
+			return arrayMove(items, oldIndex, newIndex);
+		  });
+		}
+	
+	}
+	const umatiinfosection = () => {
+		
+
+		if (currentTab == 1) { // rules
+			return (
+				<div style={{marginTop: "30px"}}>
+					<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", marginBottom:"-20px"}}>
+						<h1>Rules</h1>
+					</span>
+					<DndContext 
+					sensors={sensors}
+					collisionDetection={closestCenter}
+					onDragEnd={(e) => handleDragEnd(e)}
+					modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+					>
+					<SortableContext 
+						items={rules}
+						strategy={verticalListSortingStrategy}
+					>
+						{rules.map((id) => <SortableItem key={id} id={id}></SortableItem>)}
+					</SortableContext>
+					</DndContext>
+				</div>
+			);
+			
+		}
+		else if (currentTab == 2) { // members
+			
+		}
+		else {
+			return (
+				<div style={{marginTop: "30px"}}>
+					<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", marginBottom:"-20px"}}>
+						<h1>Posts</h1>
+						<SortDropdown/>
+					</span>
+					{ loading ? loadCards :
+						<InfiniteScroll
+						dataLength={postsData.length}
+						next={loadMorePages}
+						hasMore={!allCaughtUp}
+						loader={<LoadPostCard/>}
+						>
+						{
+							postsData.map(function (post,i) {
+								return (
+									<PostCard key={i} data={post} umatiname={umatiname} loggedIn = {token.token ? true : false}/>
+								);
+							})
+						}
+						</InfiniteScroll>
+					}
+				</div>
+			);
+		}
+		
+	}
     return (
 		<Fragment>
 			<Box
@@ -736,31 +849,37 @@ function UmatiView(props) {
 						
 					</div>
 			}
-			<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", marginBottom:"-20px"}}>
-				<h1>Posts</h1>
-				<SortDropdown/>
-            </span>
-			<div key="posts" className="PostsView" style={{marginTop: "30px"}}>
-			{ loading ? loadCards :
-				<InfiniteScroll
-				dataLength={postsData.length}
-				next={loadMorePages}
-				hasMore={!allCaughtUp}
-				loader={<LoadPostCard/>}
-				>
-				{
-					postsData.map(function (post,i) {
-						return (
-							<PostCard key={i} data={post} umatiname={umatiname} loggedIn = {token.token ? true : false}/>
-						);
-					})
+			<Tabs
+			value={currentTab}
+			onChange={(event, newValue) => {
+				setCurrentTab(newValue);
+				
+				if (newValue == 0) {
+					history.push({
+						pathname: "/u/" + umatiDat.umatiname + "/posts"
+					});
 				}
-				</InfiniteScroll>
-			}
-			</div>
-
-
-				</Container>
+				else if (newValue == 1) {
+					history.push({
+						pathname: "/u/" + umatiDat.umatiname + "/rules"
+					});
+				}
+				else if (newValue == 2) {
+					history.push({
+						pathname: "/u/" + umatiDat.umatiname + "/members"
+					});
+				}
+				}}
+			indicatorColor="primary"
+			textColor="primary"
+			variant="fullWidth"
+		>
+			<Tab label="Posts" index={0}/>
+			<Tab label="Rules" index={1}/>
+			<Tab label="Members" index={2}/>
+		</Tabs>
+			{umatiinfosection()}
+			</Container>
 			</Box>
 			
 			<Grid

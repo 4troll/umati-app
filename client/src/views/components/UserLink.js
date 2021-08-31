@@ -50,7 +50,7 @@ function UserLink (props) {
 	const userId = props.userId || data.userId;
 	const avatar = userId ? "/assets/profilePicture/" + userId : "";
     return (
-        <Link to={"/@" + username} class="user-link">
+        <Link to={"/@" + username} className="user-link">
             <div className="right-hold flexbox">
                 <Avatar style={{height:24+"px", width:24+"px"}} 
 				// alt={data.displayname ? data.displayname : data.username} 

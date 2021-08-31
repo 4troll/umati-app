@@ -95,7 +95,7 @@ function LoadPostCard (main) {
     return (
         
             
-        <Card style={{display: "flex"}} variant="outlined">
+        <Card style={{display: "flex", marginTop: "5px"}} variant="outlined">
 
             <Box style={{ alignItems: 'center',
                 display: 'flex',

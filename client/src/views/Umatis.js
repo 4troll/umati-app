@@ -1,6 +1,6 @@
 import React, { useEffect,useLayoutEffect, useRef, useState, Fragment } from "react";
 
-
+import {useParams, useHistory, useLocation} from "react-router-dom";
 import {
     Avatar,
     Box,
@@ -30,6 +30,8 @@ import AddIcon from '@material-ui/icons/Add';
 import UmatiCard from "./components/UmatiCard.js";
 
 import { Cookies, useCookies } from 'react-cookie';
+
+import InfiniteScroll from "react-infinite-scroll-component";
 
 
 const useStyles = makeStyles(theme => ({
@@ -71,12 +73,15 @@ function Umatis(props) {
     const classes = useStyles();
 
     const [loading, setLoading] = useState(true);
+    const [allCaughtUp, setAllCaughtUp] = useState(false);
 
     const [umatiData, setUmatiData] = useState([]);
     const [loadCards, setLoadCards] = useState([]);
 
     const [token, setToken] = useCookies(["token"]);
     
+    const location = useLocation();
+  	const history = useHistory();
     
     function loadCard () {
         return (
@@ -114,42 +119,74 @@ function Umatis(props) {
         );
     }
 
-    useEffect (() => {
-        async function fetchUmatiData() {
-            let response = await fetch("/api/fetchUmatis/" + window.location.search, {
-                method: "get",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                },
-                credentials: "include"
-            });
-            if (!response.ok) {
-                throw new Error("HTTP error, status = " + response.status);
-            }
-            else {
-                await response.json()
-                .then(function (json) {
-                    // await json.forEach(async function(currentUmati, index){
-                    //     await getUserDataFromId(currentUmati.owner)
-                    //     .then(response => {
-                    //         currentUmati.ownerData = response;
-                    //         umatiDataList.push(currentUmati);
-                    //     })
-                    //     .catch (e => {
-                    //         console.error(e);
-                    //     });
-                    // });
-                    setUmatiData(json);
-                    return json;
-                    
-                })
-                .catch(e => {
-                    console.error(e);
-                    return e;
-                });
-            }
+    const fetchUmatiData = async() => {
+        let response = await fetch("/api/fetchUmatis" + window.location.search, {
+            method: "get",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            },
+            credentials: "include"
+        });
+        if (!response.ok) {
+            throw new Error("HTTP error, status = " + response.status);
         }
+        else {
+            await response.json()
+            .then(function (json) {
+                // await json.forEach(async function(currentUmati, index){
+                //     await getUserDataFromId(currentUmati.owner)
+                //     .then(response => {
+                //         currentUmati.ownerData = response;
+                //         umatiDataList.push(currentUmati);
+                //     })
+                //     .catch (e => {
+                //         console.error(e);
+                //     });
+                // });
+                setUmatiData(umatiData.concat(json));
+                var searchParams = new URLSearchParams(window.location.search);
+                const limit = parseInt(searchParams.get("limit")) || 25;
+                if (json && json.length < limit) {
+                    setAllCaughtUp(true);
+                }
+                return json;
+                
+            })
+            .catch(e => {
+                console.error(e);
+                setAllCaughtUp(true);
+                return e;
+            });
+        }
+    }
+    const loadMorePages = async () => {
+        try {
+            var nextPage = 2;
+            var searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.has("page")) {
+                nextPage = parseInt(searchParams.get("page")) + 1;
+            }
+            searchParams.set("page",nextPage);
+            history.replace({
+				search: searchParams.toString(),
+			});
+            await fetchUmatiData()
+            .then(function (json) {
+                return json;
+            })
+            .catch(function (e) {
+                
+                return e;
+            });
+        }
+        catch(e) {
+            console.error(e);
+        }
+        
+    }
+
+    useEffect (() => {
 
 		setLoading(true);
         let loadlist = []
@@ -179,12 +216,21 @@ function Umatis(props) {
             }}>
 			<Container maxWidth="lg">
             <h1>Umatis</h1> 
-            { loading ? loadCards : 
-            (umatiData.map(function (umati,i) {
+            { loading ? loadCards :
+            <InfiniteScroll
+            dataLength={umatiData.length}
+            next={loadMorePages}
+            hasMore={!allCaughtUp}
+            loader={loadCard()}
+            >
+            {
+            umatiData.map(function (umati,i) {
                 return (
                     <UmatiCard key={i} data={umati}/>
                 );
-            }))
+            })
+            }
+            </InfiniteScroll>
             }
             </Container>
 		</Box>

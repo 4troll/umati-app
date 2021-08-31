@@ -50,7 +50,7 @@ function UmatiLink (props) {
 	const umatiId = props.umatiId || data.umatiId;
 	const logo = umatiId ? "/assets/umatiLogo/" + umatiId : "";
     return (
-        <Link to={"/u/" + umatiname} class="umati-link">
+        <Link to={"/u/" + umatiname} className="umati-link">
             <span className="right-hold flexbox">
                 <Avatar variant="rounded" style={{height:24+"px", width:24+"px"}} 
 				// alt={data.displayname ? data.displayname : umatiname} 
