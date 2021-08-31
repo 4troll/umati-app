@@ -40,25 +40,29 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 **User features**
 * Create and access user account
 * Customize username, display name, avatar, and description
+* Custom Markdown parser for description - supports user and Umati mentions
 * View posts created by each user
 
 **Umati (group) features**
 * Create and view Umatis
 * Customize Umati name, display name, logo, and description
-* View posts created under each Umati
+* Custom Markdown parser for description - supports user and Umati mentions
+* View posts created under each Umati (see Posts features)
 
 **Posts features**
 * Create posts under Umatis (WIP: be able to create posts under account)
-* Add optional body and picture to post. All assets stored in database
-* View all posts in Umati by opening Posts tab (WIP: sort)
+* Add optional body and image to post. Image assets stored in database
+* View all posts in Umati by opening Posts tab
+* Users can _Like_ insightful posts or _Dislike_ rule-breaking or low-quality posts
+* Posts can be sorted in different orders: Trending (Reddit Hot algorithm), New, Top (Lower bound of Wilson score confidence interval for a Bernoulli parameter), Liked, Disliked, Controversial (closest to 50% like ratio), and Old.
 * WIP: Comments
-* WIP: Voting
 
 ### Security features
 
 * Token authentication (stateless, prevents storing of permanent password in client storage)
 * Automatic renewal of access tokens, refresh tokens stored in datastore
 * SSL encryption
+* Ratelimits: Account and Umati creation (5 per hour), Login and Token Renewal (30 per 5 mins), Account and Umati Edits (30 per 15m), Posts (10 per 5m)
 
 ### Moderation features
 
