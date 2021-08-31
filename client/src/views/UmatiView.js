@@ -67,7 +67,7 @@ import {
 	restrictToParentElement
   } from '@dnd-kit/modifiers';
 
-import SortableItem from './components/SortableItem';
+import RuleCard from './components/RuleCard';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -107,7 +107,8 @@ function UmatiView(props) {
 	const [token, setToken] = useCookies(["token"]);
 
     const [umatiDat, setUmatiDat] = useState({});
-	const [rules, setRules] = useState(['1', '2', '3']);
+	const [rules, setRules] = useState([]);
+	const [originalRules, setOriginalRules] = useState([]);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor),
@@ -299,6 +300,8 @@ function UmatiView(props) {
 		var url = window.location.href;
 		var final = url.substr(url.lastIndexOf('/') + 1);
 
+		
+
 		if (final == "rules") {
 			setCurrentTab(1);
 		}
@@ -322,6 +325,9 @@ function UmatiView(props) {
 				await response.json()
 				.then(async function (json) {
 					setUmatiDat(json);
+					const rules = json.rules || [];
+					setOriginalRules(rules);
+					setRules(rules);
 					if (json.logo) {
 						console.log(json.logo);
 						setSelectedLogoFile(json.logo);
@@ -616,7 +622,7 @@ function UmatiView(props) {
 		}
 	
 	}
-	const umatiinfosection = () => {
+	const umatiDetails = () => {
 		
 
 		if (currentTab == 1) { // rules
@@ -635,7 +641,7 @@ function UmatiView(props) {
 						items={rules}
 						strategy={verticalListSortingStrategy}
 					>
-						{rules.map((id) => <SortableItem key={id} id={id}></SortableItem>)}
+						{rules.map((data) => <RuleCard key={data.id} data={data}></RuleCard>)}
 					</SortableContext>
 					</DndContext>
 				</div>
@@ -878,7 +884,7 @@ function UmatiView(props) {
 			<Tab label="Rules" index={1}/>
 			<Tab label="Members" index={2}/>
 		</Tabs>
-			{umatiinfosection()}
+			{umatiDetails()}
 			</Container>
 			</Box>
 			

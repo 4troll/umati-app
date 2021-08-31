@@ -1017,6 +1017,78 @@ app.post("/api/editDescription/umati/:umatiname", [middleware.ratelimitAccountEd
     }
 });
 
+app.post("/api/editRules/:umatiname", [middleware.ratelimitPosts, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req && req.params.umatiname) {
+        var hostUmatiname = req.params.umatiname;
+        try {
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                var body = req.body;
+                var newRules = body.rules;
+                if (req.decoded && body && newRules) {
+                    (async ()=>{
+                        let targetUmati = await umatisCollection.findOne({umatiname: hostUmatiname});
+                        if (targetUmati && (targetUmati.owner = req.decoded.userId || adminMode) ) { // if umati actually exists, and user authorized
+                            var oldRules = targetUmati.rules;
+                            if (oldRules) {
+                                let finalRules = []; // negotiated rules
+                                for (let i = 0; i < newRules.length; i++) {
+                                    let newRule = newRules[i];
+                                    let foundRuleId;
+                                    if (newRule.id && newRule.id != "new") {
+                                        for (let j = 0; j < oldRules.length; j++) {
+                                            if (oldRules[j].id == newRule.id) {
+                                                foundRuleId = oldRules[j].id;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (newRule.title && newRule.appliedTo && newRule.description) {
+                                        let title = newRule.title;
+                                        let appliedTo = newRule.appliedTo; // 0-both, 1-posts, 2-comments
+                                        let description = newRule.description;
+                                        if (newRule.title.length >= 3 && newRule.title.length <= 100) {
+                                            if (newRule.appliedTo >= 0 && newRule.appliedTo <= 2) {
+                                                if (newRule.description.length >= 0 && newRule.description.length <= 1000) {
+                                                    const ruleId = foundRuleId || short.generate();
+                                                    finalRules.push({
+                                                        ruleId: ruleId,
+                                                        title: title,
+                                                        appliedTo: appliedTo,
+                                                        description: description,
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                            
+                            res.json(newPost).end();
+                        
+                        }
+                    })();
+                }
+                else {
+                    res.status(403).end();
+                }
+            }); 
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     console.log("recieved at server");
     if (req) {
