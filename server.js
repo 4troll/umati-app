@@ -867,6 +867,72 @@ app.post("/api/createUmati", [middleware.ratelimitAccounts, middleware.jsonParse
     }
 });
 
+app.post("/api/joinUmati/:umatiname", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req && req.params.umatiname) {
+        var targetUmatiname = req.params.umatiname;
+        try {
+            var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+            client.connect( (err,db) => {
+                if (err) throw err;
+                var body = req.body;
+                var join = body.join;
+                if (req.decoded && body) {
+                    (async ()=>{
+                        const targetUmati = await umatisCollection.findOne({umatiname: targetUmatiname});
+                        const targetUser = await usersCollection.findOne({userId: req.decoded.userId});
+                        if (targetUmati && targetUser) { // if umati actually exists, and user authorized
+                            let umatiJoined = false;
+                            let indexOfJoinedUmati;
+                            let joinedIncrement = 0;
+                            if (targetUser.joinedUmatis) {
+                                
+                                for (let i = 0; i < targetUser.joinedUmatis.length; i++) {
+                                    if (targetUser.joinedUmatis[i] == req.params.umatiname) {
+                                        indexOfJoinedUmati = i;
+                                        umatiJoined = true;
+                                        break;
+                                    }
+                                }
+                                // indexOfJoinedUmati = targetUser.joinedUmatis.findIndex(umati => umati == req.params.umatiname);
+                            }
+                            if (umatiJoined != join) { // if there is no cheating
+                                if (join) { // join
+                                    await usersCollection.updateOne({userId: req.decoded.userId}, {$push: {joinedUmatis: req.params.umatiname}}, {upsert: true});
+                                    joinedIncrement = 1;
+                                }
+                                else if (targetUser.joinedUmatis.length > 0){ // leave
+                                    await usersCollection.updateOne({userId: req.decoded.userId}, {$pull: {joinedUmatis: req.params.umatiname}}, {upsert: true});
+                                    joinedIncrement = -1;
+                                }
+                                await umatisCollection.updateOne({umatiname: targetUmatiname}, {$inc: {joinCount: joinedIncrement}}, {upsert: true});
+                                res.json(body).end();
+                            }
+                            else {
+                                res.status(403).end();
+                            }
+                            
+                            
+                        
+                        }
+                    })();
+                }
+                else {
+                    res.status(403).end();
+                }
+            }); 
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 app.post("/api/updateUmati/:umatiname", [middleware.ratelimitAccountEdit, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && checkUsername(req.body.umatiname)) {
         try {
@@ -1107,9 +1173,20 @@ app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticate
                 (async ()=>{
                     var tokenData;
                     var adminMode;
+                    var joined = false;
                     if (req.decoded) {
                         var tokenData = req.decoded
                         var adminMode = tokenData.isAdmin;
+                        let viewingUser = await usersCollection.findOne({userId: req.decoded.userId});
+                        if (viewingUser.joinedUmatis) {
+                            for (let i = 0; i < viewingUser.joinedUmatis.length; i++) {
+                                if (viewingUser.joinedUmatis[i] == umatiname) {
+                                    joined = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
                     }
                     umati = await umatisCollection.findOne({umatiname: umatiname});
                     if (umati) {
@@ -1118,6 +1195,7 @@ app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticate
                             if (ownerData) {
                                 ownerData = cleanUserData(ownerData,adminMode);
                                 umati.ownerData = ownerData;
+                                umati.joined = joined;
                                 res.json(umati).end();
                             }
                         })

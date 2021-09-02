@@ -362,6 +362,8 @@ function UmatiView(props) {
 						setOriginalRules(json.rules);
 						setRules(json.rules);
 					}
+
+					setJoinedUmati(json.joined);
 					
 					return json;
 				})
@@ -743,6 +745,36 @@ function UmatiView(props) {
 		}
 	}
 
+	const [joinedUmati, setJoinedUmati] = useState(false);
+
+	const toggleJoin = async () => {
+		try {
+			let body = {
+				"join": !joinedUmati
+			}
+            // console.log(formData);
+			await postJson("/api/joinUmati/" + umatiname, body)
+			.then(function (data){
+				console.log("toggle join " + umatiname);
+				setJoinedUmati(!joinedUmati);
+				return data;
+			})
+			.catch(e => {
+				
+				console.error(e);
+				return e;
+			});
+		}
+		catch(e) {
+			console.error(e);
+			return e;
+		}
+		finally {
+			setChangingSettings(false);
+			// setProfileModal(false);
+		}
+	}
+
 	const umatiDetails = () => {
 		
 
@@ -880,7 +912,12 @@ function UmatiView(props) {
 								title={
 									(umatiDat.displayname ? umatiDat.displayname : "u/" + umatiDat.umatiname)
 								}
-								subheader={(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
+								subheader={
+									<Fragment>
+									{(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
+									<p style={{color:"#ffaa00"}}>{(umatiDat.joinCount || 0 + (joinedUmati ? 1 : 0)) + ((umatiDat.joinCount || 0+ (joinedUmati ? 1 : 0)) == 1 ? " member" : " members")}</p>
+									</Fragment>
+								}
 								action={
 								(loading || (!token.token)) ? null : (
 									<IconButton aria-label="settings" onClick={handleOpenDropdown}>
@@ -901,7 +938,8 @@ function UmatiView(props) {
 							<MenuItem onClick={handleOpenUmatiModal}>Edit name/logo</MenuItem>
 							</Fragment>
 							: 
-							<MenuItem onClick={handleCloseDropdown}>Join</MenuItem>
+							// <MenuItem onClick={toggleJoin}>Join</MenuItem>
+							""
 							}
 							</Menu>
 							<CardContent>
@@ -1019,8 +1057,8 @@ function UmatiView(props) {
 											/> */}
 										</Editable>
 										{token.token ? <div>
-										<Button style={{float:"right", width:"fit-content"}} variant="contained" type="button" color="primary">
-										Join
+										<Button onClick={() => toggleJoin()} style={{float:"right", width:"fit-content"}} variant="contained" type="button" color={joinedUmati ? "" : "primary"}>
+										{joinedUmati ? "Leave" : "Join"}
 										</Button>
 										</div> 
 										: ""}
