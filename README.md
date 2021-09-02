@@ -48,6 +48,7 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 * Customize Umati name, display name, logo, and description
 * Custom Markdown parser for description - supports user and Umati mentions
 * View posts created under each Umati (see Posts features)
+* Join relatable Umatis with the Join button, join count displayed on Umati profile
 
 **Posts features**
 * Create posts under Umatis (WIP: be able to create posts under account)
@@ -66,6 +67,11 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 
 ### Moderation features
 
+* Create and remove rules
+* Edit rules with simplistic modal
+* Reorder rules with gratifying drag-and-drop mechanic
+* Rules can apply to all UGC (user generated content), only posts, or only comments (WIP: simplistic report feature with rule radio button menu)
+* WIP: Sitewide rules
 * WIP: Add moderators
 * WIP: Extensive moderation settings
 
