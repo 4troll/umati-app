@@ -88,6 +88,10 @@ export default function Login() {
 	const inputRef = useRef();
 	const [textText, setTextText] = useState("");
 
+	useEffect (() => {
+        document.title = "Login";
+	}, []);
+
 	// window.onscroll = function () { window.scrollTo(0, 0); }; // prevent scroll
 	function validateForm() {
 		return username.length > 0 && password.length > 0;

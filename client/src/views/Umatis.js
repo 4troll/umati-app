@@ -187,7 +187,7 @@ function Umatis(props) {
     }
 
     useEffect (() => {
-
+        document.title = "Umatis";
 		setLoading(true);
         let loadlist = []
         for (let i = 0; i < 10; i++) {

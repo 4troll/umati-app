@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect,useLayoutEffect, useRef, useState, Component, Fragment } from "react";
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
-import {Item} from "./Item";
+import {Item} from "./OverlayItem";
 import DragHandleIcon from '@material-ui/icons/DragHandle';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import {
@@ -12,12 +12,16 @@ Card,
 CardHeader,
 CardActions,
 CardContent,
+Menu,
+MenuItem,
+
 } from '@material-ui/core';
+import { Skeleton } from '@material-ui/lab';
 
 import RSRR from "react-string-replace-recursively";
 import { mdconfig } from "../config/markdown";
 
-function SortableItem (props) {
+function RuleCard (props) {
 const {
 	attributes,
 	listeners,
@@ -42,35 +46,96 @@ const displayAppliedTo = () => {
 	}
 }
 
+const [anchor, setAnchor] = useState(null);
+const handleOpenDropdown = event => {
+	setAnchor(event.currentTarget);
+};
+
+const handleCloseDropdown = () => {
+	setAnchor(null);
+};
+
 return (
-	<div ref={setNodeRef} style={style} >
-	<Card variant="outlined">
+	<div ref={setNodeRef} style={style} key={props.index} >
+	<Card variant="outlined" style={{display: 'flex'}}>
+		<div style={{width: "100%"}}>
 				<CardHeader
 					title={
-						props.data.title
+						(props.index + 1) + ". "+ props.data.title
 					}
 					subheader={
 						displayAppliedTo()
 				}
-					action={
-						<Button
-						// onClick={handleOpenDropdown}
-					>
-						<MoreVertIcon />
-						</Button>
-					}
+				
+				action={
+					<Fragment>
+					{props.owner ? (<IconButton aria-label="settings" onClick={handleOpenDropdown}>
+					<MoreVertIcon />
+					</IconButton>) : ""}
+					</Fragment>
+				}
 				/>
 				<CardContent>
 				<span>
 				{RSRR(mdconfig)(props.data.description)}
 				</span>
 			</CardContent>
-		<IconButton {...attributes} {...listeners} disableRipple>
+			</div>
+		{ props.owner ? 
+		<IconButton style= {{cursor: "grab", height:"fit-content", marginTop: "8px", marginRight:"12px"}}{...attributes} {...listeners} disableRipple>
 			<DragHandleIcon/>
 		</IconButton>
+		: ""
+		}
+		<Menu
+		id="rule-menu"
+		anchorEl={anchor}
+		open={anchor}
+		onClose={handleCloseDropdown}
+		>
+		<MenuItem 
+		onClick={() => {
+			setAnchor(null);
+			props.edit(props.data.id);
+		}}
+		>
+			Edit
+		</MenuItem>
+		<MenuItem 
+		onClick={() => {
+			setAnchor(null);
+			props.delete(props.data.id);
+		}}
+		>
+			Delete
+		</MenuItem>
+		</Menu>
 	</Card>
 	</div>
 );
 }
 
-export default SortableItem;
+function LoadingRuleCard (props) {
+	return (
+		<Card variant="outlined" style={{ marginTop: "5px"}}>
+				<CardHeader
+					title={
+						<Skeleton animation="wave" height={10} width={160} style={{ marginBottom: 6 }} />
+					}
+					subheader={
+						<Skeleton animation="wave" height={10} width={80} />
+					}
+					
+				/>
+				<CardContent>
+				<span>
+					<Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+					<Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+					<Skeleton animation="wave" height={10} width="80%" />
+				</span>
+			</CardContent>
+	</Card>
+	);
+}
+
+export {RuleCard, LoadingRuleCard};

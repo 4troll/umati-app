@@ -219,6 +219,7 @@ export default function Register() {
 		return variable[0];
 	}
 	useEffect (() => {
+		document.title = "Register";
 		var searchParams = new URLSearchParams(window.location.search);
 		var reason = searchParams.get("to");
 		if (reason == "vote") {

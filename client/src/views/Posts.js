@@ -96,6 +96,7 @@ function Posts(props) {
 
 
     useEffect (() => {
+        document.title = "Posts";
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
         var searchParams = new URLSearchParams(window.location.search);
 		if (searchParams.has("welcome") && cookieDat) {
@@ -139,6 +140,7 @@ function Posts(props) {
                 await response.json()
                 .then(function (json) {
                     setPostsData(postsData.concat(json));
+                    
                     var searchParams = new URLSearchParams(window.location.search);
                     const limit = parseInt(searchParams.get("limit")) || 25;
                     if (json && json.length < limit) {

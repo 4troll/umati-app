@@ -25,7 +25,11 @@ import {
 	Fab,
 	Tooltip,
 	Tab,
-	Tabs
+	Tabs,
+	RadioGroup,
+	Radio,
+	FormControlLabel,
+	FormLabel
 } from '@material-ui/core';
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
@@ -67,7 +71,7 @@ import {
 	restrictToParentElement
   } from '@dnd-kit/modifiers';
 
-import RuleCard from './components/RuleCard';
+import {RuleCard, LoadingRuleCard} from './components/RuleCard';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -145,6 +149,8 @@ function UmatiView(props) {
 	const [postsData, setPostsData] = useState([]);
 	
 	const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
+	const [targetRule,setTargetRule] = useState("");
 
 
     function loadCard (main) {
@@ -325,15 +331,16 @@ function UmatiView(props) {
 				await response.json()
 				.then(async function (json) {
 					setUmatiDat(json);
-					const rules = json.rules || [];
-					setOriginalRules(rules);
-					setRules(rules);
+					
+								
 					if (json.logo) {
 						console.log(json.logo);
 						setSelectedLogoFile(json.logo);
 					}
 	
 					setUmatinameField(json.umatiname);
+					
+					document.title = json.displayname;
 					setDisplayName(json.displayname);
 	
 					if (json.description) {
@@ -349,6 +356,13 @@ function UmatiView(props) {
 						console.log("initiating post fetch");
 						await getPostsData(json.umatiId);
 					}
+
+					if (json.rules) {
+						console.log("setting original rules");
+						setOriginalRules(json.rules);
+						setRules(json.rules);
+					}
+					
 					return json;
 				})
 				.catch(e => {
@@ -613,24 +627,145 @@ function UmatiView(props) {
 		const {active, over} = event;
 		
 		if (active.id !== over.id) {
-		  setRules((items) => {
-			const oldIndex = items.indexOf(active.id);
-			const newIndex = items.indexOf(over.id);
+		  setRules((rules) => {
+			// const oldIndex = rules.indexOf(active.id);
+			// const newIndex = rules.indexOf(over.id);
+			var oldIndex;
+			var newIndex;
+			for (let i = 0; i < rules.length; i++) {
+				if (rules[i].id == active.id) {
+					
+					oldIndex = i;
+					console.log("old index: " + oldIndex);
+					break;
+				}
+			}
+			for (let i = 0; i < rules.length; i++) {
+				if (rules[i].id == over.id) {
+					newIndex = i;
+					console.log("new index: " + newIndex);
+					break;
+				}
+			}
 			
-			return arrayMove(items, oldIndex, newIndex);
+			console.log("rule moving from " + oldIndex + " to " + newIndex);
+			
+			return arrayMove(rules, oldIndex, newIndex);
 		  });
 		}
 	
 	}
+	const loadRuleCards = () => {
+		let loadingcards = [];
+		for (let i = 0; i < 3; i++) {
+			loadingcards.push(<LoadingRuleCard/>);
+		}
+		console.log("loading")
+		return(loadingcards);
+	}
+	const [changingSettings, setChangingSettings] = useState(false);
+
+	const [removeRuleConfirm, setRemoveRuleConfirm] = useState(false);
+
+	const handleOpenRuleRemoveConfirm = () => {
+		setRemoveRuleConfirm(true);
+	};
+
+	const handleCloseRuleRemoveConfirm = (e) => {
+		if (targetRule) {
+			// for (let i = 0; i < rules.length; i++) {
+			// 	if (rules[i] && rules[i].id == targetRule) {
+			// 		console.log("FOUND!")
+			// 		rules.splice(i,1);
+			// 	}
+			// }
+		setRules(rules.filter(rule => rule.id !== targetRule));
+		}
+		setRemoveRuleConfirm(false);
+	};
+
+	const [ruleEditModal, setRuleEditModal] = useState(false);
+
+	const handleOpenRuleEditModal = () => {
+		setRuleEditModal(true);
+	};
+
+	const handleCloseRuleEditModal = (e) => {
+		setRuleEditModal(false);
+	};
+
+	
+	const [ruleTitle, setRuleTitle] = useState("");
+	const [ruleDescription, setRuleDescription] = useState("");
+	const [ruleAppliedTo, setRuleAppliedTo] = useState(0);
+	const [newRuleIndexCount, setNewRuleIndexCount] = useState(0);
+
+	const lookUpRule = (ruleId) => {
+		if (ruleId) {
+			for (let i = 0; i < rules.length; i++) {
+				if (rules[i] && rules[i].id == ruleId) {
+					setTargetRule(ruleId);
+					setRuleTitle(rules[i].title);
+					setRuleDescription(rules[i].description);
+					setRuleAppliedTo(rules[i].appliedTo);
+				}
+			}
+		}
+	};
+
+	async function finishRuleEdits() {
+		setChangingSettings(true);
+		var body;
+		try {
+			body = {
+				"rules": rules
+			}
+            // console.log(formData);
+			await postJson("/api/editRules/" + umatiname, body)
+			.then(function (data){
+				console.log("setting original rules");
+				setOriginalRules(rules);
+				return data;
+			})
+			.catch(e => {
+				setRules(originalRules);
+				console.error(e);
+				return e;
+			});
+		}
+		catch(e) {
+			console.error(e);
+			return e;
+		}
+		finally {
+			setChangingSettings(false);
+			// setProfileModal(false);
+		}
+	}
+
 	const umatiDetails = () => {
 		
 
 		if (currentTab == 1) { // rules
 			return (
-				<div style={{marginTop: "30px"}}>
-					<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", marginBottom:"-20px"}}>
+				<div style={{marginTop: "30px", height:"fit-content"}}>
+					<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%"}}>
 						<h1>Rules</h1>
+						{editable && !loading ? <Button 
+						onClick={() => {
+							setTargetRule("");
+							setRuleTitle("");
+							setRuleDescription("");
+							setRuleAppliedTo(0);
+							handleOpenRuleEditModal();
+						}}
+						variant="outlined" type="button" color="primary">
+							Add Rule
+						</Button> : ""}
+						
 					</span>
+					<div>
+					{loading ? (loadRuleCards()) :
 					<DndContext 
 					sensors={sensors}
 					collisionDetection={closestCenter}
@@ -641,9 +776,43 @@ function UmatiView(props) {
 						items={rules}
 						strategy={verticalListSortingStrategy}
 					>
-						{rules.map((data) => <RuleCard key={data.id} data={data}></RuleCard>)}
+						{
+						rules.map((data, index) => <RuleCard key={index} data={data} index={index} owner={editable}
+						delete={(id) => {
+							lookUpRule(id);
+							handleOpenRuleRemoveConfirm();
+						}}
+						edit={(id) => {
+							lookUpRule(id);
+							handleOpenRuleEditModal();
+						}}
+						/>)
+						}
 					</SortableContext>
 					</DndContext>
+					}
+					</div>
+					{!loading && !changingSettings && originalRules != rules ? 
+					<div>
+						<Button
+						onClick={() => finishRuleEdits()}
+						style={{ float:"right", marginTop: "20px", marginBottom: "20px", marginLeft:"24px"}} variant="contained" type="button" color="primary">
+						Save
+						</Button>
+						<Button 
+						onClick={
+
+							() => {
+								
+								setRules(originalRules)
+							}
+						}
+						style={{float:"right", marginTop: "20px", marginBottom: "20px"}} variant="contained" type="button">
+						Cancel
+						</Button> 
+					</div> : ""}
+					
+					
 				</div>
 			);
 			
@@ -755,6 +924,7 @@ function UmatiView(props) {
 											<Skeleton animation="wave" height={10} width="80%" />
 										</React.Fragment>
 										) : (
+										<Fragment>
 										<Editable
 											text={desctext || umatiDat.description}
 											placeholder={editable ? "Click me to add a fancy description" : "Welcome to u/" + umatiDat.umatiname + ", one of many Umatis on the social media platform Umati!"}
@@ -848,14 +1018,23 @@ function UmatiView(props) {
 												
 											/> */}
 										</Editable>
-									)}		
+										{token.token ? <div>
+										<Button style={{float:"right", width:"fit-content"}} variant="contained" type="button" color="primary">
+										Join
+										</Button>
+										</div> 
+										: ""}
+										
+										</Fragment>
+									)}
+									
 								</Box>
 							</CardContent>
 						</Card>
 						
 					</div>
 			}
-			<Tabs
+			{!loading ? <Tabs
 			value={currentTab}
 			onChange={(event, newValue) => {
 				setCurrentTab(newValue);
@@ -883,7 +1062,8 @@ function UmatiView(props) {
 			<Tab label="Posts" index={0}/>
 			<Tab label="Rules" index={1}/>
 			<Tab label="Members" index={2}/>
-		</Tabs>
+			</Tabs> : ""}
+			
 			{umatiDetails()}
 			</Container>
 			</Box>
@@ -977,6 +1157,142 @@ function UmatiView(props) {
             </Fab>
 			</Tooltip>
         }
+
+
+		
+		<Modal // Confirm Delete Rule Modal
+		open={removeRuleConfirm}
+		onClose={() => {setRemoveRuleConfirm(false)}}
+		aria-labelledby="simple-modal-title"
+		aria-describedby="simple-modal-description"
+		style={{
+			// top: `50%`,
+			margin:'auto',
+			display:'flex',
+			alignItems:'center',
+			justifyContent:'center'
+		}}
+		>
+		<div className={classes.paper}>
+		<h2 id="simple-modal-title">{"Delete rule \"" + ruleTitle +"\""}</h2>
+		<p id="simple-modal-description">
+			{"Are you sure you want to delete rule \"" + ruleTitle +"\" ? Clicking \"Save\" after confirming this change will permanently remove this rule."}
+		</p>
+		<Button
+				onClick={(e) => handleCloseRuleRemoveConfirm(e)}
+				style={{float: "right", marginTop: "20px"}} variant="contained" type="button" color="secondary">
+				Delete
+		</Button>
+		</div>
+		</Modal>
+
+		<Modal // Add/Edit Modal
+					open={ruleEditModal}
+					onClose={handleCloseRuleEditModal}
+					aria-labelledby="simple-modal-title"
+					aria-describedby="simple-modal-description"
+					style={{
+						// top: `50%`,
+						margin:'auto',
+						display:'flex',
+						alignItems:'center',
+						justifyContent:'center'
+					}}
+					>
+					<div className={classes.paper}>
+					<h2 id="simple-modal-title">{targetRule ? "Edit rule" : "Add rule"}</h2>
+					<p id="simple-modal-description">
+						A strong Umati is a well-governed Umati. Customize this Umati's rules depending on its needs.
+					</p>
+					<form id="umatiEditRulesForm" className={classes.form} 
+					onSubmit={(e) => {
+							e.preventDefault();
+							let editedArray = [...rules];
+							if (targetRule) { // edit rule
+								for (let i = 0; i < editedArray.length; i++) {
+									if (editedArray[i] && editedArray[i].id == targetRule) {
+										editedArray[i].title = ruleTitle;
+										editedArray[i].description = ruleDescription;
+										editedArray[i].appliedTo = ruleAppliedTo;
+									}
+								}
+							}
+							else { // new rule
+								setNewRuleIndexCount(newRuleIndexCount + 1); // increment newruleindexcount
+								let newRule = {
+									id: newRuleIndexCount.toString(),
+									title: ruleTitle,
+									description: ruleDescription,
+									appliedTo: ruleAppliedTo
+								}
+								editedArray.push(newRule);
+							}
+							console.log(editedArray);
+							setRules(editedArray);
+							handleCloseRuleEditModal();
+					}} 
+					noValidate>
+						<TextField
+								variant="outlined"
+								margin="normal"
+								required
+								fullWidth
+								id="rule-title"
+								label="Title"
+								name="rule-title"
+								autoComplete="rule-title"
+								onChange={(e) => setRuleTitle(e.target.value)}
+								value={ruleTitle}
+								autoFocus
+								// error={taken == true}
+								// helperText = {taken == true? 'Umati Name already taken' : ''}
+						/>
+						<TextField
+								variant="outlined"
+								margin="normal"
+								fullWidth
+								id="rule-description"
+								label="Description"
+								name="rule-description"
+								autoComplete="rule-description"
+								value={ruleDescription}
+								onChange={(e) => setRuleDescription(e.target.value)}
+								multiline
+						/>
+						<div style={{marginTop:	"20px"}}>
+						<RadioGroup aria-label="This rule applies to:" name="gender1" value={ruleAppliedTo} onChange={(e) => {setRuleAppliedTo(parseInt(e.target.value))}}>
+							<FormLabel component="legend">This rule applies to:</FormLabel>
+							<FormControlLabel value={0} control={<Radio />} label="Posts and comments" />
+							<FormControlLabel value={1} control={<Radio />} label="Posts" />
+							<FormControlLabel value={2} control={<Radio />} label="Comments" />
+						</RadioGroup>
+						</div>
+						
+						<Button form="umatiEditRulesForm" variant="contained" color="primary" type="submit" isPrimary className={classes.submit} 
+						// disabled={!validUmatinameAvatarForm()}
+						 >
+						Save
+						</Button>
+						<br/>
+						<br/>
+						<FormLabel>{function() {
+							if (targetRule.length > 4) { // arbritary number, no one will ever make 1000+ rules in one go
+								return ("ruleid: " + targetRule);
+							}
+							else if (targetRule) { 
+								return ("This is an unsaved new rule. Its unique ID will be determined after it is saved.");
+							}
+							else {
+								return ("This action will add a new rule to the Umati.");
+							}
+						}
+						}</FormLabel>
+					</form>
+					</div>
+					</Modal>
+
+
+
 		</Fragment>
     );
 }
