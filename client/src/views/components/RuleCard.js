@@ -66,10 +66,13 @@ return (
 					subheader={
 						displayAppliedTo()
 				}
+				
 				action={
-					<IconButton aria-label="settings" onClick={handleOpenDropdown}>
+					<Fragment>
+					{props.owner ? (<IconButton aria-label="settings" onClick={handleOpenDropdown}>
 					<MoreVertIcon />
-					</IconButton>
+					</IconButton>) : ""}
+					</Fragment>
 				}
 				/>
 				<CardContent>
@@ -78,9 +81,12 @@ return (
 				</span>
 			</CardContent>
 			</div>
+		{ props.owner ? 
 		<IconButton style= {{cursor: "grab", height:"fit-content", marginTop: "8px", marginRight:"12px"}}{...attributes} {...listeners} disableRipple>
 			<DragHandleIcon/>
 		</IconButton>
+		: ""
+		}
 		<Menu
 		id="rule-menu"
 		anchorEl={anchor}

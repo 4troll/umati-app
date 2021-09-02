@@ -339,6 +339,8 @@ function UmatiView(props) {
 					}
 	
 					setUmatinameField(json.umatiname);
+					
+					document.title = json.displayname;
 					setDisplayName(json.displayname);
 	
 					if (json.description) {
@@ -749,7 +751,7 @@ function UmatiView(props) {
 				<div style={{marginTop: "30px", height:"fit-content"}}>
 					<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%"}}>
 						<h1>Rules</h1>
-						<Button 
+						{editable && !loading ? <Button 
 						onClick={() => {
 							setTargetRule("");
 							setRuleTitle("");
@@ -759,7 +761,8 @@ function UmatiView(props) {
 						}}
 						variant="outlined" type="button" color="primary">
 							Add Rule
-						</Button>
+						</Button> : ""}
+						
 					</span>
 					<div>
 					{loading ? (loadRuleCards()) :
@@ -774,7 +777,7 @@ function UmatiView(props) {
 						strategy={verticalListSortingStrategy}
 					>
 						{
-						rules.map((data, index) => <RuleCard key={index} data={data} index={index} 
+						rules.map((data, index) => <RuleCard key={index} data={data} index={index} owner={editable}
 						delete={(id) => {
 							lookUpRule(id);
 							handleOpenRuleRemoveConfirm();
@@ -1031,7 +1034,7 @@ function UmatiView(props) {
 						
 					</div>
 			}
-			<Tabs
+			{!loading ? <Tabs
 			value={currentTab}
 			onChange={(event, newValue) => {
 				setCurrentTab(newValue);
@@ -1059,7 +1062,8 @@ function UmatiView(props) {
 			<Tab label="Posts" index={0}/>
 			<Tab label="Rules" index={1}/>
 			<Tab label="Members" index={2}/>
-		</Tabs>
+			</Tabs> : ""}
+			
 			{umatiDetails()}
 			</Container>
 			</Box>

@@ -76,28 +76,9 @@ function CreatePost(props) {
 
 	const { umatiname } = useParams();
 
-    async function postJson(url, body) {
-		let response = await fetch(url, {
-			method: "post",
-			body: JSON.stringify(body),
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			credentials: "include"
-		});
-		if (!response.ok) {
-			console.log("error");
-			throw new Error("HTTP error, status = " + response.status);
-		}
-		else {
-			await response.json()
-			.then(json => {
-				console.log(json);
-				return json;
-			});
-		}
-	}
+	useEffect (() => {
+        document.title = "Create post";
+	}, []);
 
     async function sendPostCreationForm(event) {
 		event.preventDefault()

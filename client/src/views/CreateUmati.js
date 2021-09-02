@@ -68,7 +68,9 @@ function CreateUmati(props) {
     const inputFile = useRef(null);
 	const [selectedLogoFile,setSelectedLogoFile] = useState("");
 
-	
+	useEffect (() => {
+        document.title = "Create Umati";
+	}, []);
 
     async function postJson(url, body) {
 		let response = await fetch(url, {

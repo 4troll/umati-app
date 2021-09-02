@@ -170,6 +170,7 @@ function PostView(props) {
 				await response.json()
 				.then(async function (json) {
 					setPostDat(json);
+					document.title = json.title;
 					return json;
 				})
 				.catch(e => {

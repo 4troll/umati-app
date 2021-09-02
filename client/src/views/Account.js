@@ -249,6 +249,8 @@ function Account(props) {
 					}
 	
 					setUsernameField(json.username);
+
+					document.title = json.displayname;
 					setDisplayName(json.displayname);
 					
 					console.log(json.description);
