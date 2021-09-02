@@ -887,7 +887,20 @@ function UmatiView(props) {
 								}
 								
 							/>
-							
+							<Menu
+							id="simple-menu"
+							anchorEl={anchor}
+							open={anchor}
+							onClose={handleCloseDropdown}
+							>
+							{editable ? 
+							<Fragment>
+							<MenuItem onClick={handleOpenUmatiModal}>Edit name/logo</MenuItem>
+							</Fragment>
+							: 
+							<MenuItem onClick={handleCloseDropdown}>Join</MenuItem>
+							}
+							</Menu>
 							<CardContent>
 								<Box
 									sx={{
@@ -908,6 +921,7 @@ function UmatiView(props) {
 											<Skeleton animation="wave" height={10} width="80%" />
 										</React.Fragment>
 										) : (
+										<Fragment>
 										<Editable
 											text={desctext || umatiDat.description}
 											placeholder={editable ? "Click me to add a fancy description" : "Welcome to u/" + umatiDat.umatiname + ", one of many Umatis on the social media platform Umati!"}
@@ -1001,7 +1015,16 @@ function UmatiView(props) {
 												
 											/> */}
 										</Editable>
-									)}		
+										{token.token ? <div>
+										<Button style={{float:"right", width:"fit-content"}} variant="contained" type="button" color="primary">
+										Join
+										</Button>
+										</div> 
+										: ""}
+										
+										</Fragment>
+									)}
+									
 								</Box>
 							</CardContent>
 						</Card>

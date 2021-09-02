@@ -160,6 +160,7 @@ const Editable = ({
 	}
 	return (
 		<section {...props}>
+		<div>
 		{isEditing ? (
 			<div
 			// onBlur={() => finishEditing()}
@@ -176,11 +177,11 @@ const Editable = ({
 			</span>
 			</div>
 		)}
-		
-		<Button onClick={() => finishEditing()} style={{display: !isEditing ? "none" : "block", float:"right", marginTop: "20px"}} key="addAvatar" variant="contained" type="button" color="primary">
+		</div>
+		<Button onClick={() => finishEditing()} style={{display: !isEditing ? "none" : "block", float:"right" , marginBottom:"20px", marginTop: "20px", marginLeft: "20px"}} key="addAvatar" variant="contained" type="button" color="primary">
 		Submit
 		</Button>
-		<Button onClick={() => noSubmitFinishEditing()} style={{display: !isEditing ? "none" : "block", float:"right", marginTop: "20px"}} key="addAvatar" variant="contained" type="button">
+		<Button onClick={() => noSubmitFinishEditing()} style={{display: !isEditing ? "none" : "block", float:"right", marginBottom:"20px", marginTop: "20px"}} key="addAvatar" variant="contained" type="button">
 		Cancel
 		</Button>
 		</section>
