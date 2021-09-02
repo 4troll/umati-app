@@ -985,7 +985,7 @@ app.post("/api/editDescription/umati/:umatiname", [middleware.ratelimitAccountEd
                     if (req.decoded) {
                         let targetUmati = await umatisCollection.findOne({ umatiname: req.params.umatiname});
                         console.log(req.decoded);
-                        if (targetUmati && (targetUmati.owner = req.decoded.userId || adminMode) ) {
+                        if (targetUmati && (targetUmati.owner == req.decoded.userId || adminMode) ) {
                             var updateUmati = await umatisCollection.updateOne(
                                 {umatiname: req.params.umatiname},
                                 {$set: {description: req.body.description}}
@@ -1017,7 +1017,7 @@ app.post("/api/editDescription/umati/:umatiname", [middleware.ratelimitAccountEd
     }
 });
 
-app.post("/api/editRules/:umatiname", [middleware.ratelimitPosts, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/editRules/:umatiname", [ middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req && req.params.umatiname) {
         var hostUmatiname = req.params.umatiname;
         try {
@@ -1028,46 +1028,52 @@ app.post("/api/editRules/:umatiname", [middleware.ratelimitPosts, middleware.jso
                 var newRules = body.rules;
                 if (req.decoded && body && newRules) {
                     (async ()=>{
-                        let targetUmati = await umatisCollection.findOne({umatiname: hostUmatiname});
-                        if (targetUmati && (targetUmati.owner = req.decoded.userId || adminMode) ) { // if umati actually exists, and user authorized
+                        const targetUmati = await umatisCollection.findOne({umatiname: hostUmatiname});
+                        if (targetUmati && (targetUmati.owner == req.decoded.userId || adminMode) ) { // if umati actually exists, and user authorized
                             var oldRules = targetUmati.rules;
-                            if (oldRules) {
-                                let finalRules = []; // negotiated rules
-                                for (let i = 0; i < newRules.length; i++) {
-                                    let newRule = newRules[i];
-                                    let foundRuleId;
-                                    if (newRule.id && newRule.id != "new") {
+                            var finalRules = []; // negotiated rules
+                            console.log(newRules);
+                            for (let i = 0; i < newRules.length; i++) {
+                                let newRule = newRules[i];
+                                let foundRuleId;
+                                if (oldRules && oldRules.length > 0) {
+                                    if (newRule.id && newRule.id.length > 4) {
+                                        
                                         for (let j = 0; j < oldRules.length; j++) {
+                                            console.log(oldRules[j].id);
                                             if (oldRules[j].id == newRule.id) {
                                                 foundRuleId = oldRules[j].id;
                                                 break;
                                             }
                                         }
                                     }
+                                }
+                                let title = newRule.title;
+                                let appliedTo = newRule.appliedTo; // 0-both, 1-posts, 2-comments
+                                let description = newRule.description;
 
-                                    if (newRule.title && newRule.appliedTo && newRule.description) {
-                                        let title = newRule.title;
-                                        let appliedTo = newRule.appliedTo; // 0-both, 1-posts, 2-comments
-                                        let description = newRule.description;
-                                        if (newRule.title.length >= 3 && newRule.title.length <= 100) {
-                                            if (newRule.appliedTo >= 0 && newRule.appliedTo <= 2) {
-                                                if (newRule.description.length >= 0 && newRule.description.length <= 1000) {
-                                                    const ruleId = foundRuleId || short.generate();
-                                                    finalRules.push({
-                                                        ruleId: ruleId,
-                                                        title: title,
-                                                        appliedTo: appliedTo,
-                                                        description: description,
-                                                    });
-                                                }
+                                    
+                                    console.log("basic tests passed");
+                                    if (title.length >= 3 && title.length <= 100) {
+                                        if (appliedTo >= 0 && newRule.appliedTo <= 2) {
+                                            if (description.length >= 0 && description.length <= 1000) {
+                                                console.log("tests passed");
+                                                const ruleId = foundRuleId || short.generate();
+                                                finalRules.push({
+                                                    id: ruleId,
+                                                    title: title,
+                                                    appliedTo: appliedTo,
+                                                    description: description,
+                                                });
                                             }
                                         }
                                     }
 
-                                }
+
+
                             }
-                            
-                            res.json(newPost).end();
+                            await umatisCollection.updateOne({umatiname: hostUmatiname}, {$set: {rules: finalRules}});
+                            res.json(finalRules).end();
                         
                         }
                     })();
