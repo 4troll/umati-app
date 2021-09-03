@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useEffect,useLayoutEffect, useRef, useState, Fragment } from "react";
 import logo from './logo.svg';
 import Login from "./views/Login.js";
 import Account from "./views/Account.js";
@@ -24,6 +24,8 @@ import jwt_decode from "jwt-decode";
 import { useCookies } from 'react-cookie';
 
 import { SnackbarProvider } from 'notistack';
+
+import NotificationsIcon from '@material-ui/icons/Notifications';
 
 
 
@@ -61,6 +63,19 @@ import {
   Redirect
 } from "react-router-dom";
 
+import {
+	Container,
+	Box,
+    Popper,
+	Fade,
+	Paper,
+	Card,
+	CardHeader,
+	CardContent,
+	ClickAwayListener,
+	Badge
+} from '@material-ui/core';
+
 import Cookies from 'universal-cookie';
  
 const cookies = new Cookies();
@@ -74,7 +89,9 @@ class App extends Component {
 		this.state = {
 			token: cookies.get("token"),
 			cookieDat: {},
-			tabs: []
+			tabs: [],
+			anchorEl: null,
+      		open: false,
 		};
 
 		// var thirtymins = new Date(new Date().getTime() + 30 * 60 * 1000);
@@ -111,6 +128,12 @@ class App extends Component {
 		// 	return response;
 		// });
 	}
+	flipOpen = () => this.setState({ open: !this.state.open });
+
+	handlePopper = (event) => {
+	  this.setState({ anchorEl: event.currentTarget });
+	  this.flipOpen();
+	};
 	
 
 	componentDidMount() {
@@ -168,14 +191,14 @@ class App extends Component {
 			this.setState({ cookieDat : cookieDat})
 		}
 	}
-	
 	render() {
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
 		let username;
 		if (cookieDat) {
 			username = cookieDat.username;
 		}
-		
+		const open = this.state.anchorEl === null ? false : true;
+    	const id = this.state.open ? "simple-popper" : null;
 		
 		return (
 			<ThemeProvider theme={theme}>
@@ -195,6 +218,34 @@ class App extends Component {
 				}
 				<Link className="navlink" key="posts" to="/posts">Posts</Link>
 				<Link className="navlink" key="umatis" to="/umatis">Umatis</Link>
+				<button className="navlink" key="notifications" onClick={this.handlePopper} style={{float: "right"}}>
+					<Badge badgeContent={100} color="error" max={99}>
+						<NotificationsIcon style={{height:"24px"}}/>
+					</Badge>
+				</button>
+				<Popper id="simple-popper" open={this.state.open} anchorEl={this.state.anchorEl} transition>
+				{({ TransitionProps }) => (
+				<ClickAwayListener onClickAway={this.flipOpen}>
+				<Fade {...TransitionProps} timeout={350}>
+					<Paper>
+						<Box
+							sx={{
+								backgroundColor: 'background.default',
+								minHeight: '100%',
+								py: 3
+							}}
+							>
+							<Container maxWidth="lg">
+								<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"-20px 0px"}}>
+									<h3>Notifications</h3>
+								</span>
+							</Container>
+						</Box>
+					</Paper>
+				</Fade>
+				</ClickAwayListener>
+				)}
+			</Popper>
 			</div>
 				{/*
 				A <Switch> looks through all its children <Route>

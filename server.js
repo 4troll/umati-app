@@ -49,6 +49,7 @@ var mongoUri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/rat
 
 var usersDB;
 var usersCollection;
+var notifsCollection;
 var umatisDB;
 var umatisCollection;
 var postsDB;
@@ -58,6 +59,8 @@ var pfpsCollection;
 var umatiLogosCollection;
 var postPhotosCollection;
 
+
+
 try {
     var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
     client.connect( (err,db) => {
@@ -66,6 +69,7 @@ try {
         }
         usersDB = client.db("users");
         usersCollection = usersDB.collection("users");
+        notifsCollection = usersDB.collection("notifications");
 
         umatisDB = client.db("umatis");
         umatisCollection = umatisDB.collection("umatis");
@@ -1238,6 +1242,10 @@ app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken
                 
 
                 (async ()=>{
+                    var viewingUser;
+                    if (req.decoded) {
+                        viewingUser = await usersCollection.findOne({userId: req.decoded.userId});
+                    }
                     let queryStuff = {
                         "pageNum": 0,
                         "limit": 25
@@ -1290,6 +1298,15 @@ app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken
                     // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
                     // .limit( queryStuff.limit )
                     for await (let umati of aggregation) {
+                        umati.joined = false;
+                        if (viewingUser && viewingUser.joinedUmatis) {
+                            for (let i = 0; i < viewingUser.joinedUmatis.length; i++) {
+                                if (viewingUser.joinedUmatis[i] == umati.umatiname) {
+                                    umati.joined = true;
+                                    break;
+                                }
+                            }
+                        }
                         await usersCollection.findOne({userId: umati.owner})
                         .then(ownerData => {
                             if (ownerData) {

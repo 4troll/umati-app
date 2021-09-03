@@ -78,7 +78,7 @@ function createSubHeader (authorData,umatiData) {
 
 function determineColor(current,num) {
     if (current != num) {
-        return "aaa";
+        return "default";
     }
     else if (num == 1) {
         return "primary";
@@ -86,7 +86,7 @@ function determineColor(current,num) {
     else if (num == -1) {
         return "secondary";
     }
-    return "aaa";
+    return "default";
 }
 
 function LoadPostCard (main) {

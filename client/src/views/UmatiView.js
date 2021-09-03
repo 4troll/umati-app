@@ -915,7 +915,7 @@ function UmatiView(props) {
 								subheader={
 									<Fragment>
 									{(umatiDat.displayname ? ("u/" + umatiDat.umatiname) : "")}
-									<p style={{color:"#ffaa00"}}>{(umatiDat.joinCount || 0 + (joinedUmati ? 1 : 0)) + ((umatiDat.joinCount || 0+ (joinedUmati ? 1 : 0)) == 1 ? " member" : " members")}</p>
+									<p style={{color:"#ffaa00"}}>{((umatiDat.joinCount || 0) - (umatiDat.joined ? 1 : 0) + (joinedUmati ? 1 : 0)) + (((umatiDat.joinCount || 0) - (umatiDat.joined ? 1 : 0) + (joinedUmati ? 1 : 0)) == 1 ? " member" : " members")}</p>
 									</Fragment>
 								}
 								action={

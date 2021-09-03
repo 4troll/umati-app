@@ -69,9 +69,17 @@ return (
 				
 				action={
 					<Fragment>
-					{props.owner ? (<IconButton aria-label="settings" onClick={handleOpenDropdown}>
-					<MoreVertIcon />
-					</IconButton>) : ""}
+					{props.owner ? (
+					<Fragment>
+						<IconButton aria-label="settings" onClick={handleOpenDropdown}>
+							<MoreVertIcon />
+						</IconButton>
+						<IconButton style= {{cursor: "grab", height:"fit-content"}}{...attributes} {...listeners} disableRipple>
+							<DragHandleIcon/>
+						</IconButton>
+					</Fragment>
+					) : ""}
+					
 					</Fragment>
 				}
 				/>
@@ -81,12 +89,6 @@ return (
 				</span>
 			</CardContent>
 			</div>
-		{ props.owner ? 
-		<IconButton style= {{cursor: "grab", height:"fit-content", marginTop: "8px", marginRight:"12px"}}{...attributes} {...listeners} disableRipple>
-			<DragHandleIcon/>
-		</IconButton>
-		: ""
-		}
 		<Menu
 		id="rule-menu"
 		anchorEl={anchor}

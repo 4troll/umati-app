@@ -226,7 +226,7 @@ function Umatis(props) {
             {
             umatiData.map(function (umati,i) {
                 return (
-                    <UmatiCard key={i} data={umati}/>
+                    <UmatiCard key={i} data={umati} loggedIn={token.token ? true : false} joined={umati.joined}/>
                 );
             })
             }
