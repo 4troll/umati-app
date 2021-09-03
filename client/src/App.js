@@ -295,7 +295,7 @@ class App extends Component {
 							}
 						}}
 				</Route>
-				<Route exact path="/u/:umatiname/comments/:postId">
+				<Route path="/u/:umatiname/comments/:postId">
 					<PostView/>
 				</Route>
 				<Route path="/u/:umatiname/submit">
@@ -310,7 +310,7 @@ class App extends Component {
 					
 				</Route>
 
-				<Route path="/u/:umatiname" render={(props) => (<UmatiView
+				<Route exact path="/u/:umatiname" render={(props) => (<UmatiView
 					path={"/u/" + props.match.params.umatiname}
 					key={props.match.params.umatiname}
 				/>)}/>
