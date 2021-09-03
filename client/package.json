@@ -25,6 +25,7 @@
     "react-scrolllock": "^5.0.1",
     "react-string-replace": "^0.4.4",
     "react-string-replace-recursively": "^0.2.0",
+    "slugify": "^1.6.0",
     "validator": "^13.6.0"
   },
   "scripts": {

@@ -22,7 +22,7 @@ import UmatiLink from "./UmatiLink.js";
 
 import { Skeleton } from '@material-ui/lab';
 
-
+const slugify = require('slugify')
 
 import {
     Link
@@ -181,6 +181,15 @@ function LoadPostCard (main) {
     );
 }
 
+const slugSettings = {
+    replacement: '-',  // replace spaces with replacement character, defaults to `-`
+    remove: undefined, // remove characters that match regex, defaults to `undefined`
+    lower: true,      // convert to lower case, defaults to `false`
+    strict: true,     // strip special characters except replacement, defaults to `false`
+    locale: 'vi',       // language code of the locale to use
+    trim: true         // trim leading and trailing replacement chars, defaults to `true`
+  }
+
 function PostCard (props) {
     const classes = useStyles();
     const postData = props.data;
@@ -194,8 +203,6 @@ function PostCard (props) {
 
     const [voteStatus,setVoteStatus] = useState(postData.userVote || 0);
     const [loadingVote,setLoadingVote] = useState(false);
-
-    
 
     async function handleVote(originalVote,targetVote) {
 		var voteData;
@@ -292,7 +299,7 @@ function PostCard (props) {
                 </IconButton>
                 </Box>
 
-                <Link to={"/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId} style={{textDecoration:"none", color:"inherit", flex: "1"}}>
+                <Link to={"/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings)} style={{textDecoration:"none", color:"inherit", flex: "1"}}>
                 
                 <CardHeader
                     // avatar={
