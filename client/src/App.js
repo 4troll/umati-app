@@ -348,7 +348,7 @@ class App extends Component {
 					
 				</Route>
 
-				<Route exact path="/u/:umatiname" render={(props) => (<UmatiView
+				<Route path="/u/:umatiname" render={(props) => (<UmatiView
 					path={"/u/" + props.match.params.umatiname}
 					key={props.match.params.umatiname}
 				/>)}/>
