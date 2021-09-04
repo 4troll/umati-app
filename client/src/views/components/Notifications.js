@@ -255,6 +255,7 @@ function Notifications(props) {
             else {
                 await response.json()
                 .then(function (json) {
+                    window.dispatchEvent(new CustomEvent('resize'));
                     setNotifData(notifData.concat(json));
                     console.log("h");
                     const limit = 25;
@@ -319,7 +320,7 @@ function Notifications(props) {
 			}}
             style={{minWidth:"350px"}}
 			>
-				<Container maxWidth="lg">
+				<Container maxWidth={1/4}>
                     <span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"-20px 0px"}}>
                         <h3>Notifications</h3>
                     </span>
@@ -346,6 +347,14 @@ function Notifications(props) {
                                     content.title = "New post";
                                     content.subheader = umatilink(umatiData);
                                     content.description = postDescription(postData.title,userData);
+                                    content.link = "/u/" + (umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings);
+                                    content.seen = notification.seen ? true : false;
+                                    content.id = notification.notifId;
+                                }
+                                else if (notification.type == "voteMilestone") {
+                                    content.title = "⬆ Post reached " + notification.milestone + " reputation!";
+                                    content.subheader = umatilink(umatiData);
+                                    content.description = "Your post \"" + postData.title + "\" reached " + notification.milestone + " reputation. Hooray! 🥳";
                                     content.link = "/u/" + (umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings);
                                     content.seen = notification.seen ? true : false;
                                     content.id = notification.notifId;

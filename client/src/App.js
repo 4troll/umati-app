@@ -269,7 +269,7 @@ class App extends Component {
 						<NotificationsIcon style={{height:"24px"}}/>
 					</Badge>
 				</button>
-				<Popper id="simple-popper" open={this.state.open} anchorEl={this.state.anchorEl} transition>
+				<Popper id="simple-popper" placement={"bottom-end"} open={this.state.open} anchorEl={this.state.anchorEl} transition>
 				{({ TransitionProps }) => (
 				<ClickAwayListener onClickAway={this.flipOpen}>
 				<Fade {...TransitionProps} timeout={350}>

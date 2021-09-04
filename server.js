@@ -59,7 +59,14 @@ var pfpsCollection;
 var umatiLogosCollection;
 var postPhotosCollection;
 
-
+const scoreMilestones = [
+    1,
+    5,10, 25, 50, 75,
+    100, 200, 250, 500, 750, 
+    1000, 2000, 3000, 5000, 7500,
+    10000, 20000, 30000, 50000, 75000,
+    100000
+]
 
 try {
     var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -1484,7 +1491,7 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
                                     {notifs: {
                                         type: "newPost",
                                         postId: postId,
-                                        notifId: postId,
+                                        notifId: short.generate(),
                                         date: newPost.creationDate
                                         }
                                     } 
@@ -1614,6 +1621,33 @@ async function updateReputation(senderId,authorId,postId,change,voterType) {
                     }
                     }, settings);
                 await usersCollection.updateOne({userId: authorId}, { $inc: {rep: change}});
+                if (change == 1) {
+                    let postVoteCount = await postVotesCollection.findOne({"postId": postId});
+                    if (postVoteCount.voteCount && scoreMilestones.find(element => element == postVoteCount.voteCount)) {
+                        if (postVoteCount.voteCount > postVoteCount.currentMilestone || !postVoteCount.currentMilestone ) {
+                            await notifsCollection.updateOne({userId: authorId}, {$push: 
+                                {notifs: {
+                                    type: "voteMilestone",
+                                    milestone: postVoteCount.voteCount,
+                                    postId: postId,
+                                    notifId: short.generate(),
+                                    date: Date.now(),
+                                    seen: false
+
+                                    }
+                                } 
+                                
+                            },{upsert: true});
+                            await postVotesCollection.updateOne({"postId": postId},{
+                                $set: {
+                                    "milestone": postVoteCount.voteCount
+                                }
+                                }, settings);
+                        }
+                        
+                    }
+                    
+                }
             }
         }
         );
@@ -2183,9 +2217,24 @@ app.get("/api/fetchNotifs", [middleware.jsonParser, middleware.authenticateToken
 
                         let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
 
-                        let foundNotifs = await notifsCollection.findOne(
-                            {userId: req.decoded.userId},
-                            {notifs:{$slice:[startingCount, startingCount + queryStuff.limit]}}
+                        let foundNotifs = await notifsCollection.aggregate([
+                            {
+                                $match: {
+                                    userId: req.decoded.userId
+                                },
+                              },
+                              {
+                                $project: {
+                                    notifs: {
+                                    $slice: [
+                                      { $reverseArray: "$notifs" },
+                                      startingCount,
+                                      startingCount + queryStuff.limit,
+                                    ],
+                                  },
+                                },
+                              },
+                        ]
                         );
                         // let cursor = await usersCollection.find({ userId: { $gt: startingCount} })
                         // .sort({userId:1})
@@ -2193,20 +2242,22 @@ app.get("/api/fetchNotifs", [middleware.jsonParser, middleware.authenticateToken
                         // .limit( queryStuff.limit )
                         
                         if (foundNotifs) {
-                            for (let notif of foundNotifs.notifs) {
-                                console.log(notif);
-                                if (notif.type == "newPost") {
+                            for await (let main of foundNotifs) {
+                                for (let notif of main.notifs) {
+                                    console.log(notif);
+                                    if (notif.type == "newPost" || notif.type == "voteMilestone" ) {
+                                        let post = await allPostsCollection.findOne({postId: notif.postId});
+                                        let user = await usersCollection.findOne({userId: post.author});
+                                        user = cleanUserData(user,adminMode);
+                                        let umati = await umatisCollection.findOne({umatiId: post.hostUmati});
+                                        notif.postData = post;
+                                        notif.userData = user;
+                                        notif.umatiData = umati;
+                                    }
                                     
-                                    let post = await allPostsCollection.findOne({postId: notif.postId});
-                                    let user = await usersCollection.findOne({userId: post.author});
-                                    user = cleanUserData(user,adminMode);
-                                    let umati = await umatisCollection.findOne({umatiId: post.hostUmati});
-                                    notif.postData = post;
-                                    notif.userData = user;
-                                    notif.umatiData = umati;
+                                    notifStream.push(notif);
                                 }
                                 
-                                notifStream.push(notif);
                             }
                             res.json(notifStream).end();
                         }
