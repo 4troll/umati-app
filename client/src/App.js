@@ -9,6 +9,7 @@ import UmatiView from "./views/UmatiView.js";
 import CreatePost from "./views/CreatePost.js";
 import Posts from "./views/Posts.js";
 import PostView from "./views/PostView.js";
+import Policies from "./views/Policies.js";
 
 import Notifications from "./views/components/Notifications.js";
 
@@ -333,9 +334,10 @@ class App extends Component {
 							}
 						}}
 				</Route>
-				<Route path="/u/:umatiname/comments/:postId">
-					<PostView/>
-				</Route>
+				<Route path="/u/:umatiname/comments/:postId" component={(props) => (<PostView
+					path={"/u/" + props.match.params.umatiname + "/comments/" + props.match.params.postId}
+					key={props.match.params.postId}
+				/>)}/>
 				<Route path="/u/:umatiname/submit">
 					{function() {
 							if (!cookieDat) {
@@ -357,6 +359,12 @@ class App extends Component {
 				<Route exact path="/posts">
 					<Posts
 					path="/posts"
+				/>
+				</Route>
+
+				<Route path="/policies">
+					<Policies
+					path="/policies"
 				/>
 				</Route>
 				
