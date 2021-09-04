@@ -58,6 +58,13 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 * Posts can be sorted in different orders: Trending (Reddit Hot algorithm), New, Top (Lower bound of Wilson score confidence interval for a Bernoulli parameter), Liked, Disliked, Controversial (closest to 50% like ratio), and Old.
 * WIP: Comments
 
+**Notifications features**
+* Click the bell icon to see your server-stored notifications
+* Join umatis to get notified when new posts are made (on your next visit)
+* Get notified when your post reaches new milestones (1, 5, 10, 25, 50, 75, with a similar pattern across other orders of magnitude)
+* Click notifications to jump to content which sets the notification on "seen". New notifications have a blue tint
+* Bell icon badge indicates amount of new notifications
+
 ### Security features
 
 * Token authentication (stateless, prevents storing of permanent password in client storage)
@@ -67,10 +74,13 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 
 ### Moderation features
 
+**Rules features**
 * Create and remove rules
 * Edit rules with simplistic modal
 * Reorder rules with gratifying drag-and-drop mechanic
 * Rules can apply to all UGC (user generated content), only posts, or only comments (WIP: simplistic report feature with rule radio button menu)
+
+**Other**
 * WIP: Sitewide rules
 * WIP: Add moderators
 * WIP: Extensive moderation settings
