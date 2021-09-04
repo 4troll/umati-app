@@ -1474,6 +1474,25 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
 
                             let insertOperation = await allPostsCollection.insertOne(newPost);
                             let voteDoc = await postVotesCollection.insertOne({postId: postId, voteCount: 0});
+
+                            let pingedUsersAggregation = await usersCollection.aggregate([
+                                {$match: {joinedUmatis: req.params.umatiname}}
+                            ]);
+
+                            for await (let user of pingedUsersAggregation) {
+                                await notifsCollection.updateOne({userId: user.userId}, {$push: 
+                                    {notifs: {
+                                        type: "newPost",
+                                        postId: postId,
+                                        notifId: postId,
+                                        date: newPost.creationDate
+                                        }
+                                    } 
+                                    
+                            },{upsert: true});
+                            }
+
+
                             res.json(newPost).end();
                         
                         }
@@ -2127,6 +2146,166 @@ app.get("/assets/postPhoto/:id", [middleware.jsonParser, middleware.authenticate
         }
         catch (e) {
             console.error(e);
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+// Notifications
+
+app.get("/api/fetchNotifs", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req) {
+        try {
+            if (req.decoded) {
+                var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+                client.connect( (err,db) => {
+                    if (err) throw err;
+                
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                    (async ()=>{
+                        let queryStuff = {
+                            "pageNum": 0,
+                            "limit": 25
+                        }
+
+                        if (parseInt(req.query.page) && parseInt(req.query.page) > 0) {
+                            queryStuff.pageNum = parseInt(req.query.page);
+                        }
+
+                        // if (parseInt(req.query.limit) && parseInt(req.query.limit) < 100) {
+                        //     queryStuff.limit = parseInt(req.query.limit);
+                        // }
+                        
+                        var notifStream = []
+
+                        let startingCount = ( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 );
+
+                        let foundNotifs = await notifsCollection.findOne(
+                            {userId: req.decoded.userId},
+                            {notifs:{$slice:[startingCount, startingCount + queryStuff.limit]}}
+                        );
+                        // let cursor = await usersCollection.find({ userId: { $gt: startingCount} })
+                        // .sort({userId:1})
+                        // .skip( queryStuff.pageNum > 0 ? ( ( queryStuff.pageNum - 1 ) * queryStuff.limit ) : 0 )
+                        // .limit( queryStuff.limit )
+                        
+                        if (foundNotifs) {
+                            for (let notif of foundNotifs.notifs) {
+                                console.log(notif);
+                                if (notif.type == "newPost") {
+                                    
+                                    let post = await allPostsCollection.findOne({postId: notif.postId});
+                                    let user = await usersCollection.findOne({userId: post.author});
+                                    user = cleanUserData(user,adminMode);
+                                    let umati = await umatisCollection.findOne({umatiId: post.hostUmati});
+                                    notif.postData = post;
+                                    notif.userData = user;
+                                    notif.umatiData = umati;
+                                }
+                                
+                                notifStream.push(notif);
+                            }
+                            res.json(notifStream).end();
+                        }
+                        else {
+                            res.status(404).end();
+                        }
+                        
+                    })();
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.get("/api/notifCount", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    if (req) {
+        var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+        try {
+            if (req.decoded) {
+                
+                client.connect( (err,db) => {
+                    if (err) throw err;
+                
+                    var tokenData = req.decoded
+                    var adminMode = tokenData.isAdmin;
+                    console.log("notifCount");
+                    (async ()=>{
+                        let foundNotifs = await notifsCollection.findOne(
+                            {userId: req.decoded.userId},
+                            {notifs: 1}
+                        );
+                        
+                        if (foundNotifs) {
+                            let notifCount = 0;
+                            for (let i = 0; i < foundNotifs.notifs.length; i++) {
+                                if (foundNotifs.notifs[i].seen != true) {
+                                    notifCount++;
+                                }
+                            }
+                            let send = {
+                                notifCount: notifCount
+                            }
+                            res.json(send).end();
+                        }
+                        else {
+                            res.status(404).end();
+                        }
+                        
+                    })();
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/readNotif", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    var body = req.body;
+    if (req && body) {
+        var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+        try {
+            var tokenData = req.decoded
+            var adminMode = req.decoded.isAdmin;
+            if (req.decoded) {
+                client.connect( (err,db) => {
+                    if (err) throw err;
+                    (async ()=>{
+                        let updateop = await notifsCollection.updateOne(
+                            {"userId": req.decoded.userId, "notifs.notifId": req.body.readId},
+                            {$set: {"notifs.$.seen": true}}, {upsert: true}
+                        );
+                        req.body.modifiedCount = updateop.modifiedCount;
+                        res.json(req.body).end();
+                    })();
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
         }
     }
     else {

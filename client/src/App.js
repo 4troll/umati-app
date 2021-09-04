@@ -9,6 +9,9 @@ import UmatiView from "./views/UmatiView.js";
 import CreatePost from "./views/CreatePost.js";
 import Posts from "./views/Posts.js";
 import PostView from "./views/PostView.js";
+
+import Notifications from "./views/components/Notifications.js";
+
 import './App.css';
 
 import StickyFooter from "./views/components/StickyFooter.js";
@@ -89,9 +92,9 @@ class App extends Component {
 		this.state = {
 			token: cookies.get("token"),
 			cookieDat: {},
-			tabs: [],
 			anchorEl: null,
       		open: false,
+			notifCount: 0
 		};
 
 		// var thirtymins = new Date(new Date().getTime() + 30 * 60 * 1000);
@@ -134,10 +137,48 @@ class App extends Component {
 	  this.setState({ anchorEl: event.currentTarget });
 	  this.flipOpen();
 	};
+
+	getNotifAmount = async () => {
+		console.log("getting notif amount")
+		let currentComponent = this;
+		try {
+			let response = await fetch("/api/notifCount", {
+				method: "get",
+				headers: {
+					"Accept": "application/json",
+					"Content-Type": "application/json",
+				},
+				credentials: "include"
+			});
+			if (!response.ok) {
+				throw new Error("HTTP error, status = " + response.status);
+			}
+			else {
+				await response.json()
+				.then(function (json) {
+					console.log("got notif amount")
+					let notifCount = json.notifCount;
+					console.log(notifCount)
+					currentComponent.setState({notifCount: notifCount});
+					
+					return notifCount;
+				})
+				.catch(e => {
+					console.error(e);
+					return e;
+				});
+			}
+		}
+		catch(e) {
+			console.error(e);
+		}
+	}
+
+	
 	
 
 	componentDidMount() {
-		
+		this.getNotifAmount();
 	}
 
 	async checkAuth() {
@@ -191,6 +232,10 @@ class App extends Component {
 			this.setState({ cookieDat : cookieDat})
 		}
 	}
+
+	
+	
+
 	render() {
 		const cookieDat = this.state.token ? jwt_decode(this.state.token) : null ;
 		let username;
@@ -219,7 +264,8 @@ class App extends Component {
 				<Link className="navlink" key="posts" to="/posts">Posts</Link>
 				<Link className="navlink" key="umatis" to="/umatis">Umatis</Link>
 				<button className="navlink" key="notifications" onClick={this.handlePopper} style={{float: "right"}}>
-					<Badge badgeContent={100} color="error" max={99}>
+					<Badge badgeContent={this.state.notifCount} 
+					color="error" max={99}>
 						<NotificationsIcon style={{height:"24px"}}/>
 					</Badge>
 				</button>
@@ -228,19 +274,11 @@ class App extends Component {
 				<ClickAwayListener onClickAway={this.flipOpen}>
 				<Fade {...TransitionProps} timeout={350}>
 					<Paper>
-						<Box
-							sx={{
-								backgroundColor: 'background.default',
-								minHeight: '100%',
-								py: 3
-							}}
-							>
-							<Container maxWidth="lg">
-								<span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"-20px 0px"}}>
-									<h3>Notifications</h3>
-								</span>
-							</Container>
-						</Box>
+						<Notifications 
+						subNewNotifs = {() => {
+							this.setState({notifCount: (this.state.notifCount - 1)});
+						}}
+						/>
 					</Paper>
 				</Fade>
 				</ClickAwayListener>
