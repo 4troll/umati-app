@@ -23,10 +23,11 @@ const Editable = ({
   childRef,
   finishEdits,
   enabled,
+  alwaysOn,
   ...props
 }) => {
   // Manage the state whether to show the label or the input box. By default, label will be shown.
-  const [isEditing, setEditing] = useState(false);
+  const [isEditing, setEditing] = useState(alwaysOn);
   const [initialText, setInitialText] = useState(text);
 
   useEffect(() => {
@@ -54,8 +55,11 @@ const Editable = ({
 	};
 
 	function finishEditing() {
-		setEditing(false);
-		setInitialText(text);
+		if (!alwaysOn) {
+			setEditing(false);
+			setInitialText(text);
+			
+		}
 		finishEdits();
 	}
 	function noSubmitFinishEditing() {
@@ -73,82 +77,7 @@ const Editable = ({
 	function buildBody(textInput) {
 		var returned;
 		if (textInput) {
-
-			// // Umati Mention Replace
-			// returned = RSR(textInput, /[u]\/\[([^\[]+\]\[[0-9]*)\]/g, function (match, i) {
-			// 	const nameId = match.split("][");
-			// 	const umatiname = nameId[0];
-			// 	const umatiId = nameId[1];
-			// 	return (
-			// 		<UmatiLink
-			// 		umatiname={umatiname}
-			// 		umatiId={umatiId}/>
-			// 	);
-			// });
-
-			
-
-			// // User Mention Replace
-			// returned = RSR(returned, /\@\[([^\[]+\]\[[0-9]*)\]/g, function (match, i) {
-			// 	const nameId = match.split("][");
-			// 	const username = nameId[0];
-			// 	const userId = nameId[1];
-			// 	return (
-
-			// 		<UserLink
-			// 		username={username}
-			// 		userId={userId}/>
-			// 	);
-			// });
-			// // Bullet List
-			// returned = RSR(returned, /\n\*(.*)/g, function (match, i) {
-			// 	return (
-			// 		<li>{match}</li>
-			// 	);
-			// });
-			// // Number List
-			// returned = RSR(returned, /\n[0-9]+\.(.*)/g, function (match, i) {
-			// 	return (
-			// 		<ol>{match}</ol>
-			// 	);
-			// });
-
-			// // Quote
-			// returned = RSR(returned, />(.*)/g, function (match, i) {
-			// 	return (
-			// 		<blockquote style={{background:"rgb(220,220,220)", color: "rgb(128,128,128)", marginTop: "10px" }}>{match}</blockquote>
-			// 	);
-			// });
-			
-			// // Link
-			// returned = RSR(returned, /\[([^\[]+\]\([^\)]+)\)/g, function (match, i) {
-			// 	var nameId = match.split("](");
-			// 	const linkname = nameId[0]
-			// 	const link = nameId[1]
-			// 	return (
-			// 		<a href={link}>{linkname}</a>
-			// 	);
-			// });
-
-			// // Bold
-			// returned = RSR(returned, /(?:\*\*)(.*?)(?:\*\*)/g, function (match, i) {
-			// 	return (
-			// 		<strong>{match}</strong>
-			// 	);
-			// });
-
-			// // Italics
-			// returned = RSR(returned, /(?:\*)(.*?)(?:\*)/g, function (match, i) {
-			// 	return (
-			// 		<em>{match}</em>
-			// 	);
-			// });
-
 			returned = RSRR(mdconfig)(textInput);
-
-			
-
-
 		}
 		else if (placeholder) {
 			const returned = placeholder;
@@ -181,9 +110,10 @@ const Editable = ({
 		<Button onClick={() => finishEditing()} style={{display: !isEditing ? "none" : "block", float:"right" , marginBottom:"20px", marginTop: "20px", marginLeft: "20px"}} key="addAvatar" variant="contained" type="button" color="primary">
 		Submit
 		</Button>
-		<Button onClick={() => noSubmitFinishEditing()} style={{display: !isEditing ? "none" : "block", float:"right", marginBottom:"20px", marginTop: "20px"}} key="addAvatar" variant="contained" type="button">
+		{!alwaysOn ? <Button onClick={() => noSubmitFinishEditing()} style={{display: !isEditing ? "none" : "block", float:"right", marginBottom:"20px", marginTop: "20px"}} key="addAvatar" variant="contained" type="button">
 		Cancel
-		</Button>
+		</Button> : ""}
+		
 		</section>
 		
 	);

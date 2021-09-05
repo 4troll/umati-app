@@ -54,6 +54,8 @@ var umatisDB;
 var umatisCollection;
 var postsDB;
 var allPostsCollection;
+var commentsCollection;
+var commentsDB;
 var assetsDB;
 var pfpsCollection;
 var umatiLogosCollection;
@@ -83,12 +85,17 @@ try {
 
         postsDB = client.db("posts");
         allPostsCollection = postsDB.collection("all");
-        postVotesCollection = postsDB.collection("votes")
+        postVotesCollection = postsDB.collection("votes");
+
+        commentsDB = client.db("comments");
+        commentsCollection = commentsDB.collection("all");
         
         assetsDB = client.db("assets");
         pfpsCollection = assetsDB.collection("pfps");
         umatiLogosCollection = assetsDB.collection("umatiLogos");
         postPhotosCollection = assetsDB.collection("postPhotos");
+
+        
     });
 }
 catch(e) {
@@ -231,6 +238,7 @@ function checkUsername(targetUsername) {
 
 
 // Account Requests
+// usersCounter.insert({_id: "userCounter", sequence_value_: 0});
 
 app.post("/api/registerAccount", [middleware.ratelimitAccounts, jsonParser], function (req, res) {
     if (req) {
@@ -247,8 +255,7 @@ app.post("/api/registerAccount", [middleware.ratelimitAccounts, jsonParser], fun
                     let usersCounter = usersDB.collection("counter");
                     var increment = await usersCounter.findOneAndUpdate(
                         {_id: "userCounter" },
-                        {$inc:{sequence_value:1}},
-                        {}
+                        {$inc:{sequence_value:1}}
                     );  
 
 
@@ -1492,7 +1499,8 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
                                         type: "newPost",
                                         postId: postId,
                                         notifId: short.generate(),
-                                        date: newPost.creationDate
+                                        date: newPost.creationDate,
+                                        seen: false
                                         }
                                     } 
                                     
@@ -1542,11 +1550,11 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                     if (post) {
                         const umatiData = await umatisCollection.findOne({umatiId: post.hostUmati});
                         const voteStatus = await postVotesCollection.findOne({postId: postId});
-                        await usersCollection.findOne({userId: post.author})
-                        .then(authorData => {
+                        var authorData = await usersCollection.findOne({userId: post.author})
+                        if (authorData) {
                             let userVoteStatus = 0;
                             if (authorData && umatiData) {
-                                if (voteStatus ) {
+                                if (voteStatus) {
                                     if (voteStatus.likers && req.decoded) {
                                         for (let i = 0; i < voteStatus.likers.length; i++) {
                                             if (voteStatus.likers[i] == req.decoded.userId) {
@@ -1569,12 +1577,31 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                 authorData = cleanUserData(authorData,adminMode);
                                 post.umatiData = umatiData;
                                 post.authorData = authorData;
+
+                                // Votes
+
+                                let commentsAggregate = await commentsCollection.aggregate([
+                                    {$lookup: {
+                                        from: "votes",
+                                        localField: "commentId",
+                                        foreignField: "commentId",
+                                        as: "voteData"
+                                    }},
+                                ]
+                                );
+                                var commentStream = [];
+                                for await (let comment of commentsAggregate) {
+                                    let voteData = comment.voteData[0]
+                                    // console.log(voteData.voteCount);
+                                    commentStream.push(comment);
+                                }
+                                post.commentData = commentStream;
                                 res.json(post).end();
                             }
-                        })
-                        .catch(e => {
-                            console.error(e);
-                        })
+                        }
+                        else {
+                            res.status(404).end();
+                        }
                         
                     }
                     else {
@@ -1762,57 +1789,6 @@ app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authentic
                                     );
                                 } 
                             }
-                            
-                            
-                            // if(body.vote != 0 && voterType){
-                            //     await postVotesCollection.updateOne({"postId": postId},{
-                            //             $addToSet: {
-                            //                 [voterType]: req.decoded.userId
-                            //             }
-                            //         }, settings, async (error,result) => {
-                            //             if (error) {
-                            //                 console.log("ERROR: " + error);
-                            //             }
-                            //             if(result.modifiedCount && result.modifiedCount > 0){
-                            //                 // const voteStats = await postVotesCollection.findOne({"postId": postId});
-
-                            //                 // var likeCount = 0;
-                            //                 // console.log(voteStats.likers);
-                            //                 // if (voteStats.likers) {
-                            //                 //     likeCount = voteStats.likers.length;
-                            //                 // }
-                            //                 // var dislikeCount = 0;
-                            //                 // if (voteStats.dislikers) {
-                            //                 //     dislikeCount = voteStats.dislikers.length;
-                            //                 // }
-                            //                 // const finalCount = likeCount - dislikeCount;
-                            //                 // postVotesCollection.updateOne({"postId": postId},{
-                            //                 //     $set: {
-                            //                 //         "voteCount": finalCount
-                            //                 //     }
-                            //                 // }, settings);
-                            //                 if (Math.abs(counterInc) == 1) {
-                            //                     console.log(result);
-                            //                 }
-                                            
-                            //                 console.log(counterInc);
-                            //                 await postVotesCollection.findOneAndUpdate({"postId": postId},{
-                            //                     $inc: {
-                            //                         "voteCount": counterInc
-                            //                     }
-                            //                 }, settings);
-                            //             }
-                            //             else {
-                            //                 await postVotesCollection.updateOne({"postId": postId},{
-                            //                     $inc: {
-                            //                         "voteCount": 0
-                            //                     }
-                            //                 }, settings);
-                            //             }
-                            //     });
-                            // }
-
-                            
                         
                         }
                     })();
@@ -2187,6 +2163,78 @@ app.get("/assets/postPhoto/:id", [middleware.jsonParser, middleware.authenticate
     }
 });
 
+// Comments
+
+app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    console.log("recieved comment request");
+    if (req && req.params.postId && req.body.content) {
+        const postId = req.params.postId;
+        const commentBody = req.body.content;
+        try {
+            if (req.decoded) {
+                var tokenData = req.decoded
+                var adminMode = tokenData.isAdmin;
+                var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+                client.connect( (err,db) => {
+                    if (err) throw err;
+                    console.log("connected");
+                    var body = req.body;
+
+                    (async ()=>{
+
+                        const postInQuestion = await allPostsCollection.findOne({postId: postId});
+                        const commentingUser = await usersCollection.findOne({userId: req.decoded.userId});
+                        if (postInQuestion && commentingUser) {
+                            console.log("post and user verified");
+                            let commentsCounter = commentsDB.collection("counter");
+                            let commentsVotesCollection = commentsDB.collection("votes");
+                            var increment = await commentsCounter.findOneAndUpdate(
+                                {_id: "commentCounter" },
+                                {$inc:{sequence_value:1}}
+                            );
+                            const commentData = {
+                                postId: postId,
+                                commentId: short.generate(),
+                                commentAuthor: req.decoded.userId,
+                                content: commentBody,
+                                creationDate: Date.now()
+                            }
+                            let insertOperation = await commentsCollection.insertOne(commentData);
+                            let voteDoc = await commentsVotesCollection.insertOne({commentId: commentData.commentId, voteCount: 0});
+                            
+                            await notifsCollection.updateOne({userId: postInQuestion.author}, {$push: 
+                                {notifs: {
+                                    type: "newComment",
+                                    postId: postId,
+                                    commentId: commentData.commentId,
+                                    notifId: short.generate(),
+                                    commentAuthor: commentData.commentAuthor,
+                                    date: commentData.creationDate,
+                                    seen: false
+                                    }
+                                } 
+                                
+                            },{upsert: true});
+
+                            res.json(commentData).end();
+                        }
+                    })();
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+        
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 // Notifications
 
 app.get("/api/fetchNotifs", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
@@ -2345,6 +2393,39 @@ app.post("/api/readNotif", [middleware.jsonParser, middleware.authenticateToken]
                         let updateop = await notifsCollection.updateOne(
                             {"userId": req.decoded.userId, "notifs.notifId": req.body.readId},
                             {$set: {"notifs.$.seen": true}}, {upsert: true}
+                        );
+                        req.body.modifiedCount = updateop.modifiedCount;
+                        res.json(req.body).end();
+                    })();
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
+app.post("/api/dismissNotifs", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    var body = req.body;
+    if (req && body) {
+        var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+        try {
+            var tokenData = req.decoded
+            var adminMode = req.decoded.isAdmin;
+            if (req.decoded) {
+                client.connect( (err,db) => {
+                    if (err) throw err;
+                    (async ()=>{
+                        let updateop = await notifsCollection.updateOne(
+                            {"userId": req.decoded.userId},
+                            {$set: {"notifs": []}}, {upsert: true}
                         );
                         req.body.modifiedCount = updateop.modifiedCount;
                         res.json(req.body).end();

@@ -264,12 +264,15 @@ class App extends Component {
 				}
 				<Link className="navlink" key="posts" to="/posts">Posts</Link>
 				<Link className="navlink" key="umatis" to="/umatis">Umatis</Link>
-				<button className="navlink" key="notifications" onClick={this.handlePopper} style={{float: "right"}}>
+				<div>
+				{cookieDat ? <button className="navlink" key="notifications" onClick={this.handlePopper} style={{float: "right"}}>
 					<Badge badgeContent={this.state.notifCount} 
 					color="error" max={99}>
 						<NotificationsIcon style={{height:"24px"}}/>
 					</Badge>
-				</button>
+				</button> : ""}
+				</div>
+				
 				<Popper id="simple-popper" placement={"bottom-end"} open={this.state.open} anchorEl={this.state.anchorEl} transition>
 				{({ TransitionProps }) => (
 				<ClickAwayListener onClickAway={this.flipOpen}>
@@ -278,6 +281,9 @@ class App extends Component {
 						<Notifications 
 						subNewNotifs = {() => {
 							this.setState({notifCount: (this.state.notifCount - 1)});
+						}}
+						dismissNotifs = {() => {
+							this.setState({notifCount: 0});
 						}}
 						/>
 					</Paper>

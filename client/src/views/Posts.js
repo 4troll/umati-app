@@ -86,6 +86,8 @@ function Posts(props) {
 
 	const classes = useStyles();
 
+    const [page, setPage] = useState(1);
+
 	const [loadCards, setLoadCards] = useState([]);
 	const [postsData, setPostsData] = useState([]);
 
@@ -108,6 +110,10 @@ function Posts(props) {
                 variant: "success"
             });
         }
+
+        if (searchParams.has("page")) {
+            setPage(parseInt(searchParams.get("page")));
+        }
 		
         
 
@@ -119,13 +125,16 @@ function Posts(props) {
         setLoadCards(loadlist);
 
 		getPostsData().then(a => {
+            setPage(page + 1);
             setLoading(false);
         })
 	}, []);
     const getPostsData = async () => {
         try {
             console.log("initiating post fetch");
-            let response = await fetch("/api/fetchPosts" + window.location.search, {
+            let searchParams = new URLSearchParams(window.location.search);
+            searchParams.set("page",page);
+            let response = await fetch("/api/fetchPosts?" + searchParams, {
                 method: "get",
                 headers: {
                     "Accept": "application/json",
@@ -162,18 +171,19 @@ function Posts(props) {
     }
     const loadMorePages = async () => {
         try {
-            var nextPage = 2;
+            var nextPage = page + 1;
             var searchParams = new URLSearchParams(window.location.search);
-            if (searchParams.has("page")) {
-                nextPage = parseInt(searchParams.get("page")) + 1;
-            }
-            searchParams.set("page",nextPage);
-            history.replace({
-				search: searchParams.toString(),
-			});
+            // if (searchParams.has("page")) {
+            //     nextPage = parseInt(searchParams.get("page")) + 1;
+            // }
+            // searchParams.set("page",nextPage);
+            // history.replace({
+			// 	search: searchParams.toString(),
+			// });
             const limit = parseInt(searchParams.get("limit"));
             await getPostsData()
             .then(function (json) {
+                setPage(nextPage);
                 return json;
             })
             .catch(function (e) {

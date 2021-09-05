@@ -46,7 +46,7 @@ import { MentionsInput, Mention } from "react-mentions";
 
 import MentionSuggestionStyle from "./styles/MentionSuggestionStyle.js";
 
-
+import CommentSection from "./components/CommentSection.js";
 
 
 const useStyles = makeStyles(theme => ({
@@ -419,8 +419,10 @@ function PostView(props) {
 					
                         (<PostCard data={postDat} loggedIn={token.token ? true : false}/>)
 			        }
+					<CommentSection postData={postDat}/>
 				</Container>
 			</Box>
+			
 		</Fragment>
     );
 }

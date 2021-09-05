@@ -36,6 +36,8 @@ const slugSettings = {
 
 import InfiniteScroll from "react-infinite-scroll-component";
 
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+
 
 import { useTheme } from '@material-ui/core/styles';
 import { Skeleton } from '@material-ui/lab';
@@ -177,6 +179,8 @@ function Notifications(props) {
 	const [loadCards, setLoadCards] = useState([]);
 	const [notifData, setNotifData] = useState([]);
 
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+
     useEffect (() => {
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
 		setLoading(true);
@@ -191,52 +195,7 @@ function Notifications(props) {
         })
 	}, []);
 
-    const readNotif = async (id) => {
-        console.log("getting notif amount")
-        let body = {
-            readId: id
-        }
-        console.log(id);
-        try {
-            let response = await fetch("/api/readNotif", {
-                method: "post",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify(body)
-            });
-            if (!response.ok) {
-                throw new Error("HTTP error, status = " + response.status);
-            }
-            else {
-                await response.json()
-                .then(function (json) {
-                    if (json.modifiedCount > 0) {
-                        let currentNotifList = [...notifData];
-                        for (let i = 0; i < currentNotifList.length; i++) {
-                            if (currentNotifList[i].notifId == body.readId) {
-                                currentNotifList[i].seen = true;
-                                break;
-                            }
-                    }
-                    setNotifData(currentNotifList);
-                    props.subNewNotifs();
-                    }
-                    
-                    return currentNotifList;
-                })
-                .catch(e => {
-                    console.error(e);
-                    return e;
-                });
-            }
-        }
-        catch(e) {
-            console.error(e);
-        }
-    }
+    
 
     const getNotifData = async () => {
         try {
@@ -308,6 +267,103 @@ function Notifications(props) {
             </span>
         )
     }
+    const readNotif = async (id) => {
+        console.log("getting notif amount")
+        let body = {
+            readId: id
+        }
+        console.log(id);
+        try {
+            let response = await fetch("/api/readNotif", {
+                method: "post",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                throw new Error("HTTP error, status = " + response.status);
+            }
+            else {
+                await response.json()
+                .then(function (json) {
+                    if (json.modifiedCount > 0) {
+                        let currentNotifList = [...notifData];
+                        for (let i = 0; i < currentNotifList.length; i++) {
+                            if (currentNotifList[i].notifId == body.readId) {
+                                currentNotifList[i].seen = true;
+                                break;
+                            }
+                    }
+                    setNotifData(currentNotifList);
+                    props.subNewNotifs();
+                    }
+                    
+                    return currentNotifList;
+                })
+                .catch(e => {
+                    console.error(e);
+                    return e;
+                });
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+    }
+
+    const dismissNotifs = async (id) => {
+        if (notifData.length != 0) {
+            console.log("dismissing notifs")
+            let body = {
+                dismiss: true
+            }
+            console.log(id);
+            try {
+                let response = await fetch("/api/dismissNotifs", {
+                    method: "post",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) {
+                    throw new Error("HTTP error, status = " + response.status);
+                }
+                else {
+                    await response.json()
+                    .then(function (json) {
+                        if (json.modifiedCount > 0) {
+                            setNotifData([]);
+                            props.dismissNotifs();
+                            enqueueSnackbar("Notifcations successfully dismissed!", { 
+                                variant: "success"
+                            });
+                        }
+                        
+                        return [];
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        return e;
+                    });
+                }
+            }
+            catch(e) {
+                console.error(e);
+            }
+        }
+        else {
+            enqueueSnackbar("No notifications to dismiss.", { 
+				variant: "error"
+			})
+        }
+        
+    }
 
     return (
 		<Fragment>
@@ -323,6 +379,15 @@ function Notifications(props) {
 				<Container maxWidth={1/4}>
                     <span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"-20px 0px"}}>
                         <h3>Notifications</h3>
+                        <span>
+                        {((!loading) && (notifData.length != 0)) ? <Button 
+						onClick={() => {
+                            dismissNotifs()
+						}}
+						variant="outlined" type="button" color="primary">
+							Dismiss
+						</Button> : ""}
+                        </span>
                     </span>
                     <div key="notifications" className="NotifsView" style={{marginTop: "30px"}}>
                     <InfiniteScroll
@@ -332,7 +397,17 @@ function Notifications(props) {
                     loader={loadCard}
                     height={400}
                     >
-                        { loading ? loadCards : 
+                        { loading ? loadCards :
+                            <div style={{textAlign:"center", verticalAlign:"middle", height:"100%"}}>
+                            {
+                            (notifData.length == 0) ? 
+                            
+                            <div>
+                                <CheckCircleIcon color="primary" style={{ fontSize: 80 }}/> <br/>
+                                <span>All caught up!</span>
+                            </div>
+                            
+                            :
                             (notifData.map(function (notification,i) {
                                 let content = {
                                     title: "",
@@ -363,6 +438,8 @@ function Notifications(props) {
                                     NotifCard(content)
                                 );
                             }))
+                            }
+                            </div>
                         }
                     </InfiniteScroll>
                     </div>
