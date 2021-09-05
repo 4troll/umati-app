@@ -20,7 +20,8 @@ import {
 	Menu,
 	MenuItem,
 	Modal,
-	Fab
+	Fab,
+    Tooltip
 } from '@material-ui/core';
 
 import UserLink from "./UserLink.js";
@@ -31,6 +32,7 @@ import {
 
 import MentionSuggestionStyle from "../styles/MentionSuggestionStyle.js";
 import Editable from "./Editable.js";
+import CommentCard from "./CommentCard.js";
 import { MentionsInput, Mention } from "react-mentions";
 
 const useStyles = makeStyles(theme => ({
@@ -72,6 +74,9 @@ function CommentSection (props) {
     const classes = useStyles();
 
     const postDat = props.postData;
+    const loggedIn = props.loggedIn;
+    const [commentData, setCommentData] = useState(postDat.commentData);
+    
     
     const inputRef = useRef();
     const portalRef = useRef();
@@ -177,7 +182,7 @@ function CommentSection (props) {
         setLoadingSuggestions(false);
     }
 	useEffect (() => {
-        
+        console.log(commentData)
 	}, []);
 
 	async function postJson(url, body) {
@@ -335,8 +340,14 @@ function CommentSection (props) {
                             </Editable>
                         </div>
                         <div>
-                            {postDat.commentData.map(function (comment,i) {
+                            {commentData.map(function (comment,i) {
 
+                                
+                                return (
+                                    <CommentCard commentData={comment} loggedIn={loggedIn} userVote={comment.userVote ? comment.userVote : 0}/>
+                                
+                                );
+                                
                             })}
 
                         </div>

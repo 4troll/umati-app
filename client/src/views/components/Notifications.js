@@ -398,11 +398,11 @@ function Notifications(props) {
                     height={400}
                     >
                         { loading ? loadCards :
-                            <div style={{textAlign:"center", verticalAlign:"middle", height:"100%"}}>
+                            <div >
                             {
                             (notifData.length == 0) ? 
                             
-                            <div>
+                            <div style={{textAlign:"center", verticalAlign:"middle", height:"100%"}}>
                                 <CheckCircleIcon color="primary" style={{ fontSize: 80 }}/> <br/>
                                 <span>All caught up!</span>
                             </div>
@@ -430,6 +430,22 @@ function Notifications(props) {
                                     content.title = "⬆ Post reached " + notification.milestone + " reputation!";
                                     content.subheader = umatilink(umatiData);
                                     content.description = "Your post \"" + postData.title + "\" reached " + notification.milestone + " reputation. Hooray! 🥳";
+                                    content.link = "/u/" + (umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings);
+                                    content.seen = notification.seen ? true : false;
+                                    content.id = notification.notifId;
+                                }
+                                else if (notification.type == "voteMilestoneComment") {
+                                    content.title = "⬆ Comment reached " + notification.milestone + " reputation!";
+                                    content.subheader = umatilink(umatiData);
+                                    content.description = "Your comment under \"" + postData.title + "\" reached " + notification.milestone + " reputation. Hooray! 🥳";
+                                    content.link = "/u/" + (umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings);
+                                    content.seen = notification.seen ? true : false;
+                                    content.id = notification.notifId;
+                                }
+                                else if (notification.type == "newComment") {
+                                    content.title = "💬 @" + userData.username + " replied to your post";
+                                    content.subheader = umatilink(umatiData);
+                                    content.description = notification.commentData.content;
                                     content.link = "/u/" + (umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings);
                                     content.seen = notification.seen ? true : false;
                                     content.id = notification.notifId;

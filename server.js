@@ -50,12 +50,18 @@ var mongoUri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/rat
 var usersDB;
 var usersCollection;
 var notifsCollection;
+
 var umatisDB;
 var umatisCollection;
+
 var postsDB;
 var allPostsCollection;
-var commentsCollection;
+var postVotesCollection;
+
 var commentsDB;
+var commentsCollection;
+var commentVotesCollection;
+
 var assetsDB;
 var pfpsCollection;
 var umatiLogosCollection;
@@ -89,6 +95,7 @@ try {
 
         commentsDB = client.db("comments");
         commentsCollection = commentsDB.collection("all");
+        commentVotesCollection = commentsDB.collection("votes");
         
         assetsDB = client.db("assets");
         pfpsCollection = assetsDB.collection("pfps");
@@ -1581,6 +1588,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                 // Votes
 
                                 let commentsAggregate = await commentsCollection.aggregate([
+                                    {$match: {postId: postId}},
                                     {$lookup: {
                                         from: "votes",
                                         localField: "commentId",
@@ -1591,7 +1599,30 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                 );
                                 var commentStream = [];
                                 for await (let comment of commentsAggregate) {
-                                    let voteData = comment.voteData[0]
+                                    let commenter = await usersCollection.findOne({userId: comment.commentAuthor});
+                                    comment.commenterData = commenter;
+                                    let voteStatus = comment.voteData[0]
+                                    let userVoteStatus = 0;
+                                    if (voteStatus) {
+                                        if (voteStatus.likers && req.decoded) {
+                                            for (let i = 0; i < voteStatus.likers.length; i++) {
+                                                if (voteStatus.likers[i] == req.decoded.userId) {
+                                                    userVoteStatus = 1;
+                                                }
+                                            }
+                                        }
+                                        
+                                        if (voteStatus.dislikers && req.decoded) {
+                                            for (let i = 0; i < voteStatus.dislikers.length; i++) {
+                                                if (voteStatus.dislikers[i] == req.decoded.userId) {
+                                                    userVoteStatus = -1;
+                                                }
+                                            }
+                                        }
+                
+                                        comment.userVote = userVoteStatus;
+                                        comment.voteCount = voteStatus.voteCount;
+                                    }
                                     // console.log(voteData.voteCount);
                                     commentStream.push(comment);
                                 }
@@ -1622,7 +1653,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
     }
 });
 
-async function updateReputation(senderId,authorId,postId,change,voterType) {
+async function updatePostReputation(senderId,authorId,postId,change,voterType) {
     const settings = {upsert:true};
     if (voterType == "undo") { // new votes already checked
         await postVotesCollection.updateOne({"postId": postId},{
@@ -1715,7 +1746,7 @@ app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authentic
                                         }
                                     }, async (error, result) => {
                                         if(result.modifiedCount > 0){
-                                            await updateReputation(req.decoded.userId,authorId,postId,1,"undo");
+                                            await updatePostReputation(req.decoded.userId,authorId,postId,1,"undo");
                                         }
                                         else{
                                             postVotesCollection.updateOne({postId: postId},{
@@ -1724,7 +1755,7 @@ app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authentic
                                                 }
                                             }, async (error, result) => {
                                                 if(result.modifiedCount > 0){
-                                                    await updateReputation(req.decoded.userId,authorId,postId,-1,"undo");
+                                                    await updatePostReputation(req.decoded.userId,authorId,postId,-1,"undo");
                                                 }
                                             });
                                         }
@@ -1746,7 +1777,7 @@ app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authentic
                                         if(result.modifiedCount > 0){
                                             console.log("Down to Up");
                                             counterInc = 2;
-                                            await updateReputation(req.decoded.userId,authorId,postId,2,voterType);
+                                            await updatePostReputation(req.decoded.userId,authorId,postId,2,voterType);
                                         }
                                         else if (!result) {
                                             console.log("what");
@@ -1754,7 +1785,7 @@ app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authentic
                                             
                                         }
                                         else {
-                                            await updateReputation(req.decoded.userId,authorId,postId,1,voterType);
+                                            await updatePostReputation(req.decoded.userId,authorId,postId,1,voterType);
                                         }
                                     }
                                     );
@@ -1775,14 +1806,14 @@ app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authentic
                                         if(result.modifiedCount > 0){
                                             console.log("Up To Down");
                                             counterInc = -2;
-                                            await updateReputation(req.decoded.userId,authorId,postId,-2,voterType);
+                                            await updatePostReputation(req.decoded.userId,authorId,postId,-2,voterType);
                                         }
                                         else if (!result) {
                                             console.log("what");
                                             counterInc = 0;
                                         }
                                         else {
-                                            await updateReputation(req.decoded.userId,authorId,postId,-1,voterType);
+                                            await updatePostReputation(req.decoded.userId,authorId,postId,-1,voterType);
                                                 
                                         }
                                     }
@@ -2235,6 +2266,197 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
     }
 });
 
+async function updateCommentReputation(senderId,authorId,commentId,change,voterType) {
+    const settings = {upsert:true};
+    if (voterType == "undo") { // new votes already checked
+        await commentVotesCollection.updateOne({"commentId": commentId},{
+            $inc: {
+                "voteCount": change
+            }
+            }, settings);
+        await usersCollection.updateOne({userId: authorId}, { $inc: {rep: change}});
+    }
+    else { // vote-changing not checked yet
+        await commentVotesCollection.updateOne({"commentId": commentId},{
+            $addToSet: {
+                [voterType]: senderId
+            }
+        }, settings, async (error,result) => {
+            if (error) {
+                console.log("ERROR: " + error);
+            }
+            if(result.modifiedCount && result.modifiedCount > 0){
+                await commentVotesCollection.updateOne({"commentId": commentId},{
+                    $inc: {
+                        "voteCount": change
+                    }
+                    }, settings);
+                await usersCollection.updateOne({userId: authorId}, { $inc: {rep: change}});
+                if (change == 1) {
+                    let commentVoteCount = await commentVotesCollection.findOne({"commentId": commentId});
+                    if (commentVoteCount.voteCount && scoreMilestones.find(element => element == commentVoteCount.voteCount)) {
+                        if (commentVoteCount.voteCount > commentVoteCount.currentMilestone || !commentVoteCount.currentMilestone ) {
+                            await notifsCollection.updateOne({userId: authorId}, {$push: 
+                                {notifs: {
+                                    type: "voteMilestoneComment",
+                                    milestone: commentVoteCount.voteCount,
+                                    commentId: commentId,
+                                    notifId: short.generate(),
+                                    date: Date.now(),
+                                    seen: false
+
+                                    }
+                                } 
+                                
+                            },{upsert: true});
+                            await commentVotesCollection.updateOne({"commentId": commentId},{
+                                $set: {
+                                    "milestone": commentVoteCount.voteCount
+                                }
+                                }, settings);
+                        }
+                        
+                    }
+                    
+                }
+            }
+        }
+        );
+    }
+    
+        
+    
+}
+
+app.post("/api/voteOnComment/:commentId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+    var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+    var body = req.body;
+
+    if (req && req.params.commentId && (body.vote == 0 || body.vote == -1 || body.vote == 1)) {
+        try {
+            if (req.decoded) {
+            
+            client.connect( (err,db) => {
+                if (err) throw err;
+                
+                    
+                    (async ()=>{
+                        let loggedUser = await usersCollection.findOne({userId: req.decoded.userId});
+                        let targetComment = await commentsCollection.findOne({commentId: req.params.commentId});
+                        if (targetComment && loggedUser.username == req.decoded.username) { // verify logged in
+                            console.log("verified vote request");
+                            const commentId = req.params.commentId;
+
+                            var counterInc = 0;
+                            var voterType = null;
+
+                            const authorId = targetComment.commentAuthor;
+
+                            if (authorId == req.decoded.userId) {
+                                if (body.vote == 0) {
+                                    commentVotesCollection.updateOne({commentId: commentId},{
+                                        $pull: {
+                                            "dislikers": req.decoded.userId
+                                        }
+                                    }, async (error, result) => {
+                                        if(result.modifiedCount > 0){
+                                            await updateCommentReputation(req.decoded.userId,authorId,commentId,1,"undo");
+                                        }
+                                        else{
+                                            commentVotesCollection.updateOne({commentId: commentId},{
+                                                $pull: {
+                                                    "likers": req.decoded.userId
+                                                }
+                                            }, async (error, result) => {
+                                                if(result.modifiedCount > 0){
+                                                    await updateCommentReputation(req.decoded.userId,authorId,commentId,-1,"undo");
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                                if(body.vote == 1){
+                                    voterType = "likers";
+                                    counterInc = 1;
+                                    await commentVotesCollection.updateOne({"commentId": commentId},{
+                                        $pull: {
+                                            "dislikers": req.decoded.userId
+                                        },
+                                    }, 
+                                    async(error,result) => {
+                                        if (error) {
+                                            console.log("ERROR: " + error);
+                                        }
+                                        console.log(result);
+                                        if(result.modifiedCount > 0){
+                                            console.log("Down to Up");
+                                            counterInc = 2;
+                                            await updateCommentReputation(req.decoded.userId,authorId,commentId,2,voterType);
+                                        }
+                                        else if (!result) {
+                                            console.log("what");
+                                            counterInc = 0;
+                                            
+                                        }
+                                        else {
+                                            await updateCommentReputation(req.decoded.userId,authorId,commentId,1,voterType);
+                                        }
+                                    }
+                                    );
+                                }
+                                else if(body.vote == -1){
+                                    voterType = "dislikers";
+                                    counterInc = -1;
+                                    await commentVotesCollection.updateOne({"commentId": commentId},{
+                                        $pull: {
+                                            "likers": req.decoded.userId
+                                        },
+                                    }, 
+                                    async (error,result) => {
+                                        if (error) {
+                                            console.log("ERROR: " + error);
+                                        }
+                                        console.log(result);
+                                        if(result.modifiedCount > 0){
+                                            console.log("Up To Down");
+                                            counterInc = -2;
+                                            await updateCommentReputation(req.decoded.userId,authorId,commentId,-2,voterType);
+                                        }
+                                        else if (!result) {
+                                            console.log("what");
+                                            counterInc = 0;
+                                        }
+                                        else {
+                                            await updateCommentReputation(req.decoded.userId,authorId,commentId,-1,voterType);
+                                        }
+                                    }
+                                    );
+                                } 
+                            }
+                        
+                        }
+                    })();
+                
+                    res.json(req.body).end();
+            }); 
+            }
+            else {
+                res.status(403).end();
+            }
+        }
+        catch(e) {
+            console.error(e);
+        }
+        finally {
+            client.close();
+        }
+    
+    }
+    else {
+        res.status(404).end();
+    }
+});
+
 // Notifications
 
 app.get("/api/fetchNotifs", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
@@ -2295,11 +2517,36 @@ app.get("/api/fetchNotifs", [middleware.jsonParser, middleware.authenticateToken
                                     console.log(notif);
                                     if (notif.type == "newPost" || notif.type == "voteMilestone" ) {
                                         let post = await allPostsCollection.findOne({postId: notif.postId});
-                                        let user = await usersCollection.findOne({userId: post.author});
-                                        user = cleanUserData(user,adminMode);
-                                        let umati = await umatisCollection.findOne({umatiId: post.hostUmati});
                                         notif.postData = post;
+                                        
+                                        let umati = await umatisCollection.findOne({umatiId: post.hostUmati});
+                                        notif.umatiData = umati;
+                                        
+
+                                        if (notif.type == "newPost") {
+                                            let user = await usersCollection.findOne({userId: post.author});
+                                            user = cleanUserData(user,adminMode);
+                                            notif.userData = user;
+                                        }
+                                        
+                                    }
+                                    else if (notif.type == "voteMilestoneComment") {
+                                        let comment = await commentsCollection.findOne({commentId: notif.commentId});
+                                        let post = await allPostsCollection.findOne({postId: comment.postId});
+                                        let umati = await umatisCollection.findOne({umatiId: post.hostUmati});
+                                        notif.commentData = comment;
+                                        notif.postData = post;
+                                        notif.umatiData = umati;
+                                    }
+                                    else if (notif.type == "newComment") {
+                                        let comment = await commentsCollection.findOne({commentId: notif.commentId});
+                                        let user = await usersCollection.findOne({userId: comment.commentAuthor});
+                                        user = cleanUserData(user,adminMode);
                                         notif.userData = user;
+                                        let post = await allPostsCollection.findOne({postId: notif.postId});
+                                        let umati = await umatisCollection.findOne({umatiId: post.hostUmati});
+                                        notif.commentData = comment;
+                                        notif.postData = post;
                                         notif.umatiData = umati;
                                     }
                                     

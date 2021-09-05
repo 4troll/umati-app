@@ -214,62 +214,6 @@ function PostView(props) {
 		};
 	};
 
-	async function saveUmatiData(event) {
-		event.preventDefault();
-		try {
-			var formData = {
-				"umatiname": umatinameField,
-				"displayname": displayName,
-				"logo": selectedLogoFile
-			}
-			let response = await fetch("/api/updateUmati/" + umatiname, {
-				method: "post",
-				headers: {
-					"Accept": "application/json",
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(formData),
-				credentials: "include"
-			});
-			if (!response.ok) {
-				throw new Error("HTTP error, status = " + response.status);
-			}
-			else {
-				await response.json()
-				.then(json => {
-					window.location.href = "/u/" + formData.umatiname;
-					return json;
-				})
-				.catch(e => {
-					console.error(e);
-					return e;
-				});
-			}
-		}
-		catch(e) {
-			console.error(e);
-		}
-		finally {
-			setUmatiModal(false);
-		}
-	}
-
-	function checkUmatiname(targetUmatiname) {
-		if (!targetUmatiname) {
-			return false;
-		}
-		if (targetUmatiname.length < 3) {
-			return false;
-		}
-		if (targetUmatiname.length > 25) {
-			return false;
-		}
-		if (!validator.isAlphanumeric(targetUmatiname)) {
-			return false;
-		}
-		return true;
-	}
-
 	async function updateDescription() {
 		try {
 			console.log(desctext);
@@ -419,7 +363,7 @@ function PostView(props) {
 					
                         (<PostCard data={postDat} loggedIn={token.token ? true : false}/>)
 			        }
-					<CommentSection postData={postDat}/>
+					{loading ? "" : <CommentSection postData={postDat} loggedIn={token.token ? true : false}/>}
 				</Container>
 			</Box>
 			

@@ -52,9 +52,9 @@ function UserLink (props) {
     return (
         <Link to={"/@" + username} className="user-link">
             <div className="right-hold flexbox">
-                <Avatar style={{height:24+"px", width:24+"px"}} 
+				{!props.noIcon ? <Avatar style={{height:24+"px", width:24+"px"}} 
 				// alt={data.displayname ? data.displayname : data.username} 
-				src={avatar} />
+				src={avatar} /> : ""}
 				<span>&nbsp;</span>
                 <p>{"@" + username}</p>
             </div>
