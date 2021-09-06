@@ -47,6 +47,9 @@ import MentionSuggestionStyle from "../styles/MentionSuggestionStyle.js";
 import UserLink from "./UserLink.js";
 import UmatiLink from "./UmatiLink.js";
 
+import RSRR from "react-string-replace-recursively";
+import { mdconfig } from "../config/markdown";
+
 
 function determineColor(current,num) {
     if (current != num) {
@@ -154,7 +157,7 @@ function CommentCard(props) {
                     flexDirection: 'column'
                     }}
                 >
-                <p>{comment.content}</p>		
+                <p>{RSRR(mdconfig)(comment.content)}</p>		
                 </Box>
             </CardContent>
             <Box style={{ alignItems: 'center',

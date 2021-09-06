@@ -361,7 +361,7 @@ function PostView(props) {
 				<Container maxWidth="lg">
 					{loading ? LoadPostCard(true) :
 					
-                        (<PostCard data={postDat} loggedIn={token.token ? true : false}/>)
+                        (<PostCard data={postDat} loggedIn={token.token ? true : false} main={true}/>)
 			        }
 					{loading ? "" : <CommentSection postData={postDat} loggedIn={token.token ? true : false}/>}
 				</Container>

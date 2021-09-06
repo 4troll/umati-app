@@ -22,6 +22,9 @@ import UmatiLink from "./UmatiLink.js";
 
 import { Skeleton } from '@material-ui/lab';
 
+import RSRR from "react-string-replace-recursively";
+import { mdconfig } from "../config/markdown";
+
 const slugify = require('slugify');
 const slugSettings = {
     replacement: '_',  // replace spaces with replacement character, defaults to `-`
@@ -194,7 +197,6 @@ function LoadPostCard (main) {
 function PostCard (props) {
     const classes = useStyles();
     const postData = props.data;
-    const main = props.main;
     const loggedIn = props.loggedIn;
 
     const authorData = postData.authorData;
@@ -300,43 +302,43 @@ function PostCard (props) {
                 </IconButton>
                 </Box>
 
-                <Link to={"/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings)} style={{textDecoration:"none", color:"inherit", flex: "1"}}>
-                
-                <CardHeader
-                    // avatar={
-                    // <Avatar
-                    //     variant="circle"
-                    //     alt={authorData.displayname}
-                    //     src={authorData.avatar}
-                    //     style={{height:32+"px", width:32+"px"}}
-                    //     />
-                    // }
-                    title={
-                        (postData.title)
-                    }
-                    subheader={createSubHeader(authorData, hostIndication)}
-                />
-                
-                <CardContent>
-                
-                    <Box
-                        sx={{
-                        alignItems: 'left',
-                        display: 'flex',
-                        flexDirection: 'column'
-                        }}
-                    >
-                        {postData.photo ? 
-                        
-                        <img src={postData.photo} style={{
-                        maxHeight:"720px",
-                        objectFit: "contain"
-                        }}/>
-                        
-                        : ""}
-                        <p style={{marginTop: bodySpacing}}>{postData.body ? postData.body : "This post has no body."}</p>
-                    </Box>
-                </CardContent>
+                <Link to={props.main ? "#" : "/u/" + (props.umatiname || umatiData.umatiname) + "/comments/" + postData.postId + "/" + slugify(postData.title, slugSettings)} style={{textDecoration:"none", color:"inherit", flex: "1", cursor:(props.main ? "default" : "pointer")}}>
+                    
+                    <CardHeader
+                        // avatar={
+                        // <Avatar
+                        //     variant="circle"
+                        //     alt={authorData.displayname}
+                        //     src={authorData.avatar}
+                        //     style={{height:32+"px", width:32+"px"}}
+                        //     />
+                        // }
+                        title={
+                            (postData.title)
+                        }
+                        subheader={createSubHeader(authorData, hostIndication)}
+                    />
+                    
+                    <CardContent>
+                    
+                        <Box
+                            sx={{
+                            alignItems: 'left',
+                            display: 'flex',
+                            flexDirection: 'column'
+                            }}
+                        >
+                            {postData.photo ? 
+                            
+                            <img src={postData.photo} style={{
+                            maxHeight:"720px",
+                            objectFit: "contain"
+                            }}/>
+                            
+                            : ""}
+                            <p style={{marginTop: bodySpacing}}>{postData.body ? RSRR(mdconfig)(postData.body) : "This post has no body."}</p>
+                        </Box>
+                    </CardContent>
                 </Link>
             </Card>
     </div>
