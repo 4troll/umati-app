@@ -1682,7 +1682,7 @@ async function updatePostReputation(senderId,authorId,postId,change,voterType) {
                 if (change == 1) {
                     let postVoteCount = await postVotesCollection.findOne({"postId": postId});
                     if (postVoteCount.voteCount && scoreMilestones.find(element => element == postVoteCount.voteCount)) {
-                        if (postVoteCount.voteCount > postVoteCount.currentMilestone || !postVoteCount.currentMilestone ) {
+                        if (postVoteCount.voteCount > postVoteCount.milestone || !postVoteCount.milestone ) {
                             await notifsCollection.updateOne({userId: authorId}, {$push: 
                                 {notifs: {
                                     type: "voteMilestone",
@@ -2295,7 +2295,7 @@ async function updateCommentReputation(senderId,authorId,commentId,change,voterT
                 if (change == 1) {
                     let commentVoteCount = await commentVotesCollection.findOne({"commentId": commentId});
                     if (commentVoteCount.voteCount && scoreMilestones.find(element => element == commentVoteCount.voteCount)) {
-                        if (commentVoteCount.voteCount > commentVoteCount.currentMilestone || !commentVoteCount.currentMilestone ) {
+                        if (commentVoteCount.voteCount > commentVoteCount.milestone || !commentVoteCount.milestone ) {
                             await notifsCollection.updateOne({userId: authorId}, {$push: 
                                 {notifs: {
                                     type: "voteMilestoneComment",
@@ -2352,7 +2352,7 @@ app.post("/api/voteOnComment/:commentId", [middleware.jsonParser, middleware.aut
 
                             const authorId = targetComment.commentAuthor;
 
-                            if (authorId == req.decoded.userId) {
+                            if (authorId != req.decoded.userId) {
                                 if (body.vote == 0) {
                                     commentVotesCollection.updateOne({commentId: commentId},{
                                         $pull: {
