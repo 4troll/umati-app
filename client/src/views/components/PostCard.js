@@ -25,6 +25,8 @@ import { Skeleton } from '@material-ui/lab';
 import RSRR from "react-string-replace-recursively";
 import { mdconfig } from "../config/markdown";
 
+import Image from "material-ui-image"
+
 const slugify = require('slugify');
 const slugSettings = {
     replacement: '_',  // replace spaces with replacement character, defaults to `-`
@@ -330,7 +332,7 @@ function PostCard (props) {
                         >
                             {postData.photo ? 
                             
-                            <img src={postData.photo} style={{
+                            <Image src={postData.photo} style={{
                             maxHeight:"720px",
                             objectFit: "contain"
                             }}/>

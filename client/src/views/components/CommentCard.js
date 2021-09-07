@@ -166,6 +166,8 @@ function CommentCard(props) {
     const [voteStatus,setVoteStatus] = useState(comment.userVote || 0);
     const [loadingVote,setLoadingVote] = useState(false);
 
+    const cardRef = useRef();
+
     async function handleVote(originalVote,targetVote) {
 		var voteData;
         console.log("sent")
@@ -216,11 +218,26 @@ function CommentCard(props) {
             window.location.href = "/register?to=vote&vote=like";
         }
     }
+
+    const useScroll = () => {
+        const elRef = useRef(null);
+        const executeScroll = () => elRef.current.scrollIntoView();
+      
+        return [executeScroll, elRef];
+    };
+    const [executeScroll, elRef] = useScroll();
+    useEffect(() => {
+        if (props.targetComment == comment.commentId) {
+            executeScroll();
+        }
+        
+    }, []);
     
     return (
         <Card 
         style={{marginTop: "5px", backgroundColor: (props.targetComment == comment.commentId) ? "rgba(255, 255, 0, 0.05)":  "rgba(255, 255, 255, 1)" }}
-        // className={classes.root} 
+        // className={classes.root}
+        ref={(props.targetComment == comment.commentId) ? elRef : null}
         variant="outlined">
             <CardHeader
                 // action={
