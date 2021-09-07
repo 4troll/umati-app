@@ -237,8 +237,9 @@ function CommentCard(props) {
         <Card 
         style={{marginTop: "5px", backgroundColor: (props.targetComment == comment.commentId) ? "rgba(255, 255, 0, 0.05)":  "rgba(255, 255, 255, 1)" }}
         // className={classes.root}
-        ref={(props.targetComment == comment.commentId) ? elRef : null}
+        
         variant="outlined">
+            <div ref={(props.targetComment == comment.commentId) ? elRef : null} id="anchor-name" style={{position: "absolute", marginTop: "-50px", Left: 0}}></div>
             <CardHeader
                 // action={
                 // loading ? null : (

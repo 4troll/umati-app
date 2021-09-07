@@ -267,7 +267,11 @@ function CommentSection (props) {
             style={{minWidth:"350px"}}
 			>
                 <Container maxWidth={1/4}>
-                    <span>{(props.targetComment && !props.loading) ? <Link to={"/u/" + props.hostUmatiname + "/comments/" + postDat.postId + "/" + slugify(postDat.title,slugSettings)}>View entire discussion</Link> : ""}</span>
+                    <span>{(props.targetComment && !props.loading) ? <Link 
+                    style={{color: "#3f50b5", textDecoration: "none"}}
+                    to={"/u/" + props.hostUmatiname + "/comments/" + postDat.postId + "/" + slugify(postDat.title,slugSettings)}>View entire discussion
+                    </Link> : ""}
+                    </span>
                     <span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"0px 0px", height:"fit-content"}}>
                         <h1>Comments</h1>
                     </span>
@@ -370,7 +374,34 @@ function CommentSection (props) {
                             }
                         }
                         </div>
-                        
+                        {/* <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/> */}
                 </Container>
             </Box>
 
