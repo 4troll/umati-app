@@ -115,8 +115,8 @@ function LoadPostCard (main) {
             
             <Tooltip title={"Like"} placement="left">
                 <IconButton
-                aria-label="like" component="span"
-                onClick={() => {setVote(1)}}
+                aria-label="like" 
+                component="span"
                 disabled={true}
                 >
                     <ThumbUpIcon />
@@ -135,7 +135,7 @@ function LoadPostCard (main) {
             </Tooltip>
 
 
-            <IconButton color="secondary" aria-label="flag" component="span">
+            <IconButton color="secondary" aria-label="flag" component="span" disabled={true}>
                 <FlagIcon />
             </IconButton>
             </Box>

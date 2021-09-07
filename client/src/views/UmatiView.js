@@ -383,7 +383,7 @@ function UmatiView(props) {
 		getUmatiData().then(a => {
             setLoading(false);
         });
-	}, []);
+	}, [umatiname]);
 	
 
 	function onChangeLogoClick () {

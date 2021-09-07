@@ -1587,8 +1587,14 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
 
                                 // Votes
 
+                                let matchComment = {$match: {}};
+                                if (req.query.commentId) {
+                                    matchComment = {$match: {commentId: req.query.commentId}}
+                                }
+
                                 let commentsAggregate = await commentsCollection.aggregate([
                                     {$match: {postId: postId}},
+                                    matchComment,
                                     {$lookup: {
                                         from: "votes",
                                         localField: "commentId",

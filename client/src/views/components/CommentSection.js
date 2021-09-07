@@ -27,13 +27,28 @@ import {
 import UserLink from "./UserLink.js";
 
 import {
-    Link
-} from "react-router-dom";
+    BrowserRouter as Router,
+    Switch,
+    Route,
+    Link,
+    useRouteMatch,
+    useParams
+  } from "react-router-dom";
 
 import MentionSuggestionStyle from "../styles/MentionSuggestionStyle.js";
 import Editable from "./Editable.js";
-import CommentCard from "./CommentCard.js";
+import {LoadingComment, CommentCard} from "./CommentCard.js";
 import { MentionsInput, Mention } from "react-mentions";
+
+const slugify = require('slugify');
+const slugSettings = {
+    replacement: '_',  // replace spaces with replacement character, defaults to `-`
+    remove: undefined, // remove characters that match regex, defaults to `undefined`
+    lower: true,      // convert to lower case, defaults to `false`
+    strict: true,     // strip special characters except replacement, defaults to `false`
+    locale: 'vi',       // language code of the locale to use
+    trim: true         // trim leading and trailing replacement chars, defaults to `true`
+  }
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -83,7 +98,7 @@ function CommentSection (props) {
     const [commentDraft, setCommentDraft] = useState("");
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
-    
+    let match = useRouteMatch();
 
 
     const findMentionableUmatis = async (query, callback) => {
@@ -252,9 +267,9 @@ function CommentSection (props) {
             style={{minWidth:"350px"}}
 			>
                 <Container maxWidth={1/4}>
-                    <span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"-20px 0px"}}>
+                    <span>{(props.targetComment && !props.loading) ? <Link to={"/u/" + props.hostUmatiname + "/comments/" + postDat.postId + "/" + slugify(postDat.title,slugSettings)}>View entire discussion</Link> : ""}</span>
+                    <span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"0px 0px", height:"fit-content"}}>
                         <h1>Comments</h1>
-                        
                     </span>
                     <div class="submitCommentDiv" ref={portalRef}>
                         <Editable
@@ -340,16 +355,20 @@ function CommentSection (props) {
                             </Editable>
                         </div>
                         <div>
-                            {commentData.map(function (comment,i) {
-
-                                
+                            {(!props.loading && props.postData) ? props.postData.commentData.map(function (comment,i) {
                                 return (
-                                    <CommentCard commentData={comment} loggedIn={loggedIn} userVote={comment.userVote ? comment.userVote : 0}/>
-                                
+                                    <CommentCard targetComment={props.targetComment} postTitle={postDat.title} hostUmatiname={props.hostUmatiname} commentData={comment} loggedIn={loggedIn} userVote={comment.userVote ? comment.userVote : 0}/>
                                 );
                                 
-                            })}
-
+                            }) : 
+                            function() {
+                                return(<Fragment>
+                                    <LoadingComment/>
+                                    <LoadingComment/>
+                                    <LoadingComment/>
+                                    </Fragment>)
+                            }
+                        }
                         </div>
                         
                 </Container>

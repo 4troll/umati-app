@@ -49,6 +49,7 @@ import MentionSuggestionStyle from "./styles/MentionSuggestionStyle.js";
 import CommentSection from "./components/CommentSection.js";
 
 
+
 const useStyles = makeStyles(theme => ({
     root: {
         minWidth: 275,
@@ -119,7 +120,8 @@ function PostView(props) {
 	const inputFile = useRef(null);
 	const [selectedLogoFile,setSelectedLogoFile] = useState("");
 
-    const { umatiname, postId } = useParams();
+	const { umatiname, postId, commentId } = useParams();
+    
 	const classes = useStyles();
 
 	const inputRef = useRef();
@@ -153,9 +155,13 @@ function PostView(props) {
 
     useEffect (() => {
 		const cookieDat = token.token ? jwt_decode(token.token) : null ;
+		
 		async function getPostData () {
-			
-			let response = await fetch("/api/postData/" + postId, {
+			let query = "";
+			if (props.targetComment) {
+				query = "?commentId=" + commentId;
+			}
+			let response = await fetch("/api/postData/" + postId + query, {
 				method: "get",
 				headers: {
 					"Accept": "application/json",
@@ -188,8 +194,8 @@ function PostView(props) {
 		getPostData().then(a => {
             setLoading(false);
         });
-
-	}, []);
+		
+	}, [umatiname, postId, commentId]);
 
 	function onChangeLogoClick () {
 		// `current` points to the mounted file input element
@@ -363,7 +369,7 @@ function PostView(props) {
 					
                         (<PostCard data={postDat} loggedIn={token.token ? true : false} main={true}/>)
 			        }
-					{loading ? "" : <CommentSection postData={postDat} loggedIn={token.token ? true : false}/>}
+					<CommentSection targetComment={props.targetComment ? commentId : null} loading={loading} postData={postDat} hostUmatiname={umatiname} loggedIn={token.token ? true : false}/>
 				</Container>
 			</Box>
 			

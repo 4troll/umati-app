@@ -286,7 +286,7 @@ function Account(props) {
 			setLoading(false);
 		});
 		
-	}, []);
+	}, [username]);
 
 	async function setDescription() {
 		try {

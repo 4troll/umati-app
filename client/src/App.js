@@ -12,6 +12,7 @@ import PostView from "./views/PostView.js";
 import Policies from "./views/Policies.js";
 
 import Notifications from "./views/components/Notifications.js";
+import ScrollToTop from "./views/components/ScrollToTop.js";
 
 import './App.css';
 
@@ -250,6 +251,7 @@ class App extends Component {
 			<ThemeProvider theme={theme}>
 			<SnackbarProvider maxSnack={3}>
 			<Router>
+			<ScrollToTop />
 			<div className="navbar">
 				<Link key="home" className="navlink home" to="/">
 					<div className="right-hold flexbox" >
@@ -258,7 +260,9 @@ class App extends Component {
 					</div>
 				</Link>
 				{username ? 
-				(<Link className="navlink"   key={username} to={"/@" + username + "?self"}>@{username}</Link>)
+				(<Link className="navlink" 
+				// onClick={() => {this.getNotifAmount()}}
+				  key={username} to={"/@" + username + "?self"}>@{username}</Link>)
 				: 
 				<Link className="navlink" key="login" to="/login">Login</Link>
 				}
@@ -321,10 +325,12 @@ class App extends Component {
 					<Register />
 				</Route>
 
-				<Route exact path="/@:username" component={(props) => (<Account 
-					path={"/@" + props.match.params.username}
-					key={props.match.params.username}
-				/>)}/>
+				<Route exact path="/@:username" children={<Account 
+					// path={"/@" + props.match.params.username}
+					// key={props.match.params.username}
+					/>}/>
+{/* 					
+				</Route> */}
 				
 				<Route exact path="/umatis">
 					<Umatis />
@@ -340,10 +346,19 @@ class App extends Component {
 							}
 						}}
 				</Route>
-				<Route path="/u/:umatiname/comments/:postId" component={(props) => (<PostView
-					path={"/u/" + props.match.params.umatiname + "/comments/" + props.match.params.postId}
-					key={props.match.params.postId}
-				/>)}/>
+				<Route path="/u/:umatiname/comments/:postId/:slug/:commentId">
+					<PostView
+						targetComment={true}
+						// path={"/u/" + props.match.params.umatiname + "/comments/" + props.match.params.postId + "/" + props.match.params.slug}
+						// key={props.match.params.postId}
+					/>
+				</Route>
+				<Route path="/u/:umatiname/comments/:postId/:slug">
+					<PostView
+						// path={"/u/" + props.match.params.umatiname + "/comments/" + props.match.params.postId + "/" + props.match.params.slug}
+						// key={props.match.params.postId}
+					/>
+				</Route>
 				<Route path="/u/:umatiname/submit">
 					{function() {
 							if (!cookieDat) {
@@ -356,10 +371,12 @@ class App extends Component {
 					
 				</Route>
 
-				<Route path="/u/:umatiname" render={(props) => (<UmatiView
-					path={"/u/" + props.match.params.umatiname}
-					key={props.match.params.umatiname}
-				/>)}/>
+				<Route path="/u/:umatiname"> 
+					<UmatiView
+					// path={"/u/" + props.match.params.umatiname}
+					// key={props.match.params.umatiname}
+					/>
+				</Route>
 				
 
 				<Route exact path="/posts">

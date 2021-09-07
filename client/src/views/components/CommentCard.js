@@ -1,7 +1,7 @@
 import React, { useEffect,useLayoutEffect, useRef, useState, Component, Fragment } from "react";
 
 
-import {useParams} from "react-router-dom";
+import {useParams, Link} from "react-router-dom";
 import Editable from "./Editable";
 
 import {
@@ -50,6 +50,16 @@ import UmatiLink from "./UmatiLink.js";
 import RSRR from "react-string-replace-recursively";
 import { mdconfig } from "../config/markdown";
 
+const slugify = require('slugify');
+const slugSettings = {
+    replacement: '_',  // replace spaces with replacement character, defaults to `-`
+    remove: undefined, // remove characters that match regex, defaults to `undefined`
+    lower: true,      // convert to lower case, defaults to `false`
+    strict: true,     // strip special characters except replacement, defaults to `false`
+    locale: 'vi',       // language code of the locale to use
+    trim: true         // trim leading and trailing replacement chars, defaults to `true`
+  }
+
 
 function determineColor(current,num) {
     if (current != num) {
@@ -64,9 +74,91 @@ function determineColor(current,num) {
     return "default";
 }
 
+function LoadingComment (props) {
+    return (
+        <Card 
+        style={{marginTop: "5px"}}
+        // className={classes.root} 
+        variant="outlined">
+            <CardHeader
+                // action={
+                // loading ? null : (
+                //     <IconButton aria-label="settings" 
+                //     // onClick={handleOpenDropdown}
+                //     >
+                //     <MoreVertIcon />
+                //     </IconButton>
+                // )
+                // }
+                avatar={
+                    <Skeleton animation="wave" variant="circle" width={32} height={32} />
+                    }
+                title={
+                    <Skeleton animation="wave" height={10} width={160} style={{ marginBottom: 6 }} />
+                }
+                // subheader={props.subheader}
+            />
+            <CardContent>
+                <Box
+                    sx={{
+                    alignItems: 'left',
+                    display: 'flex',
+                    flexDirection: 'column'
+                    }}
+                >
+                <React.Fragment>
+                        <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+                        <Skeleton animation="wave" height={10} style={{ marginBottom: 6 }} width="80%" />
+                        <Skeleton animation="wave" height={10} width="80%" />
+                </React.Fragment>		
+                </Box>
+            </CardContent>
+            <Box style={{ alignItems: 'center',
+                display: 'flex',
+                flexDirection: 'row',
+                backgroundColor: "rgba(0, 0, 0, 0.12)"}}>
+            
+            <Tooltip title={"Like"} placement="left">
+                <IconButton
+                aria-label="like" 
+                component="span"
+                disabled={true}
+                >
+                    <ThumbUpIcon />
+                </IconButton>
+            </Tooltip>
+
+            <span>{"-"}</span>
+
+            <Tooltip title={"Dislike"} placement="left">
+                <IconButton 
+                aria-label="dislike" 
+                component="span"
+                disabled={true}>
+                    <ThumbDownIcon />
+                </IconButton>
+            </Tooltip>
+            <Button variant="outlined" color="primary" disabled={true}>
+                Reply
+            </Button>
+            
+            <Button variant="outlined" color="primary" disabled={true}>
+                Permalink
+            </Button>
+
+            <IconButton color="secondary" aria-label="flag" component="span" disabled={true}>
+                <FlagIcon />
+            </IconButton>
+            
+            </Box>
+    </Card>
+    );
+}
+
 
 function CommentCard(props) {
     const comment = props.commentData;
+    const postDat = props.postData;
     const commenterData = comment.commenterData;
     const loggedIn = props.loggedIn;
     const userVote = props.userVote;
@@ -127,6 +219,7 @@ function CommentCard(props) {
     
     return (
         <Card 
+        style={{marginTop: "5px", backgroundColor: (props.targetComment == comment.commentId) ? "rgba(255, 255, 0, 0.05)":  "rgba(255, 255, 255, 1)" }}
         // className={classes.root} 
         variant="outlined">
             <CardHeader
@@ -186,13 +279,23 @@ function CommentCard(props) {
                     <ThumbDownIcon />
                 </IconButton>
             </Tooltip>
-
+            <Button variant="outlined" color="primary">
+                Reply
+            </Button>
+            <Link 
+            style ={{textDecoration:"none"}}
+            to={"/u/" + props.hostUmatiname + "/comments/" + comment.postId + "/" + slugify(props.postTitle,slugSettings) + "/" + comment.commentId}>
+            <Button variant="outlined" color="primary">
+                Permalink
+            </Button>
+            </Link>
 
             <IconButton color="secondary" aria-label="flag" component="span">
                 <FlagIcon />
             </IconButton>
+            
             </Box>
     </Card>
     );
 }
-export default CommentCard;
+export {LoadingComment, CommentCard};
