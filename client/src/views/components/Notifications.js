@@ -376,7 +376,7 @@ function Notifications(props) {
 			}}
             style={{minWidth:"350px"}}
 			>
-				<Container maxWidth={1/4}>
+				<Container maxWidth={"sm"}>
                     <span className="right-hold flexbox" style= {{justifyContent:"space-between", width:"100%", margin:"-20px 0px"}}>
                         <h3>Notifications</h3>
                         <span>

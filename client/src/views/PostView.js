@@ -369,7 +369,10 @@ function PostView(props) {
 					
                         (<PostCard data={postDat} loggedIn={token.token ? true : false} main={true}/>)
 			        }
-					<CommentSection targetComment={props.targetComment ? commentId : null} loading={loading} postData={postDat} hostUmatiname={umatiname} loggedIn={token.token ? true : false}/>
+					<CommentSection 
+					setLoading={()=> {setLoading(true)}}
+					targetComment={props.targetComment ? commentId : null} 
+					loading={loading} postData={postDat} hostUmatiname={umatiname} loggedIn={token.token ? true : false}/>
 				</Container>
 			</Box>
 			

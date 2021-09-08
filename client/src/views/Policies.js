@@ -36,7 +36,7 @@ return (
 			}}
             style={{minWidth:"350px"}}
 			>
-				<Container maxWidth={1/4}>
+				<Container maxWidth={"lg"}>
                 <strong>Skip to:</strong><br/>
                 <a href="/policies#umati_user_agreement">Umati User Agreement</a> <br/>
                 <a href="/policies#content_policy">Content Policy</a>

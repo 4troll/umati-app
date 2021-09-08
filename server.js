@@ -1587,27 +1587,156 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
 
                                 // Votes
 
-                                let matchComment = {$match: {}};
+                                let matchComment = {$match: {postId: postId}};
                                 if (req.query.commentId) {
                                     matchComment = {$match: {commentId: req.query.commentId}}
                                 }
 
                                 let commentsAggregate = await commentsCollection.aggregate([
-                                    {$match: {postId: postId}},
                                     matchComment,
                                     {$lookup: {
                                         from: "votes",
                                         localField: "commentId",
                                         foreignField: "commentId",
-                                        as: "voteData"
+                                        as: "voteData",
+                                        
                                     }},
+                                    {
+                                        $graphLookup: {
+                                          from: "all",
+                                          startWith: "$commentId",
+                                          connectFromField: "commentId",
+                                          connectToField: "parentComment",
+                                          depthField: "level",
+                                          as: "children",
+                                        }
+                                      },
+                                      {
+                                        $unwind: {
+                                          path: "$children",
+                                          preserveNullAndEmptyArrays: true
+                                        }
+                                      },
+                                      {
+                                        $sort: {
+                                          "children.level": -1
+                                        }
+                                      },
+                                      {
+                                        $group: {
+                                        _id: "$_id",
+                                          postId: {
+                                            $first: "$postId"
+                                          },
+                                          commentId: {
+                                            $first: "$commentId"
+                                          },
+                                          commentAuthor: {
+                                            $first: "$commentAuthor"
+                                          },
+                                          content: {
+                                            $first: "$content"
+                                          },
+                                          ancestors: {
+                                            $first: "$ancestors"
+                                          },
+                                          creationDate: {
+                                            $first: "$creationDate"
+                                          },
+                                          parentComment: {
+                                            $first: "$parentComment"
+                                          },
+                                          children: {
+                                            $push: "$children"
+                                          }
+                                        }
+                                      },
+                                      {
+                                        $addFields: {
+                                          children: {
+                                            $reduce: {
+                                              input: "$children",
+                                              initialValue: {
+                                                level: -1,
+                                                presentChild: [],
+                                                prevChild: []
+                                              },
+                                              in: {
+                                                $let: {
+                                                  vars: {
+                                                    prev: {
+                                                      $cond: [
+                                                        {
+                                                          $eq: [
+                                                            "$$value.level",
+                                                            "$$this.level"
+                                                          ]
+                                                        },
+                                                        "$$value.prevChild",
+                                                        "$$value.presentChild"
+                                                      ]
+                                                    },
+                                                    current: {
+                                                      $cond: [
+                                                        {
+                                                          $eq: [
+                                                            "$$value.level",
+                                                            "$$this.level"
+                                                          ]
+                                                        },
+                                                        "$$value.presentChild",
+                                                        []
+                                                      ]
+                                                    }
+                                                  },
+                                                  in: {
+                                                    level: "$$this.level",
+                                                    prevChild: "$$prev",
+                                                    presentChild: {
+                                                      $concatArrays: [
+                                                        "$$current",
+                                                        [
+                                                          {
+                                                            $mergeObjects: [
+                                                              "$$this",
+                                                              {
+                                                                children: {
+                                                                  $filter: {
+                                                                    input: "$$prev",
+                                                                    as: "e",
+                                                                    cond: {
+                                                                      $eq: [
+                                                                        "$$e.parentComment",
+                                                                        "$$this.commentId"
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      {
+                                        $addFields: {
+                                          children: "$children.presentChild"
+                                        }
+                                      }
                                 ]
                                 );
                                 var commentStream = [];
-                                for await (let comment of commentsAggregate) {
+                                async function recursivelyManipulateChildComments(comment) {
                                     let commenter = await usersCollection.findOne({userId: comment.commentAuthor});
                                     comment.commenterData = commenter;
-                                    let voteStatus = comment.voteData[0]
+                                    let voteStatus = comment.voteData
                                     let userVoteStatus = 0;
                                     if (voteStatus) {
                                         if (voteStatus.likers && req.decoded) {
@@ -1630,7 +1759,19 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                         comment.voteCount = voteStatus.voteCount;
                                     }
                                     // console.log(voteData.voteCount);
-                                    commentStream.push(comment);
+                                    if (!comment.parentComment) {
+                                        commentStream.push(comment);
+                                    }
+                                    
+                                    if (comment.children) {
+                                        for (let i = 0; i < comment.children.length; i++) {
+                                            await recursivelyManipulateChildComments(comment.children[i])
+                                        }
+                                    }
+                                }
+                                for await (let comment of commentsAggregate) {
+                                    console.log(comment);
+                                    await recursivelyManipulateChildComments(comment);
                                 }
                                 post.commentData = commentStream;
                                 res.json(post).end();
@@ -2207,11 +2348,13 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
     if (req && req.params.postId && req.body.content) {
         const postId = req.params.postId;
         const commentBody = req.body.content;
+        const commentParentId = req.body.commentParent;
+        var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
         try {
             if (req.decoded) {
                 var tokenData = req.decoded
                 var adminMode = tokenData.isAdmin;
-                var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+                
                 client.connect( (err,db) => {
                     if (err) throw err;
                     console.log("connected");
@@ -2221,7 +2364,18 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
 
                         const postInQuestion = await allPostsCollection.findOne({postId: postId});
                         const commentingUser = await usersCollection.findOne({userId: req.decoded.userId});
-                        if (postInQuestion && commentingUser) {
+                        var parentComment;
+
+                        // check if parent comment exists
+                        let parentCommentExists = true;
+                        if (commentParentId) {
+                            parentComment = await commentsCollection.findOne({commentId: commentParentId});
+                            if (!parentComment) {
+                                parentCommentExists = false;
+                            }
+                        }
+
+                        if (postInQuestion && commentingUser && parentCommentExists) {
                             console.log("post and user verified");
                             let commentsCounter = commentsDB.collection("counter");
                             let commentsVotesCollection = commentsDB.collection("votes");
@@ -2229,29 +2383,60 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
                                 {_id: "commentCounter" },
                                 {$inc:{sequence_value:1}}
                             );
+
+                            let ancestors = []
+
+                            if (parentComment) {
+                                console.log("parent comment found");
+                                if (parentComment.ancestors) {
+                                    ancestors = ancestors.concat(parentComment.ancestors);
+                                }
+                                ancestors.push(commentParentId);
+                            }
+
                             const commentData = {
                                 postId: postId,
                                 commentId: short.generate(),
                                 commentAuthor: req.decoded.userId,
                                 content: commentBody,
-                                creationDate: Date.now()
+                                creationDate: Date.now(),
+                                parentComment: commentParentId ? commentParentId : null,
+                                ancestors: ancestors
                             }
                             let insertOperation = await commentsCollection.insertOne(commentData);
                             let voteDoc = await commentsVotesCollection.insertOne({commentId: commentData.commentId, voteCount: 0});
                             
-                            await notifsCollection.updateOne({userId: postInQuestion.author}, {$push: 
-                                {notifs: {
-                                    type: "newComment",
-                                    postId: postId,
-                                    commentId: commentData.commentId,
-                                    notifId: short.generate(),
-                                    commentAuthor: commentData.commentAuthor,
-                                    date: commentData.creationDate,
-                                    seen: false
-                                    }
-                                } 
+                            if (!parentComment) {
+                                await notifsCollection.updateOne({userId: postInQuestion.author}, {$push: 
+                                    {notifs: {
+                                        type: "newComment",
+                                        postId: postId,
+                                        commentId: commentData.commentId,
+                                        notifId: short.generate(),
+                                        commentAuthor: commentData.commentAuthor,
+                                        date: commentData.creationDate,
+                                        seen: false
+                                        }
+                                }
+                                },{upsert: true});
+                            }
+                            else {
+                                await notifsCollection.updateOne({userId: postInQuestion.author}, {$push: 
+                                    {notifs: {
+                                        type: "newReply",
+                                        postId: postId,
+                                        commentId: commentData.commentId,
+                                        notifId: short.generate(),
+                                        commentAuthor: commentData.commentAuthor,
+                                        date: commentData.creationDate,
+                                        seen: false
+                                        }
+                                }
+                                },{upsert: true});
+                            }
+                            
                                 
-                            },{upsert: true});
+                            
 
                             res.json(commentData).end();
                         }
@@ -2520,7 +2705,6 @@ app.get("/api/fetchNotifs", [middleware.jsonParser, middleware.authenticateToken
                         if (foundNotifs) {
                             for await (let main of foundNotifs) {
                                 for (let notif of main.notifs) {
-                                    console.log(notif);
                                     if (notif.type == "newPost" || notif.type == "voteMilestone" ) {
                                         let post = await allPostsCollection.findOne({postId: notif.postId});
                                         notif.postData = post;

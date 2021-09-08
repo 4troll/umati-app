@@ -266,9 +266,10 @@ function CommentSection (props) {
             
             style={{minWidth:"350px"}}
 			>
-                <Container maxWidth={1/4}>
+                <Container maxWidth={"lg"}>
                     <span>{(props.targetComment && !props.loading) ? <Link 
                     style={{color: "#3f50b5", textDecoration: "none"}}
+                    onClick={()=> {props.setLoading()}}
                     to={"/u/" + props.hostUmatiname + "/comments/" + postDat.postId + "/" + slugify(postDat.title,slugSettings)}>View entire discussion
                     </Link> : ""}
                     </span>
@@ -292,11 +293,10 @@ function CommentSection (props) {
                                 placeholder={"Add a comment"}
                                 onChange={(e) => {setCommentDraft(e.target.value)}}
                                 style={MentionSuggestionStyle}
-                                multiline
                                 ignoreAccents
                                 suggestionsPortalHost={portalRef.current}
                                 allowSuggestionsAboveCursor={true}
-                                style={{height:"200px"}}
+                                style={{minHeight:"100px", overflow: "auto"}}
                                 >
                                     <Mention
                                     trigger={/(u\/([a-zA-Z0-9]+))/}
@@ -359,19 +359,24 @@ function CommentSection (props) {
                             </Editable>
                         </div>
                         <div>
-                            {(!props.loading && props.postData) ? props.postData.commentData.map(function (comment,i) {
+                            {(props.loading == false && props.postData) ? (props.postData.commentData.map(function (comment,i) {
                                 return (
-                                    <CommentCard targetComment={props.targetComment} postTitle={postDat.title} hostUmatiname={props.hostUmatiname} commentData={comment} loggedIn={loggedIn} userVote={comment.userVote ? comment.userVote : 0}/>
-                                );
+                                    <CommentCard key={comment.commentId}
+                                    targetComment={props.targetComment} 
+                                    postTitle={postDat.title}
+                                    hostUmatiname={props.hostUmatiname}
+                                    commentData={comment}
+                                    loggedIn={loggedIn}
+                                    userVote={comment.userVote ? comment.userVote : 0}/>
+                                    );
                                 
-                            }) : 
-                            function() {
-                                return(<Fragment>
-                                    <LoadingComment/>
-                                    <LoadingComment/>
-                                    <LoadingComment/>
-                                    </Fragment>)
-                            }
+                            })) : 
+                            (props.targetComment ? <LoadingComment key={1}/> : <Fragment>
+                                <LoadingComment key={1}/>
+                                <LoadingComment key={2}/>
+                                <LoadingComment key={3}/>
+                            </Fragment>)
+                            
                         }
                         </div>
                         {/* <br/>
