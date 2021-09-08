@@ -1589,7 +1589,8 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
 
                                 let matchComment = {$match: {postId: postId}};
                                 if (req.query.commentId) {
-                                    matchComment = {$match: {commentId: req.query.commentId}}
+                                    // matchComment = {$match: {$and: [{postId: postId}, { $or: [{commentId: req.query.commentId}, {ancestors: req.query.commentId}]}]}  }
+                                    matchComment = {$match: {postId: postId, commentId: req.query.commentId}};
                                 }
 
                                 let commentsAggregate = await commentsCollection.aggregate([
@@ -1759,7 +1760,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                         comment.voteCount = voteStatus.voteCount;
                                     }
                                     // console.log(voteData.voteCount);
-                                    if (!comment.parentComment) {
+                                    if (!comment.parentComment || comment.commentId == req.query.commentId) {
                                         commentStream.push(comment);
                                     }
                                     
@@ -1770,7 +1771,6 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                     }
                                 }
                                 for await (let comment of commentsAggregate) {
-                                    console.log(comment);
                                     await recursivelyManipulateChildComments(comment);
                                 }
                                 post.commentData = commentStream;

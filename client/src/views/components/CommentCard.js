@@ -349,7 +349,8 @@ function CommentCard(props) {
                 else {
                     await response.json()
                     .then(function (json) {
-                        console.log(json)
+                        console.log(json);
+                        window.location.reload();
                         return json;
                     })
                     .catch(e => {

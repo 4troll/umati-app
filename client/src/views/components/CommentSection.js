@@ -242,6 +242,7 @@ function CommentSection (props) {
                 await response.json()
                 .then(function (json) {
                     console.log(json)
+                    window.location.reload();
                     return json;
                 })
                 .catch(e => {
