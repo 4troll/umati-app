@@ -840,7 +840,8 @@ app.post("/api/createUmati", [middleware.ratelimitAccounts, middleware.jsonParse
                                 {$inc:{sequence_value:1}},
                                 { }
                             );
-
+                            const umatiId = increment.value.sequence_value + 1;
+                            const isUrlOptions = {require_tld: false, require_protocol: false, require_host: false, require_port: false, require_valid_protocol: false, allow_underscores: false, host_whitelist: false, host_blacklist: false, allow_trailing_dot: false, allow_protocol_relative_urls: true, disallow_auth: false, validate_length: true }
                             if (body.logo && !validator.isURL(body.logo,isUrlOptions)) {
                                 console.log("logo found");
                                 let uncompressedb64 = body.logo
@@ -855,25 +856,25 @@ app.post("/api/createUmati", [middleware.ratelimitAccounts, middleware.jsonParse
                                     let resizedImageData = resizedImageBuffer.toString('base64');
                                     resizedBase64 = `data:${mimType};base64,${resizedImageData}`;
                                 })
-                                console.log(targetUmati.umatiId);
+                                console.log(umatiId);
                                 // update logo asset
                                 let operation = await umatiLogosCollection.replaceOne(
-                                    {id: targetUmati.umatiId}, 
+                                    {id: umatiId}, 
                                     {
-                                        id: targetUmati.umatiId,
+                                        id: umatiId,
                                         contents: resizedBase64
                                     },
                                     {upsert: true}
                                 );
                             }
                             
-                            let logoLink = "/assets/umatiLogo/" + targetUmati.umatiId;
+                            let logoLink = "/assets/umatiLogo/" + umatiId;
 
                             newUmati = {
                                 "umatiname": body.umatiname,
                                 "displayname": body.displayname,
                                 "logo": logoLink,
-                                "umatiId": increment.value.sequence_value + 1,
+                                "umatiId": umatiId,
                                 "owner": req.decoded.userId,
                                 "removed": false,
                                 "creationDate": Date.now()
