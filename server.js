@@ -225,6 +225,21 @@ const middleware = {
         // should match expireTimeMs
         windowMs: 5 * 60 * 1000
     }),
+    ratelimitVotes: new RateLimit({ // 30 votes in 1m
+        store: new MongoStore({
+            uri: mongoUri,
+            collectionName: "votesRateLimit",
+            //   user: "mustafaA",
+            //   password: 'mongopassword',
+            // should match windowMs
+            expireTimeMs: 60 * 1000,
+            errorHandler: console.error.bind(null, "rate-limit-mongo")
+            // see Configuration section for more options and details
+        }),
+        max: 30,
+        // should match expireTimeMs
+        windowMs: 60 * 1000
+    }),
 }
 
 function checkUsername(targetUsername) {
@@ -1603,6 +1618,12 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                         
                                     }},
                                     {
+                                        $unwind: {
+                                          path: "$voteData",
+                                          preserveNullAndEmptyArrays: true
+                                        }
+                                      },
+                                    {
                                         $graphLookup: {
                                           from: "all",
                                           startWith: "$commentId",
@@ -1646,6 +1667,9 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                           },
                                           parentComment: {
                                             $first: "$parentComment"
+                                          },
+                                          voteData: {
+                                            $first: "$voteData"
                                           },
                                           children: {
                                             $push: "$children"
@@ -1771,6 +1795,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                     }
                                 }
                                 for await (let comment of commentsAggregate) {
+                                    console.log(comment);
                                     await recursivelyManipulateChildComments(comment);
                                 }
                                 post.commentData = commentStream;
@@ -1862,7 +1887,7 @@ async function updatePostReputation(senderId,authorId,postId,change,voterType) {
     
 }
 
-app.post("/api/voteOnPost/:postId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/voteOnPost/:postId", [middleware.ratelimitVotes, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
     var body = req.body;
     if (req && req.params.postId && (body.vote == 0 || body.vote == -1 || body.vote == 1)) {
@@ -2519,7 +2544,7 @@ async function updateCommentReputation(senderId,authorId,commentId,change,voterT
     
 }
 
-app.post("/api/voteOnComment/:commentId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
+app.post("/api/voteOnComment/:commentId", [middleware.ratelimitVotes, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
     var body = req.body;
 

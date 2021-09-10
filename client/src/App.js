@@ -318,8 +318,16 @@ class App extends Component {
 					{/* <Home /> */}
 				</Route>
 				<Route path="/login">
-					
-					<Login />
+					{
+						function() {
+							if (!cookieDat) {
+								return (<Login />);
+							}
+							else {
+								return (<Redirect to={"/posts"} />);
+							}
+						}
+					}
 				</Route>
 				<Route path="/register">
 					<Register />
