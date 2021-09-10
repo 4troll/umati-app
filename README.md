@@ -1,4 +1,6 @@
 # umati
+
+![notifications](https://user-images.githubusercontent.com/50559427/132928779-0d0e5e98-6df2-46c9-be7b-b7cc39b60082.png)
 Umati (<em>oo•mah•tee</em>) is a social news website that places emphasis on small communities and the individuals within them. Communities in Umati are called Umatis. Content moderators are free to moderate their Umatis however they wish provided that all users follow Umati's Terms of Service.
 
 # Goals
