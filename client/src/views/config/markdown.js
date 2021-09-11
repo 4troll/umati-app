@@ -267,7 +267,7 @@ const mdconfig = {
 		}
 	},
 	"link": {
-		pattern: /([\\]?\[[^\[\n\s]+\]\([^\)\n\s]+\))/g,
+		pattern: /([\\]?\[[^\[\n]+\]\([^\)\n\s]+\))/g,
 		matcherFn: function (rawText, processed, key) {
 			if (processed[0].charAt(0) == '\\') {
 				processed[0] = processed[0].replace("\\", "");
