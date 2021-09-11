@@ -45,7 +45,7 @@ app.use(function(req, res, next) {
   });
 
 
-var mongoUri = "mongodb+srv://mustafaA:loleris123@cluster0.2yo81.mongodb.net/ratelimits";
+var mongoUri = process.env.MONGO_URI;
 
 var usersDB;
 var usersCollection;
