@@ -174,7 +174,7 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 <li>Create and remove rules</li>
 <li>Edit rules with simplistic modal</li>
 <li>Reorder rules with gratifying drag-and-drop mechanic</li>
-<li>Rules can apply to all UGC (user generated content), only posts, or only comments</li>
+<li>Rules can apply to all UGC (user generated content), only posts, or only comments (WIP: Rules that apply will show in the report menu)</li>
 </ul>
 </details>
 
