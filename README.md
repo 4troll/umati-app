@@ -198,6 +198,6 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 * Express backend
 * React frontend
 * material-ui React library
-* MongoDB backend datastore with Atlas host
+* MongoDB backend datastore with Atlas database host
 * Heroku host
 * Countless libraries not mentioned (see package.json)
