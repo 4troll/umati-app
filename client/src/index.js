@@ -9,7 +9,11 @@ import { CookiesProvider } from 'react-cookie';
 import Cookies from 'universal-cookie';
 
 
+import TimeAgo from 'javascript-time-ago'
 
+import en from 'javascript-time-ago/locale/en'
+
+TimeAgo.addDefaultLocale(en)
  
 const cookies = new Cookies();
 

@@ -49,6 +49,7 @@ import UmatiLink from "./UmatiLink.js";
 import RSRR from "react-string-replace-recursively";
 import { mdconfig } from "../config/markdown";
 
+import ReactTimeAgo from 'react-time-ago'
 
 const useStyles = makeStyles(theme => ({
     root: {
@@ -458,7 +459,12 @@ function CommentCard(props) {
                         style={{height:32+"px", width:32+"px", marginRight: "-15px"}}
                         />
                         }
-                    title={<UserLink data={commenterData} noIcon={true}/>}
+                    title={
+                    <Fragment>
+                    <UserLink data={commenterData} noIcon={true}/>
+                    <span>&nbsp; &#183; &nbsp;</span>
+                    <ReactTimeAgo date={comment.creationDate} locale="en-US" timeStyle="round"/>
+                    </Fragment>}
                     // subheader={props.subheader}
                 />
                 <CardContent>

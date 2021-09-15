@@ -26,6 +26,7 @@ import RSRR from "react-string-replace-recursively";
 import { mdconfig } from "../config/markdown";
 
 import Image from "material-ui-image"
+import ReactTimeAgo from 'react-time-ago'
 
 const slugify = require('slugify');
 const slugSettings = {
@@ -71,7 +72,7 @@ import {
 //     window.location.href = "/u/" + umatiname + "/comments/" + postid;
 // }
 
-function createSubHeader (authorData,umatiData) {
+function createSubHeader (authorData,umatiData, postData) {
     return (
         <span style={{
             alignItems: "left",
@@ -79,12 +80,16 @@ function createSubHeader (authorData,umatiData) {
             flexDirection: 'row',
         }}>
             <b>{umatiData ? <UmatiLink data={umatiData}/> : ""}</b>
+            <span>
             {(umatiData && authorData) ? <span>&nbsp; &#183; &nbsp;</span> : ""}
             {authorData ? " Posted by " : ""}
             {(authorData && authorData.displayname) ? authorData.displayname : ""} 
             {(authorData && authorData.displayname) ? " (" : ""}
             {authorData ? <UserLink data={authorData}/> : ""}
             {(authorData && authorData.displayname) ? ")" : ""}
+            </span>
+            <span>&nbsp; &#183; &nbsp;</span>
+            <ReactTimeAgo date={postData.creationDate} locale="en-US" timeStyle="round"/>
         </span>
     )
 }
@@ -318,7 +323,7 @@ function PostCard (props) {
                         title={
                             (postData.title)
                         }
-                        subheader={createSubHeader(authorData, hostIndication)}
+                        subheader={createSubHeader(authorData, hostIndication, postData)}
                     />
                     
                     <CardContent>

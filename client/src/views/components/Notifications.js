@@ -54,6 +54,7 @@ import UmatiLink from "./UmatiLink.js";
 
 import { useSnackbar } from 'notistack';
 
+import ReactTimeAgo from 'react-time-ago'
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -145,7 +146,12 @@ function NotifCard (props) {
                 // )
                 // }
                 title={props.title}
-                subheader={props.subheader}
+                subheader={
+                <Fragment>
+                <span>{props.subheader}</span>
+                <span>&nbsp; &#183; &nbsp;</span>
+                <ReactTimeAgo date={props.date} locale="en-US" timeStyle="round"/>
+                </Fragment>}
             />
             <CardContent>
                 <Box
@@ -413,7 +419,8 @@ function Notifications(props) {
                                     title: "",
                                     subheader: "",
                                     description: "",
-                                    onRead: readNotif
+                                    onRead: readNotif,
+                                    date: notification.date
                                 }
                                 let umatiData = notification.umatiData;
                                 let postData = notification.postData;
