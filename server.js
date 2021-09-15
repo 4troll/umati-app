@@ -2389,6 +2389,7 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
                     (async ()=>{
 
                         const postInQuestion = await allPostsCollection.findOne({postId: postId});
+                        const hostUmatiData = await umatisCollection.findOne({umatiId: postInQuestion.hostUmati});
                         const commentingUser = await usersCollection.findOne({userId: req.decoded.userId});
                         var parentComment;
 
@@ -2426,8 +2427,11 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
                                 commentAuthor: req.decoded.userId,
                                 content: commentBody,
                                 creationDate: Date.now(),
+                                hostUmatiname: hostUmatiData.umatiname,
+                                postTitle: postInQuestion.title,
                                 parentComment: commentParentId ? commentParentId : null,
-                                ancestors: ancestors
+                                ancestors: ancestors,
+
                             }
                             let insertOperation = await commentsCollection.insertOne(commentData);
                             let voteDoc = await commentsVotesCollection.insertOne({commentId: commentData.commentId, voteCount: 0});
@@ -2920,4 +2924,4 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(port, () => 
+app.listen(port, () => console.log(`Listening on port ${port}`));

@@ -242,7 +242,8 @@ function CommentSection (props) {
                 await response.json()
                 .then(function (json) {
                     console.log(json)
-                    window.location.reload();
+                    // window.location.reload();
+                    window.location.href = "/u/" + json.hostUmatiname + "/comments/" + json.postId + "/" + slugify(json.postTitle,slugSettings) + "/" + json.commentId;
                     return json;
                 })
                 .catch(e => {
