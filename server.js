@@ -339,7 +339,7 @@ app.post("/api/loginAccount", [middleware.ratelimitLogin, jsonParser], function 
                     const addTokenOperation = await usersCollection.updateOne({userId: user.userId},
                         {$set: {refreshToken: refreshToken}}
                     );
-                    console.log(addTokenOperation);
+                    
                     
                     let isAdmin = user.admin;
                     const token = generateAccessToken({ username: req.body.username, isAdmin: isAdmin, userId: user.userId });
@@ -382,18 +382,18 @@ app.get("/api/getAccessToken", [middleware.ratelimitLogin, jsonParser], function
                 if (refreshToken) {
                     jwt.verify(refreshToken, process.env.TOKEN_REFRESH_SECRET, async function (err, decoded) {
                         if (err) {
-                            console.log("Unauthorized");
+                            
                             res.status(401).end(); // unauthorized
                         }
                         else {
                             user = await usersCollection.findOne({refreshToken: refreshToken});
-                            console.log("Looking for user");
+                            
                             if (user) {
                                 const token = generateAccessToken({ username: user.username, isAdmin: user.admin, userId: user.userId });
                                 let tokenResponse = {
                                     token: token
                                 }
-                                console.log(tokenResponse);
+                                
                                 res.json(tokenResponse).end();
                             }
                             else {
@@ -545,7 +545,7 @@ app.get("/api/fetchUsers", [middleware.jsonParser, middleware.authenticateToken]
                     let aggregation;
                     if (req.query.search && req.query.search.length > 0) {
                         query = req.query.search;
-                        console.log("query: " + query);
+                        
                         aggregation = await usersCollection.aggregate([
                             {$search: {index: "userSearch", "autocomplete": {
                                 "query": query,
@@ -843,7 +843,7 @@ app.post("/api/createUmati", [middleware.ratelimitAccounts, middleware.jsonParse
                             const umatiId = increment.value.sequence_value + 1;
                             const isUrlOptions = {require_tld: false, require_protocol: false, require_host: false, require_port: false, require_valid_protocol: false, allow_underscores: false, host_whitelist: false, host_blacklist: false, allow_trailing_dot: false, allow_protocol_relative_urls: true, disallow_auth: false, validate_length: true }
                             if (body.logo && !validator.isURL(body.logo,isUrlOptions)) {
-                                console.log("logo found");
+                                
                                 let uncompressedb64 = body.logo
                                 let parts = uncompressedb64.split(';');
                                 let mimType = parts[0].split(':')[1];
@@ -856,7 +856,7 @@ app.post("/api/createUmati", [middleware.ratelimitAccounts, middleware.jsonParse
                                     let resizedImageData = resizedImageBuffer.toString('base64');
                                     resizedBase64 = `data:${mimType};base64,${resizedImageData}`;
                                 })
-                                console.log(umatiId);
+                                
                                 // update logo asset
                                 let operation = await umatiLogosCollection.replaceOne(
                                     {id: umatiId}, 
@@ -992,19 +992,19 @@ app.post("/api/updateUmati/:umatiname", [middleware.ratelimitAccountEdit, middle
                 (async ()=>{
                     let targetUmati = await umatisCollection.findOne({ umatiname: req.params.umatiname})
                     if (req.decoded && (targetUmati.owner == req.decoded.userId || adminMode)) { // if user owns the umati or admin
-                        console.log("authorized");
+                        
                         var foundUmati = await umatisCollection.findOne({umatiname: body.umatiname});
                         if (!foundUmati || (body.umatiname == req.params.umatiname)) { // if umatiname not taken by other umatis
-                            console.log("unique");
+                            
                             let resizedBase64;
 
                             const isUrlOptions = {require_tld: false, require_protocol: false, require_host: false, require_port: false, require_valid_protocol: false, allow_underscores: false, host_whitelist: false, host_blacklist: false, allow_trailing_dot: false, allow_protocol_relative_urls: true, disallow_auth: false, validate_length: true }
                             
-                            console.log("Is not URL: " + !validator.isURL(body.logo,isUrlOptions));
-                            console.log("Is b64: " + validator.isBase64(body.logo));
+                            
+                            
                             
                             if (body.logo && !validator.isURL(body.logo,isUrlOptions)) {
-                                console.log("logo found");
+                                
                                 let uncompressedb64 = body.logo
                                 let parts = uncompressedb64.split(';');
                                 let mimType = parts[0].split(':')[1];
@@ -1042,7 +1042,7 @@ app.post("/api/updateUmati/:umatiname", [middleware.ratelimitAccountEdit, middle
                                 {$set: {umatiname: body.umatiname, displayname: body.displayname, logo: logoLink}}
                             );
                             if (updateUmati) {
-                                console.log("success");
+                                
                                 res.json(updateUmati).end();
                             }
                             else { // if update failed
@@ -1088,10 +1088,10 @@ app.post("/api/editDescription/umati/:umatiname", [middleware.ratelimitAccountEd
                 }
 
                 (async ()=>{
-                    console.log(req.decoded);
+                    
                     if (req.decoded) {
                         let targetUmati = await umatisCollection.findOne({ umatiname: req.params.umatiname});
-                        console.log(req.decoded);
+                        
                         if (targetUmati && (targetUmati.owner == req.decoded.userId || adminMode) ) {
                             var updateUmati = await umatisCollection.updateOne(
                                 {umatiname: req.params.umatiname},
@@ -1139,7 +1139,7 @@ app.post("/api/editRules/:umatiname", [ middleware.jsonParser, middleware.authen
                         if (targetUmati && (targetUmati.owner == req.decoded.userId || adminMode) ) { // if umati actually exists, and user authorized
                             var oldRules = targetUmati.rules;
                             var finalRules = []; // negotiated rules
-                            console.log(newRules);
+                            
                             for (let i = 0; i < newRules.length; i++) {
                                 let newRule = newRules[i];
                                 let foundRuleId;
@@ -1147,7 +1147,7 @@ app.post("/api/editRules/:umatiname", [ middleware.jsonParser, middleware.authen
                                     if (newRule.id && newRule.id.length > 4) {
                                         
                                         for (let j = 0; j < oldRules.length; j++) {
-                                            console.log(oldRules[j].id);
+                                            
                                             if (oldRules[j].id == newRule.id) {
                                                 foundRuleId = oldRules[j].id;
                                                 break;
@@ -1160,11 +1160,11 @@ app.post("/api/editRules/:umatiname", [ middleware.jsonParser, middleware.authen
                                 let description = newRule.description;
 
                                     
-                                    console.log("basic tests passed");
+                                    
                                     if (title.length >= 3 && title.length <= 100) {
                                         if (appliedTo >= 0 && newRule.appliedTo <= 2) {
                                             if (description.length >= 0 && description.length <= 1000) {
-                                                console.log("tests passed");
+                                                
                                                 const ruleId = foundRuleId || short.generate();
                                                 finalRules.push({
                                                     id: ruleId,
@@ -1203,7 +1203,7 @@ app.post("/api/editRules/:umatiname", [ middleware.jsonParser, middleware.authen
 });
 
 app.get("/api/umatiData/:umati", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
-    console.log("recieved at server");
+    
     if (req) {
         var umatiname = req.params.umati;
         var umati;
@@ -1307,7 +1307,7 @@ app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken
                     let aggregation;
                     if (req.query.search && req.query.search.length > 0) {
                         query = req.query.search;
-                        console.log("query: " + query);
+                        
                         aggregation = await umatisCollection.aggregate([
                             {$search: {index: "umatiSearch", "autocomplete": {
                                 "query": query,
@@ -1349,7 +1349,7 @@ app.get("/api/fetchUmatis", [middleware.jsonParser, middleware.authenticateToken
                             if (ownerData) {
                                 ownerData = cleanUserData(ownerData,adminMode);
                                 umati.ownerData = ownerData;
-                                // console.log(umati);
+                                // 
                                 umatiStream.push(umati);
                             }
                         })
@@ -1554,7 +1554,7 @@ app.post("/api/createPost/:umatiname", [middleware.ratelimitPosts, middleware.js
 });
 
 app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
-    console.log("recieved at server");
+    
     if (req && req.params.postId) {
         var postId = req.params.postId;
         var umati;
@@ -1784,7 +1784,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                         comment.userVote = userVoteStatus;
                                         comment.voteCount = voteStatus.voteCount;
                                     }
-                                    // console.log(voteData.voteCount);
+                                    // 
                                     if (!comment.parentComment || comment.commentId == req.query.commentId) {
                                         commentStream.push(comment);
                                     }
@@ -1796,7 +1796,7 @@ app.get("/api/postData/:postId", [middleware.jsonParser, middleware.authenticate
                                     }
                                 }
                                 for await (let comment of commentsAggregate) {
-                                    console.log(comment);
+                                    
                                     await recursivelyManipulateChildComments(comment);
                                 }
                                 post.commentData = commentStream;
@@ -1843,7 +1843,7 @@ async function updatePostReputation(senderId,authorId,postId,change,voterType) {
             }
         }, settings, async (error,result) => {
             if (error) {
-                console.log("ERROR: " + error);
+                
             }
             if(result.modifiedCount && result.modifiedCount > 0){
                 await postVotesCollection.updateOne({"postId": postId},{
@@ -1944,16 +1944,16 @@ app.post("/api/voteOnPost/:postId", [middleware.ratelimitVotes, middleware.jsonP
                                     }, 
                                     async(error,result) => {
                                         if (error) {
-                                            console.log("ERROR: " + error);
+                                            
                                         }
-                                        console.log(result);
+                                        
                                         if(result.modifiedCount > 0){
-                                            console.log("Down to Up");
+                                            
                                             counterInc = 2;
                                             await updatePostReputation(req.decoded.userId,authorId,postId,2,voterType);
                                         }
                                         else if (!result) {
-                                            console.log("what");
+                                            
                                             counterInc = 0;
                                             
                                         }
@@ -1973,16 +1973,16 @@ app.post("/api/voteOnPost/:postId", [middleware.ratelimitVotes, middleware.jsonP
                                     }, 
                                     async (error,result) => {
                                         if (error) {
-                                            console.log("ERROR: " + error);
+                                            
                                         }
-                                        console.log(result);
+                                        
                                         if(result.modifiedCount > 0){
-                                            console.log("Up To Down");
+                                            
                                             counterInc = -2;
                                             await updatePostReputation(req.decoded.userId,authorId,postId,-2,voterType);
                                         }
                                         else if (!result) {
-                                            console.log("what");
+                                            
                                             counterInc = 0;
                                         }
                                         else {
@@ -2019,7 +2019,7 @@ app.post("/api/voteOnPost/:postId", [middleware.ratelimitVotes, middleware.jsonP
 
 app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken], function (req, res) {
     if (req) {
-        console.log("fetching posts");
+        
         try {
             var client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
             client.connect( (err,db) => {
@@ -2066,7 +2066,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                     }
 
                     const chosenSort = req.query.sort || (query["author"] ? "new" : "trending");
-                    console.log(chosenSort);
+                    
 
                     const match = {$match: query};
                     const lookup = {$lookup: {
@@ -2250,7 +2250,7 @@ app.get("/api/fetchPosts", [middleware.jsonParser, middleware.authenticateToken]
                     }
 
                     // for await (let post of aggregation) {
-                    //     console.log(post);
+                    //     
                     // }
 
 
@@ -2370,7 +2370,7 @@ app.get("/assets/postPhoto/:id", [middleware.jsonParser, middleware.authenticate
 // Comments
 
 app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.jsonParser, middleware.authenticateToken], function (req, res) {
-    console.log("recieved comment request");
+    
     if (req && req.params.postId && req.body.content) {
         const postId = req.params.postId;
         const commentBody = req.body.content;
@@ -2383,7 +2383,7 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
                 
                 client.connect( (err,db) => {
                     if (err) throw err;
-                    console.log("connected");
+                    
                     var body = req.body;
 
                     (async ()=>{
@@ -2402,7 +2402,7 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
                         }
 
                         if (postInQuestion && commentingUser && parentCommentExists) {
-                            console.log("post and user verified");
+                            
                             let commentsCounter = commentsDB.collection("counter");
                             let commentsVotesCollection = commentsDB.collection("votes");
                             var increment = await commentsCounter.findOneAndUpdate(
@@ -2413,7 +2413,7 @@ app.post("/api/createComment/:postId", [middleware.ratelimitPosts, middleware.js
                             let ancestors = []
 
                             if (parentComment) {
-                                console.log("parent comment found");
+                                
                                 if (parentComment.ancestors) {
                                     ancestors = ancestors.concat(parentComment.ancestors);
                                 }
@@ -2500,7 +2500,7 @@ async function updateCommentReputation(senderId,authorId,commentId,change,voterT
             }
         }, settings, async (error,result) => {
             if (error) {
-                console.log("ERROR: " + error);
+                
             }
             if(result.modifiedCount && result.modifiedCount > 0){
                 await commentVotesCollection.updateOne({"commentId": commentId},{
@@ -2561,7 +2561,7 @@ app.post("/api/voteOnComment/:commentId", [middleware.ratelimitVotes, middleware
                         let loggedUser = await usersCollection.findOne({userId: req.decoded.userId});
                         let targetComment = await commentsCollection.findOne({commentId: req.params.commentId});
                         if (targetComment && loggedUser.username == req.decoded.username) { // verify logged in
-                            console.log("verified vote request");
+                            
                             const commentId = req.params.commentId;
 
                             var counterInc = 0;
@@ -2602,16 +2602,16 @@ app.post("/api/voteOnComment/:commentId", [middleware.ratelimitVotes, middleware
                                     }, 
                                     async(error,result) => {
                                         if (error) {
-                                            console.log("ERROR: " + error);
+                                            
                                         }
-                                        console.log(result);
+                                        
                                         if(result.modifiedCount > 0){
-                                            console.log("Down to Up");
+                                            
                                             counterInc = 2;
                                             await updateCommentReputation(req.decoded.userId,authorId,commentId,2,voterType);
                                         }
                                         else if (!result) {
-                                            console.log("what");
+                                            
                                             counterInc = 0;
                                             
                                         }
@@ -2631,16 +2631,16 @@ app.post("/api/voteOnComment/:commentId", [middleware.ratelimitVotes, middleware
                                     }, 
                                     async (error,result) => {
                                         if (error) {
-                                            console.log("ERROR: " + error);
+                                            
                                         }
-                                        console.log(result);
+                                        
                                         if(result.modifiedCount > 0){
-                                            console.log("Up To Down");
+                                            
                                             counterInc = -2;
                                             await updateCommentReputation(req.decoded.userId,authorId,commentId,-2,voterType);
                                         }
                                         else if (!result) {
-                                            console.log("what");
+                                            
                                             counterInc = 0;
                                         }
                                         else {
@@ -2803,7 +2803,7 @@ app.get("/api/notifCount", [middleware.jsonParser, middleware.authenticateToken]
                 
                     var tokenData = req.decoded
                     var adminMode = tokenData.isAdmin;
-                    console.log("notifCount");
+                    
                     (async ()=>{
                         let foundNotifs = await notifsCollection.findOne(
                             {userId: req.decoded.userId},
@@ -2920,4 +2920,4 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(port, () => console.log(`Listening on port ${port}`));
+app.listen(port, () => 
