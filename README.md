@@ -76,11 +76,14 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 <li>Custom Markdown parser for description - supports user and Umati mentions</li>
 <li>View posts created by each user</li>
 </ul>
-</details>
 
 ![account view](https://user-images.githubusercontent.com/50559427/132928420-61f24a29-f0b2-4c04-9c2d-11d5140e2079.png)
 
 ![editnameandavatar](https://user-images.githubusercontent.com/50559427/132928471-0f3ac802-c1bc-4660-9a22-c771a9b48041.png)
+
+</details>
+
+
 
 <details>
 <summary><b>Umatis (groups)</b></summary>
@@ -94,7 +97,6 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 <li>Join relatable Umatis with the Join button, join count displayed on Umati profile</li>
 <li>WIP: Community customization (banners, umati categories, user tags, etc)</li>
 </ul>
-</details>
 
 ![create umati](https://user-images.githubusercontent.com/50559427/132928494-dfc47389-bef8-4bc1-81e0-5c0971d230cb.png)
 
@@ -105,6 +107,10 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 ![umati view](https://user-images.githubusercontent.com/50559427/132928518-bc2e8ef9-187d-4045-857a-e6a849ea918b.png)
 
 ![umatisview](https://user-images.githubusercontent.com/50559427/132928528-3990bfb0-f0c3-410d-9560-4845a2479a8e.png)
+
+</details>
+
+
 
 <details>
 <summary><b>Posts</b></summary>
@@ -117,11 +123,14 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 <li>Users can _Like_ insightful posts or _Dislike_ rule-breaking or low-quality posts</li>
 <li>Posts can be sorted in different orders: Trending (Reddit Hot algorithm), New, Top (Lower bound of Wilson score confidence interval for a Bernoulli parameter), Liked, Disliked, Controversial (closest to 50% like ratio), and Old.</li>
 </ul>
-</details>
 
 ![create post](https://user-images.githubusercontent.com/50559427/132928541-5b5300c2-201f-4d02-94a8-786173760012.png)
 
 ![sorting](https://user-images.githubusercontent.com/50559427/132928598-1cf97ced-e8f1-44b8-8535-1cb212606a27.png)
+
+</details>
+
+
 
 <details>
 <summary><b>Comments</b></summary>
@@ -135,9 +144,12 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 <li>Nested comments: Unlike Youtube or Instagram, comment replies are stored as a tree model which allows for fluid discussion</li>
 <li>Comment permalinks allow viewers to jump to related discussion - linked comments have a yellow tint</li>
 </ul>
-</details>
 
 ![comment](https://user-images.githubusercontent.com/50559427/132928558-c44384f8-015c-4d99-bc6e-d9eacbe47c13.png)
+
+</details>
+
+
 
 <details>
 <summary><b>Notifications</b></summary>
@@ -150,11 +162,14 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 <li>Click notifications to jump to content which sets the notification on "seen". New notifications have a blue tint</li>
 <li>Bell icon badge indicates amount of new notifications</li>
 </ul>
-</details>
 
 ![notifications](https://user-images.githubusercontent.com/50559427/132928571-53058a22-cb32-42a2-8151-1872dede9887.png)
 
 ![milestones](https://user-images.githubusercontent.com/50559427/132928573-98f883b7-6348-4331-be53-94d048909b40.png)
+
+</details>
+
+
 
 ### Security features
 <ul>
@@ -176,11 +191,14 @@ Features are currently divided into three areas. **Core**, **Security**, and **M
 <li>Reorder rules with gratifying drag-and-drop mechanic</li>
 <li>Rules can apply to all UGC (user generated content), only posts, or only comments (WIP: Rules that apply will show in the report menu)</li>
 </ul>
-</details>
-
+  
 ![add rule](https://user-images.githubusercontent.com/50559427/132928588-ea573102-cad6-4ae0-98a8-0f4836808f5b.png)
 
 ![rule view](https://user-images.githubusercontent.com/50559427/132928591-9d7ec8f5-6a77-438c-875f-51be41e2f2c1.png)
+
+</details>
+
+
 
 <details>
 
