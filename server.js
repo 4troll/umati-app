@@ -169,8 +169,6 @@ const middleware = {
         store: new MongoStore({
             uri: mongoUri,
             collectionName: "accountRateLimit",
-            //   user: "mustafaA",
-            //   password: 'mongopassword',
             // should match windowMs
             expireTimeMs: 60 * 60 * 1000,
             errorHandler: console.error.bind(null, "rate-limit-mongo")
@@ -184,8 +182,6 @@ const middleware = {
         store: new MongoStore({
             uri: mongoUri,
             collectionName: "loginRateLimit",
-            //user: "mustafaA",
-            //password: "loleris123",
             // should match windowMs
             expireTimeMs: 5 * 60 * 1000,
             errorHandler: console.error.bind(null, "rate-limit-mongo")
@@ -199,8 +195,6 @@ const middleware = {
         store: new MongoStore({
             uri: mongoUri,
             collectionName: "accountEditRateLimit",
-            //   user: "mustafaA",
-            //   password: 'mongopassword',
             // should match windowMs
             expireTimeMs: 15 * 60 * 1000,
             errorHandler: console.error.bind(null, "rate-limit-mongo")
@@ -214,8 +208,6 @@ const middleware = {
         store: new MongoStore({
             uri: mongoUri,
             collectionName: "postsRateLimit",
-            //   user: "mustafaA",
-            //   password: 'mongopassword',
             // should match windowMs
             expireTimeMs: 5 * 60 * 1000,
             errorHandler: console.error.bind(null, "rate-limit-mongo")
@@ -229,8 +221,6 @@ const middleware = {
         store: new MongoStore({
             uri: mongoUri,
             collectionName: "votesRateLimit",
-            //   user: "mustafaA",
-            //   password: 'mongopassword',
             // should match windowMs
             expireTimeMs: 60 * 1000,
             errorHandler: console.error.bind(null, "rate-limit-mongo")
