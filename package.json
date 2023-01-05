@@ -10,7 +10,7 @@
     "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn client\"",
     "dev:server": "cd client && yarn build && cd .. && yarn start",
     "start": "node server.js",
-    "heroku-postbuild": "cd client && npm install && npm install --no-shrinkwrap && npm run build"
+    "heroku-postbuild": "cd client && npm install && npm install --no-shrinkwrap --force && npm run build"
   },
   "dependencies": {
     "body-parser": "^1.19.0",
