@@ -2,9 +2,7 @@
   "name": "umati-app",
   "version": "1.0.0",
   "description": "social media",
-  "author": {
-    "name": "Mustafa Abdulameer"
-  },
+  "author": "Mustafa Abdulameer",
   "license": "MIT",
   "scripts": {
     "client": "cd client && yarn start",
@@ -33,17 +31,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/4troll/umati-app.git"
+    "url": "git+https://github.com/4troll/umati-app.git"
   },
   "bugs": {
     "url": "https://github.com/4troll/umati-app/issues"
   },
   "engines": {
-    "node": "18.x"
+    "node": "19.x"
   },
   "keywords": [
     "node",
     "express",
     "create-react-app"
-  ]
+  ],
+  "homepage": "https://github.com/4troll/umati-app#readme",
+  "main": "server.js"
 }
